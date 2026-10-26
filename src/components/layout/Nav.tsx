@@ -2,14 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Suspense, useEffect, useRef } from "react";
-import { site } from "@/config/site";
+import { Suspense, useEffect, useRef, type ReactNode } from "react";
+import { useSettings } from "@/components/SettingsProvider";
 import { cartCount, useCart, useCartHydration } from "@/store/cart";
 
-const LINKS = [
-  { href: "/shop", label: "Shop" },
-  { href: "/track", label: "Track" },
-];
+const LINKS = [{ href: "/shop", label: "Shop" }];
 
 function LinkList({ pathname }: { pathname: string }) {
   return LINKS.map((l) => {
@@ -27,14 +24,15 @@ function ActiveLinks() {
   return <LinkList pathname={usePathname()} />;
 }
 
-export function Nav() {
+export function Nav({ account }: { account: ReactNode }) {
+  const { brand } = useSettings();
   useCartHydration();
   const count = useCart((s) => cartCount(s.lines));
   const hydrated = useCart((s) => s.hydrated);
   const bumps = useCart((s) => s.bumps);
   const openDrawer = useCart((s) => s.openDrawer);
   const badge = useRef<HTMLSpanElement>(null);
-  const [left, right] = site.brand.split("—");
+  const [left, right] = brand.split("—");
 
   // Restart the CSS keyframe on every add so the badge bumps even for identical counts.
   useEffect(() => {
@@ -51,7 +49,7 @@ export function Nav() {
         Skip to content
       </a>
       <nav aria-label="Main" className="shell flex h-[var(--nav-h)] items-center justify-between">
-        <Link href="/" className="font-mono text-[0.8rem] font-medium tracking-[0.2em]" aria-label={`${site.brand} home`}>
+        <Link href="/" className="font-mono text-[0.8rem] font-medium tracking-[0.2em]" aria-label={`${brand} home`}>
           {right !== undefined ? (
             <>
               {left}
@@ -59,10 +57,10 @@ export function Nav() {
               {right}
             </>
           ) : (
-            site.brand
+            brand
           )}
         </Link>
-        <div className="flex items-center gap-1 sm:gap-3">
+        <div className="flex items-center gap-1 sm:gap-2">
           <Suspense fallback={<LinkList pathname="" />}>
             <ActiveLinks />
           </Suspense>
@@ -77,6 +75,7 @@ export function Nav() {
               {hydrated ? count : 0}
             </span>
           </button>
+          {account}
         </div>
       </nav>
     </header>

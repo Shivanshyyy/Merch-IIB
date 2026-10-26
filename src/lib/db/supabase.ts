@@ -1,12 +1,9 @@
 import "server-only";
-import { createClient } from "@supabase/supabase-js";
-import type { Batch, NewOrder, Order, Product } from "@/lib/types";
-import { CodeTakenError, type Db } from "./types";
+import type { Batch, Order, Product, Profile } from "@/lib/types";
+import { CodeTakenError, EmailTakenError, type Db } from "./types";
+import type { ServiceClient } from "./supabase-client";
 
-export function createSupabaseDb(url: string, serviceKey: string): Db {
-  // Service-role key bypasses RLS; it must never reach client code.
-  const sb = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
-
+export function createSupabaseDb(sb: ServiceClient): Db {
   const fail = (what: string, error: { message: string }): never => {
     throw new Error(`supabase ${what}: ${error.message}`);
   };
@@ -30,18 +27,50 @@ export function createSupabaseDb(url: string, serviceKey: string): Db {
       return (data as Batch | null) ?? null;
     },
 
-    async countPendingOrders(email) {
+    async getSettings() {
+      const { data, error } = await sb.from("settings").select("value").eq("id", 1).maybeSingle();
+      if (error) fail("getSettings", error);
+      return data?.value ?? null;
+    },
+
+    async saveSettings(value) {
+      const { error } = await sb.from("settings").upsert({ id: 1, value });
+      if (error) fail("saveSettings", error);
+    },
+
+    async getProfile(userId) {
+      const { data, error } = await sb.from("profiles").select("*").eq("id", userId).maybeSingle();
+      if (error) fail("getProfile", error);
+      return (data as Profile | null) ?? null;
+    },
+
+    async createProfile(userId, email, input) {
+      const { data, error } = await sb.from("profiles").insert({ id: userId, email, ...input }).select("*").single();
+      if (error) {
+        if (error.code === "23505") throw new EmailTakenError();
+        fail("createProfile", error);
+      }
+      return data as Profile;
+    },
+
+    async updateProfile(userId, input) {
+      const { data, error } = await sb.from("profiles").update(input).eq("id", userId).select("*").single();
+      if (error) fail("updateProfile", error);
+      return data as Profile;
+    },
+
+    async countPendingOrders(userId) {
       const { count, error } = await sb
         .from("orders")
         .select("id", { count: "exact", head: true })
-        .eq("email", email)
+        .eq("user_id", userId)
         .eq("payment_status", "pending")
         .neq("order_status", "cancelled");
       if (error) fail("countPendingOrders", error);
       return count ?? 0;
     },
 
-    async insertOrder(order: NewOrder) {
+    async insertOrder(order) {
       const { data, error } = await sb.from("orders").insert(order).select("*").single();
       if (error) {
         if (error.code === "23505") throw new CodeTakenError();
@@ -56,9 +85,9 @@ export function createSupabaseDb(url: string, serviceKey: string): Db {
       return (data as Order | null) ?? null;
     },
 
-    async listOrdersByEmail(email) {
-      const { data, error } = await sb.from("orders").select("*").eq("email", email).order("created_at", { ascending: false });
-      if (error) fail("listOrdersByEmail", error);
+    async listOrdersByUser(userId) {
+      const { data, error } = await sb.from("orders").select("*").eq("user_id", userId).order("created_at", { ascending: false });
+      if (error) fail("listOrdersByUser", error);
       return (data ?? []) as Order[];
     },
 

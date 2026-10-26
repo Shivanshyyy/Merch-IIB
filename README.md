@@ -17,15 +17,17 @@ With no `SUPABASE_*` variables set, the site uses a demo store seeded from `supa
 | Variable | Where to get it | Used for |
 |---|---|---|
 | `SUPABASE_URL` | Supabase → Project Settings → API → Project URL | server only |
+| `SUPABASE_ANON_KEY` | Supabase → Project Settings → API → `anon` / publishable key | server only, customer login |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project Settings → API → `service_role` key | server only, bypasses RLS: never prefix with `NEXT_PUBLIC_` |
 | `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET` | you choose | admin panel (Phase 2) |
 
 ## Set up the database (Supabase)
 
 1. Create a project at supabase.com.
-2. Open **SQL Editor → New query**, paste [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql), **Run**.
-3. New query again, paste [`supabase/seed.sql`](supabase/seed.sql), **Run** (3 placeholder hoodies and one open batch; safe to re-run).
-4. Put the project URL and `service_role` key in `.env.local` and in Vercel → Settings → Environment Variables.
+2. Open **SQL Editor → New query**, paste each file in [`supabase/migrations/`](supabase/migrations) in order (`0001_init.sql`, then `0002_accounts_settings.sql`) and **Run**.
+3. New query again, paste [`supabase/seed.sql`](supabase/seed.sql), **Run** (3 placeholder hoodies, one open batch and the default settings; safe to re-run).
+4. **Authentication → Providers → Email:** turn **Confirm email OFF**. Customers sign up with email + password only and the app never sends email.
+5. Put the project URL, `anon` key and `service_role` key in `.env.local` and in Vercel → Settings → Environment Variables.
 
 Row-level security is on for every table with no policies, so the public key can read nothing. All access is server-side with the service role.
 

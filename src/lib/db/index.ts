@@ -1,6 +1,7 @@
 import "server-only";
 import { createMemoryDb } from "./memory";
 import { createSupabaseDb } from "./supabase";
+import { serviceClient } from "./supabase-client";
 import type { Db } from "./types";
 
 let instance: Db | undefined;
@@ -11,7 +12,7 @@ export function db(): Db {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (url && key) {
-    instance = createSupabaseDb(url, key);
+    instance = createSupabaseDb(serviceClient());
   } else if (process.env.VERCEL_ENV === "production") {
     // Never fall back to the demo store on the live site: orders would silently vanish.
     throw new Error("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set in production");
@@ -22,4 +23,4 @@ export function db(): Db {
   return instance;
 }
 
-export { CodeTakenError } from "./types";
+export { CodeTakenError, EmailTakenError } from "./types";

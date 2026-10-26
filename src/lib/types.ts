@@ -13,6 +13,7 @@ export type Product = {
   active: boolean;
   sort: number;
 };
+export type ProductInput = Omit<Product, "id">;
 
 export type BatchStatus = "open" | "closed" | "ordered" | "received" | "done";
 
@@ -24,6 +25,7 @@ export type Batch = {
   est_delivery: string;
   status: BatchStatus;
 };
+export type BatchInput = Omit<Batch, "id">;
 
 // Snapshot stored on the order; prices come from the DB at order time, never from the client.
 export type OrderItem = {
@@ -44,6 +46,7 @@ export type Order = {
   id: string;
   code: string;
   batch_id: string;
+  user_id: string | null;
   email: string;
   full_name: string;
   phone: string;
@@ -60,4 +63,17 @@ export type Order = {
   created_at: string;
 };
 
-export type NewOrder = Pick<Order, "code" | "batch_id" | "email" | "full_name" | "phone" | "hostel" | "room" | "items" | "total_inr">;
+export type NewOrder = Pick<Order, "code" | "batch_id" | "user_id" | "email" | "full_name" | "phone" | "hostel" | "room" | "items" | "total_inr">;
+
+export type OrderEvent = { id: number; order_id: string; type: string; note: string | null; created_at: string };
+
+export type Profile = {
+  id: string;
+  email: string;
+  full_name: string;
+  phone: string;
+  roll_no: string | null;
+  default_size: string | null;
+  created_at: string;
+};
+export type ProfileInput = Pick<Profile, "full_name" | "phone" | "roll_no" | "default_size">;

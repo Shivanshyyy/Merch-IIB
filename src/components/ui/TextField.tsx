@@ -2,9 +2,9 @@
 
 import { useId, type ComponentProps, type ReactNode } from "react";
 
-type Props = Omit<ComponentProps<"input">, "id"> & { label: ReactNode; error?: string; aside?: ReactNode; help?: ReactNode };
+type Props = Omit<ComponentProps<"input">, "id"> & { label: ReactNode; error?: string; aside?: ReactNode; help?: ReactNode; end?: ReactNode };
 
-export function TextField({ label, error, aside, help, className = "", ...input }: Props) {
+export function TextField({ label, error, aside, help, end, className = "", ...input }: Props) {
   const id = useId();
   const msg = `${id}-msg`;
   return (
@@ -13,7 +13,10 @@ export function TextField({ label, error, aside, help, className = "", ...input 
         <span>{label}</span>
         {aside}
       </label>
-      <input id={id} className={`input ${className}`} aria-invalid={error ? true : undefined} aria-describedby={error || help ? msg : undefined} {...input} />
+      <div className="relative">
+        <input id={id} className={`input ${end ? "pr-16" : ""} ${className}`} aria-invalid={error ? true : undefined} aria-describedby={error || help ? msg : undefined} {...input} />
+        {end && <div className="absolute inset-y-0 right-0 flex items-center pr-2">{end}</div>}
+      </div>
       {/* Help and error share one grid cell, so blur-validation never shifts the form (a shift can swallow the next tap). */}
       <div className="mt-2 grid min-h-[1.5rem]">
         {help && (

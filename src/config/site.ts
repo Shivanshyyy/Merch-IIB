@@ -1,42 +1,44 @@
-// Every business constant lives here so non-coders can edit it. Search for TODO to find what still needs a real value.
+// Fixed constants plus the DEFAULT business values.
+// Business values (UPI, phone, pickup, refund days, prices...) are edited in /admin/settings and stored in the
+// database; the defaults here only seed that screen and fill any gap. They live in settings.defaults.json so the
+// SQL seed, the demo store and the UI share one source.
+import defaults from "./settings.defaults.json";
+
+export type SizeChart = { unit: string; columns: string[]; rows: Record<string, string[]> };
+export type FabricSpec = { label: string; value: string };
+
+export type Settings = {
+  brand: string;
+  upiId: string;
+  payeeName: string;
+  contactName: string;
+  phone: string; // digits only, country code first
+  whatsapp: string;
+  pickupLocation: string;
+  pickupRoom: string;
+  pickupHours: string;
+  refundWindowDays: number;
+  nameMaxLength: number;
+  nameUppercase: boolean;
+  maxPendingOrdersPerEmail: number;
+  sizeChart: SizeChart;
+  fabricSpecs: FabricSpec[];
+};
+
+export const defaultSettings: Settings = defaults;
+
 export const site = {
-  brand: "MERCH—IITB", // TODO: final brand name
-  domain: "TBD", // TODO: e.g. merch-iitb.shop
-  upi: { id: "TODO@upi", payeeName: "Aryan TODO" }, // TODO: real UPI ID + payee name
-  contact: { name: "Aryan", phone: "91XXXXXXXXXX", whatsapp: "91XXXXXXXXXX" }, // TODO: real numbers, country code first, digits only
-  pickup: { location: "Hostel 4", room: "TODO", hours: "TODO" }, // TODO: room + collection hours
-  refundWindowDays: 5,
-  nameMaxLength: 12,
-  maxPendingOrdersPerEmail: 3,
   orderCodePrefix: "HD",
   maxQtyPerLine: 10,
-  nameUppercase: true, // TODO: confirm with vendor whether names print in capitals
   modelCredit: {
     title: "Classic Black Flame Hoodie",
     author: "kril",
     url: "https://sketchfab.com/3d-models/classic-black-flame-hoodie-0fd0effa321e456cb2a7467e2899b658",
     license: "CC BY 4.0",
   },
-  // TODO: replace with the vendor's real size chart (chest/length in cm). Shown in the size-chart modal.
-  sizeChart: {
-    unit: "cm",
-    columns: ["Chest", "Length", "Sleeve"],
-    rows: {
-      S: ["TODO", "TODO", "TODO"],
-      M: ["TODO", "TODO", "TODO"],
-      L: ["TODO", "TODO", "TODO"],
-      XL: ["TODO", "TODO", "TODO"],
-      XXL: ["TODO", "TODO", "TODO"],
-    },
-  },
-  // TODO: fabric spec numbers must come from the vendor; shown as-is on the product page and home "The Fabric" section.
-  fabricSpecs: [
-    { label: "Fabric", value: "TODO" },
-    { label: "Weight", value: "TODO" },
-    { label: "Fit", value: "TODO" },
-  ],
 } as const;
 
-export type Site = typeof site;
+export const whatsappUrl = (number: string, text: string) => `https://wa.me/${number}?text=${encodeURIComponent(text)}`;
 
-export const whatsappLink = (text: string) => `https://wa.me/${site.contact.whatsapp}?text=${encodeURIComponent(text)}`;
+// "91XXXXXXXXXX" -> "+91 XXXXXXXXXX"
+export const formatPhone = (digits: string) => (digits.length > 10 ? `+${digits.slice(0, digits.length - 10)} ${digits.slice(-10)}` : digits);

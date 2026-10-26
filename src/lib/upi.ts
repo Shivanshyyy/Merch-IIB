@@ -1,11 +1,10 @@
 import "server-only";
 import QRCode from "qrcode";
-import { site } from "@/config/site";
+import type { Settings } from "@/config/site";
 
 // "@" stays literal in pa and spaces are %20, because some UPI apps mishandle %40 and "+".
-export function upiLink(totalInr: number, orderCode: string) {
-  const { id, payeeName } = site.upi;
-  return `upi://pay?pa=${id}&pn=${encodeURIComponent(payeeName)}&am=${totalInr.toFixed(2)}&cu=INR&tn=${encodeURIComponent(orderCode)}`;
+export function upiLink(s: Pick<Settings, "upiId" | "payeeName">, totalInr: number, orderCode: string) {
+  return `upi://pay?pa=${s.upiId}&pn=${encodeURIComponent(s.payeeName)}&am=${totalInr.toFixed(2)}&cu=INR&tn=${encodeURIComponent(orderCode)}`;
 }
 
 // Dark-on-light for scanner reliability; returned as a data URL so it works in a plain <img>.

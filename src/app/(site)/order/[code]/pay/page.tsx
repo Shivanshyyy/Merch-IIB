@@ -2,14 +2,17 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { CopyButton } from "@/components/ui/CopyButton";
-import { Button } from "@/components/ui/Button";
 import { OpenUpiButton } from "@/components/order/OpenUpiButton";
 import { UtrForm } from "@/components/order/UtrForm";
-import { site, whatsappLink } from "@/config/site";
+import { Button } from "@/components/ui/Button";
+import { CopyButton } from "@/components/ui/CopyButton";
+import { formatPhone, whatsappUrl } from "@/config/site";
+import { requireProfile } from "@/lib/auth/guards";
 import { db } from "@/lib/db";
 import { inr } from "@/lib/format";
 import { orderCodeSchema } from "@/lib/schemas";
+import { getSettingsFresh } from "@/lib/settings";
+import { isPlaceholderUpi } from "@/lib/settings-schema";
 import { upiLink, upiQrDataUrl } from "@/lib/upi";
 
 export const metadata: Metadata = { title: "Pay for your order", robots: { index: false } };
@@ -31,13 +34,19 @@ export default function PayPage({ params }: Props) {
 async function Pay({ params }: Props) {
   const parsed = orderCodeSchema.safeParse(decodeURIComponent((await params).code));
   if (!parsed.success) notFound();
-  const order = await db().getOrderByCode(parsed.data);
-  if (!order) notFound();
 
-  const link = upiLink(order.total_inr, order.code);
-  const qr = await upiQrDataUrl(link);
-  const phoneDisplay = `+${site.contact.phone.slice(0, 2)} ${site.contact.phone.slice(2)}`;
+  // Owner only: the code alone is no longer enough to see an order.
+  const { user } = await requireProfile(`/order/${parsed.data}/pay`);
+  const order = await db().getOrderByCode(parsed.data);
+  if (!order || order.user_id !== user.id) notFound();
+
+  // Fresh read: a customer must never pay to a UPI ID that was changed a minute ago.
+  const s = await getSettingsFresh();
+  const paymentsReady = !(process.env.VERCEL_ENV === "production" && isPlaceholderUpi(s.upiId));
+  const link = upiLink(s, order.total_inr, order.code);
+  const qr = paymentsReady ? await upiQrDataUrl(link) : "";
   const itemCount = order.items.reduce((n, i) => n + i.qty, 0);
+  const wa = (text: string) => whatsappUrl(s.whatsapp, text);
 
   return (
     <>
@@ -45,14 +54,15 @@ async function Pay({ params }: Props) {
 
       {order.payment_status === "verified" && (
         <p role="status" className="mt-6 bg-accent-2 px-5 py-4 font-mono text-[0.8rem] uppercase tracking-[0.1em] text-bg">
-          Payment verified. You&apos;re all set. <Link href="/track" className="underline underline-offset-4">
+          Payment verified. You&apos;re all set.{" "}
+          <Link href="/orders" className="underline underline-offset-4">
             Track your order →
           </Link>
         </p>
       )}
       {order.payment_status === "rejected" && (
         <p role="alert" className="mt-6 border border-accent px-5 py-4 text-[#ff7a63]">
-          We couldn&apos;t match your payment. Message {site.contact.name} on WhatsApp with your screenshot and order code and we&apos;ll sort it out.
+          We couldn&apos;t match your payment. Message {s.contactName} on WhatsApp with your screenshot and order code and we&apos;ll sort it out.
         </p>
       )}
 
@@ -62,7 +72,9 @@ async function Pay({ params }: Props) {
           <h1 className="mono mt-3 text-[clamp(2.6rem,12vw,8rem)] font-medium leading-none tracking-[-0.04em]">{order.code}</h1>
         </div>
         <div className="md:text-right">
-          <p className="label">Amount to pay · {itemCount} {itemCount === 1 ? "item" : "items"}</p>
+          <p className="label">
+            Amount to pay · {itemCount} {itemCount === 1 ? "item" : "items"}
+          </p>
           <p className="mono mt-3 text-[clamp(2.2rem,7vw,4.5rem)] leading-none">{inr(order.total_inr)}</p>
         </div>
       </header>
@@ -73,22 +85,38 @@ async function Pay({ params }: Props) {
           <h2 id="pay-h" className="sr-only">
             Pay with UPI
           </h2>
-          <div className="bg-fg p-4">
-            {/* eslint-disable-next-line @next/next/no-img-element -- generated data URL, nothing to optimise */}
-            <img src={qr} alt={`UPI QR code for ${inr(order.total_inr)}, order ${order.code}`} width={420} height={420} className="aspect-square w-full" />
-          </div>
-          <p className="label text-center normal-case tracking-normal">The amount and order code are filled in for you. Don&apos;t edit them.</p>
+          {paymentsReady ? (
+            <>
+              <div className="bg-fg p-4">
+                {/* eslint-disable-next-line @next/next/no-img-element -- generated data URL, nothing to optimise */}
+                <img src={qr} alt={`UPI QR code for ${inr(order.total_inr)}, order ${order.code}`} width={420} height={420} className="aspect-square w-full" />
+              </div>
+              <p className="label text-center normal-case tracking-normal">The amount and order code are filled in for you. Don&apos;t edit them.</p>
 
-          <OpenUpiButton link={link} />
+              <OpenUpiButton link={link} />
 
-          <div className="border border-line bg-bg-2 p-4">
-            <p className="label">UPI ID</p>
-            <div className="mt-3 flex items-center justify-between gap-3">
-              <p className="mono break-all text-[1.05rem]">{site.upi.id}</p>
-              <CopyButton text={site.upi.id} label="Copy UPI ID" toastMessage="UPI ID copied" />
+              <div className="border border-line bg-bg-2 p-4">
+                <p className="label">UPI ID</p>
+                <div className="mt-3 flex items-center justify-between gap-3">
+                  <p className="mono break-all text-[1.05rem]">{s.upiId}</p>
+                  <CopyButton text={s.upiId} label="Copy UPI ID" toastMessage="UPI ID copied" />
+                </div>
+                <p className="label mt-3 normal-case tracking-normal">
+                  Paying to {s.payeeName}. Add {order.code} in the note.
+                </p>
+              </div>
+            </>
+          ) : (
+            <div role="alert" className="border border-accent-2 p-6">
+              <p className="t-display text-xl">Payments are being set up</p>
+              <p className="mt-3 text-muted">Your order {order.code} is saved. Message {s.contactName} on WhatsApp and they&apos;ll send you the payment details.</p>
+              <div className="mt-5">
+                <Button href={wa(`Hi, I placed order ${order.code} for ${inr(order.total_inr)}. How do I pay?`)} target="_blank" rel="noopener">
+                  WhatsApp {s.contactName}
+                </Button>
+              </div>
             </div>
-            <p className="label mt-3 normal-case tracking-normal">Paying to {site.upi.payeeName}. Add {order.code} in the note.</p>
-          </div>
+          )}
         </section>
 
         {/* Steps */}
@@ -103,25 +131,25 @@ async function Pay({ params }: Props) {
             <li className="grid gap-4 bg-bg p-6">
               <p className="label text-accent-2">02 — Send the screenshot on WhatsApp</p>
               <p>
-                Send a screenshot of the payment to {site.contact.name} ({phoneDisplay}) so it can be verified.
+                Send a screenshot of the payment to {s.contactName} ({formatPhone(s.phone)}) so it can be verified.
               </p>
               <div className="grid gap-3 sm:grid-cols-2">
-                <Button href={whatsappLink(`Hi, I paid ${inr(order.total_inr)} for order ${order.code}. Screenshot attached.`)} variant="quiet" target="_blank" rel="noopener">
-                  WhatsApp {site.contact.name}
+                <Button href={wa(`Hi, I paid ${inr(order.total_inr)} for order ${order.code}. Screenshot attached.`)} variant="quiet" target="_blank" rel="noopener">
+                  WhatsApp {s.contactName}
                 </Button>
-                <Button href={`tel:+${site.contact.phone}`} variant="ghost">
-                  Call {site.contact.name}
+                <Button href={`tel:+${s.phone}`} variant="ghost">
+                  Call {s.contactName}
                 </Button>
               </div>
             </li>
             <li className="grid gap-3 bg-bg p-6">
               <p className="label text-accent-2">03 — Check your status</p>
               <p>
-                We verify payments by hand. Track progress any time with your email and order code <span className="mono">{order.code}</span>.
+                We verify payments by hand. Follow your order in My orders; its status updates as soon as {s.contactName} verifies it.
               </p>
               <div>
-                <Button href="/track" variant="ghost">
-                  Track my order
+                <Button href="/orders" variant="ghost">
+                  My orders
                 </Button>
               </div>
             </li>
@@ -139,11 +167,11 @@ async function Pay({ params }: Props) {
             </h2>
             <ul className="mt-5 grid gap-3 text-[0.95rem] leading-relaxed">
               <li>
-                <strong>Refund eligible within {site.refundWindowDays} days of pickup</strong> for defective, misprinted or wrong items.
+                <strong>Refund eligible within {s.refundWindowDays} days of pickup</strong> for defective, misprinted or wrong items.
               </li>
               <li>Personalised items may not be eligible for change-of-mind returns, so double-check your name spelling and size.</li>
               <li>
-                Collection and returns happen at <strong>{site.pickup.location}</strong>, Room {site.pickup.room}, {site.pickup.hours}.
+                Collection and returns happen at <strong>{s.pickupLocation}</strong>, {s.pickupRoom}, {s.pickupHours}.
               </li>
             </ul>
             <Link href="/policies" className="label mt-5 inline-block underline underline-offset-4 hover:text-fg">

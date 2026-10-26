@@ -3,32 +3,39 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useMemo } from "react";
 import { placeOrder } from "@/actions/checkout";
+import { useSettings } from "@/components/SettingsProvider";
 import { Button } from "@/components/ui/Button";
 import { Check } from "@/components/ui/Check";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { TextField } from "@/components/ui/TextField";
-import { site } from "@/config/site";
+import { useFieldErrors } from "@/components/ui/useFieldErrors";
 import { colorwayImage, fmtDate, inr } from "@/lib/format";
 import type { CheckoutState } from "@/lib/form-state";
-import { checkoutSchema, type CheckoutField, type FieldErrors } from "@/lib/schemas";
+import { makeCheckoutSchema } from "@/lib/schemas";
 import { useBatchClosed } from "@/lib/useBatchClosed";
 import { cartCount, useCart } from "@/store/cart";
 
-type FieldKey = "fullName" | "email" | "phone" | "hostel" | "room";
-const LAST_LOOKUP_KEY = "merch-track";
+type Defaults = { fullName: string; phone: string; hostel: string; room: string };
+type FieldKey = keyof Defaults;
 
-export function CheckoutForm({ prices, batch }: { prices: Record<string, number>; batch: { name: string; closesAt: string } | null }) {
+type Props = {
+  prices: Record<string, number>;
+  batch: { name: string; closesAt: string } | null;
+  email: string;
+  defaults: Defaults;
+};
+
+export function CheckoutForm({ prices, batch, email, defaults }: Props) {
   const router = useRouter();
+  const settings = useSettings();
+  const schema = useMemo(() => makeCheckoutSchema(settings), [settings]);
   const lines = useCart((s) => s.lines);
   const hydrated = useCart((s) => s.hydrated);
   const clear = useCart((s) => s.clear);
   const [state, action] = useActionState<CheckoutState, FormData>(placeOrder, { ok: false });
-  // Client-side results are tied to the server state they were made against, so a fresh submit starts clean.
-  const [client, setClient] = useState<{ at: CheckoutState | null; errors: FieldErrors<CheckoutField> }>({ at: null, errors: {} });
-  const clientErrors = client.at === state ? client.errors : {};
-  const setField = (key: CheckoutField, message: string | undefined) => setClient((c) => ({ at: state, errors: { ...(c.at === state ? c.errors : {}), [key]: message } }));
+  const f = useFieldErrors(state, state.fieldErrors);
   const closed = useBatchClosed(batch?.closesAt) || !batch;
 
   // Show server-side prices, so a stale cart snapshot can't mislead.
@@ -39,23 +46,18 @@ export function CheckoutForm({ prices, batch }: { prices: Record<string, number>
 
   useEffect(() => {
     if (!state.ok || !state.code) return;
-    try {
-      // Pre-fill /track with this order, since there is no login.
-      localStorage.setItem(LAST_LOOKUP_KEY, JSON.stringify({ email: state.values?.email?.trim().toLowerCase() ?? "", code: state.code }));
-    } catch {
-      /* private mode */
-    }
     clear();
     router.push(`/order/${state.code}/pay`);
   }, [state, clear, router]);
 
-  const validate = (key: FieldKey) => (e: React.FocusEvent<HTMLInputElement>) => {
-    const r = checkoutSchema.shape[key].safeParse(e.target.value);
-    setField(key, r.success ? undefined : r.error.issues[0]?.message);
-  };
-  // Once the user has touched a field, their live result wins over the server's older message.
-  const err = (k: CheckoutField) => (k in clientErrors ? clientErrors[k] : state.fieldErrors?.[k]);
-  const v = (k: FieldKey) => state.values?.[k];
+  const value = (k: FieldKey) => state.values?.[k] ?? defaults[k];
+  const field = (k: FieldKey) => ({
+    name: k,
+    defaultValue: value(k),
+    error: f.error(k),
+    onBlur: f.validate(k, schema.shape[k]),
+    required: true,
+  });
 
   if (hydrated && lines.length === 0 && !state.ok) {
     return (
@@ -81,36 +83,37 @@ export function CheckoutForm({ prices, batch }: { prices: Record<string, number>
       </div>
 
       <div className="grid content-start gap-10">
-        <fieldset className="grid gap-5">
+        <fieldset className="grid gap-2">
           <legend className="label mb-5">[ 01 ] — Who&apos;s it for</legend>
-          <TextField label="Full name" name="fullName" autoComplete="name" defaultValue={v("fullName")} error={err("fullName")} onBlur={validate("fullName")} required />
-          <TextField
-            label="Email"
-            name="email"
-            type="email"
-            inputMode="email"
-            autoComplete="email"
-            defaultValue={v("email")}
-            error={err("email")}
-            onBlur={validate("email")}
-            help="This is how you track your order. There's no login."
-            required
-          />
-          <TextField label="Phone" name="phone" type="tel" inputMode="numeric" autoComplete="tel-national" maxLength={14} defaultValue={v("phone")} error={err("phone")} onBlur={validate("phone")} help="10-digit Indian mobile number" required />
+          <TextField label="Full name" autoComplete="name" {...field("fullName")} />
+          <TextField label="Email" value={email} readOnly aria-readonly help={
+            <>
+              Your account email.{" "}
+              <Link href="/account" className="underline underline-offset-4 hover:text-fg">
+                Edit your details
+              </Link>
+            </>
+          } />
+          <TextField label="Phone" type="tel" inputMode="numeric" autoComplete="tel-national" maxLength={14} help="10-digit Indian mobile number" {...field("phone")} />
         </fieldset>
 
-        <fieldset className="grid gap-5 sm:grid-cols-2">
+        <fieldset className="grid gap-x-5 gap-y-2 sm:grid-cols-2">
           <legend className="label mb-5">[ 02 ] — Pickup details</legend>
-          <TextField label="Hostel" name="hostel" autoComplete="off" defaultValue={v("hostel")} error={err("hostel")} onBlur={validate("hostel")} placeholder="e.g. Hostel 4" required />
-          <TextField label="Room" name="room" autoComplete="off" defaultValue={v("room")} error={err("room")} onBlur={validate("room")} required />
+          <TextField label="Hostel" autoComplete="off" placeholder="e.g. Hostel 4" {...field("hostel")} />
+          <TextField label="Room" autoComplete="off" {...field("room")} />
           <p className="label normal-case tracking-normal sm:col-span-2">
-            You&apos;ll collect from {site.pickup.location}, Room {site.pickup.room}.
+            You&apos;ll collect from {settings.pickupLocation}, {settings.pickupRoom}.
           </p>
         </fieldset>
 
-        <fieldset className="grid gap-3">
+        <fieldset className="grid gap-1">
           <legend className="label mb-3">[ 03 ] — Before you pay</legend>
-          <Check name="confirmSpelling" label="I confirmed the name spelling and sizes" error={err("confirmSpelling")} onChange={(e) => setField("confirmSpelling", e.target.checked ? undefined : "Please confirm the name spelling and sizes")} />
+          <Check
+            name="confirmSpelling"
+            label="I confirmed the name spelling and sizes"
+            error={f.error("confirmSpelling")}
+            onChange={(e) => f.set("confirmSpelling", e.target.checked ? undefined : "Please confirm the name spelling and sizes")}
+          />
           <Check
             name="confirmPolicy"
             label={
@@ -121,8 +124,8 @@ export function CheckoutForm({ prices, batch }: { prices: Record<string, number>
                 </Link>
               </>
             }
-            error={err("confirmPolicy")}
-            onChange={(e) => setField("confirmPolicy", e.target.checked ? undefined : "Please confirm you have read the policy")}
+            error={f.error("confirmPolicy")}
+            onChange={(e) => f.set("confirmPolicy", e.target.checked ? undefined : "Please confirm you have read the policy")}
           />
         </fieldset>
       </div>
@@ -153,16 +156,20 @@ export function CheckoutForm({ prices, batch }: { prices: Record<string, number>
           <span className="label">Total</span>
           <span className="mono text-3xl">{inr(total)}</span>
         </div>
-        {batch && <p className="label mt-3 normal-case tracking-normal">{batch.name} closes {fmtDate(batch.closesAt)}</p>}
+        {batch && (
+          <p className="label mt-3 normal-case tracking-normal">
+            {batch.name} closes {fmtDate(batch.closesAt)}
+          </p>
+        )}
 
         {state.message && (
           <p role="alert" className="mt-5 border border-accent p-4 text-[0.9rem] text-[#ff7a63]">
             {state.message}
           </p>
         )}
-        {err("items") && (
+        {f.error("items") && (
           <p role="alert" className="field-error">
-            {err("items")}
+            {f.error("items")}
           </p>
         )}
         {state.ok && <p className="label mt-5 text-accent-2">Order placed. Taking you to payment…</p>}
@@ -170,7 +177,9 @@ export function CheckoutForm({ prices, batch }: { prices: Record<string, number>
         <SubmitButton size="lg" block className="mt-6" disabled={closed || hasGone || lines.length === 0 || state.ok}>
           {closed ? "Preorders closed" : `Place order · ${inr(total)}`}
         </SubmitButton>
-        <p className="label mt-4 normal-case leading-relaxed tracking-normal">You pay by UPI on the next screen. Your order is held as &ldquo;payment pending&rdquo; until {site.contact.name} verifies it.</p>
+        <p className="label mt-4 normal-case leading-relaxed tracking-normal">
+          You pay by UPI on the next screen. Your order is held as &ldquo;payment pending&rdquo; until {settings.contactName} verifies it.
+        </p>
       </aside>
     </form>
   );

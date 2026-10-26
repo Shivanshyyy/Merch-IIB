@@ -1,17 +1,17 @@
-import { site } from "@/config/site";
 import { fmtDate, inr } from "@/lib/format";
-import type { TrackedOrder } from "@/lib/form-state";
+import { Button } from "@/components/ui/Button";
+import type { OrderView } from "@/lib/form-state";
 
 const STEPS = ["Placed", "Payment verified", "In production", "Ready for pickup", "Collected"] as const;
 
-function reached(o: TrackedOrder): boolean[] {
+function reached(o: OrderView): boolean[] {
   const s = o.order_status;
   return [true, o.payment_status === "verified", ["in_production", "ready", "collected"].includes(s), ["ready", "collected"].includes(s), s === "collected"];
 }
 
 const REFUND_COPY = { requested: "Refund requested", approved: "Refund approved", refunded: "Refund completed" } as const;
 
-export function OrderCard({ order }: { order: TrackedOrder }) {
+export function OrderCard({ order, contactName }: { order: OrderView; contactName: string }) {
   const done = reached(order);
   const current = done.lastIndexOf(true);
   const cancelled = order.order_status === "cancelled";
@@ -50,7 +50,7 @@ export function OrderCard({ order }: { order: TrackedOrder }) {
           {cancelled && <p className="mb-5 border border-accent p-3 text-[#ff7a63]">This order was cancelled.</p>}
           {rejected && (
             <p className="mb-5 border border-accent p-3 text-[#ff7a63]">
-              We couldn&apos;t match your payment. Message {site.contact.name} on WhatsApp with your screenshot.
+              We couldn&apos;t match your payment. Message {contactName} on WhatsApp with your screenshot.
             </p>
           )}
           <ol aria-label="Order progress" className="relative grid gap-5">
@@ -79,6 +79,11 @@ export function OrderCard({ order }: { order: TrackedOrder }) {
               );
             })}
           </ol>
+          {order.payment_status === "pending" && order.order_status !== "cancelled" && (
+            <div className="mt-6">
+              <Button href={`/order/${order.code}/pay`}>Pay now</Button>
+            </div>
+          )}
           {order.refund_status !== "none" && (
             <p className="label mt-6 inline-block border border-accent-2 px-3 py-2 text-accent-2">{REFUND_COPY[order.refund_status]}</p>
           )}

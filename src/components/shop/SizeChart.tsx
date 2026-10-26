@@ -1,11 +1,11 @@
 "use client";
 
 import { useRef } from "react";
-import { site } from "@/config/site";
+import { useSettings } from "@/components/SettingsProvider";
 
 export function SizeChart({ sizes }: { sizes: string[] }) {
   const ref = useRef<HTMLDialogElement>(null);
-  const { columns, rows, unit } = site.sizeChart;
+  const { columns, rows, unit } = useSettings().sizeChart;
 
   return (
     <>
@@ -41,7 +41,7 @@ export function SizeChart({ sizes }: { sizes: string[] }) {
             {sizes.map((s) => (
               <tr key={s} className="border-b border-line last:border-0">
                 <th className="px-5 py-3 font-medium">{s}</th>
-                {(rows[s as keyof typeof rows] ?? columns.map(() => "TODO")).map((v, i) => (
+                {(rows[s] ?? columns.map(() => "—")).map((v, i) => (
                   <td key={i} className="px-3 py-3">
                     {v}
                   </td>

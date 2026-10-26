@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { priceOrder } from "@/lib/pricing";
+import { priceOrder as price } from "@/lib/pricing";
 import type { Product } from "@/lib/types";
+
+const rules = { nameMaxLength: 12, nameUppercase: true };
+const priceOrder = (lines: Parameters<typeof price>[0], products: Product[], r = rules) => price(lines, products, r);
 
 const product = (over: Partial<Product> = {}): Product => ({
   id: "p1",
@@ -37,6 +40,13 @@ test("names are normalised (spacing, capitals) before they are stored", () => {
   const r = priceOrder([line({ name: "  aryan   k. " })], [product()]);
   assert.ok(r.ok);
   assert.equal(r.items[0].name, "ARYAN K.");
+});
+
+test("name rules follow the runtime settings (length and capitals)", () => {
+  const long = priceOrder([line({ name: "Aryan Kumar Singh" })], [product()], { nameMaxLength: 20, nameUppercase: false });
+  assert.ok(long.ok);
+  assert.equal(long.items[0].name, "Aryan Kumar Singh");
+  assert.throws(() => priceOrder([line({ name: "Aryan Kumar Singh" })], [product()], { nameMaxLength: 8, nameUppercase: false }));
 });
 
 test("rejects unknown product, colourway and size", () => {

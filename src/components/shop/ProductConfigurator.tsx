@@ -10,7 +10,7 @@ import { ChipGroup } from "@/components/ui/ChipGroup";
 import { Stepper } from "@/components/ui/Stepper";
 import { TextField } from "@/components/ui/TextField";
 import { useToast } from "@/components/ui/Toast";
-import { site } from "@/config/site";
+import { useSettings } from "@/components/SettingsProvider";
 import { colorwayImage, fmtDate, inr } from "@/lib/format";
 import { buzz } from "@/lib/haptics";
 import { normalizeName } from "@/lib/schemas";
@@ -24,6 +24,7 @@ export function ProductConfigurator({ product, batch }: { product: Product; batc
   const router = useRouter();
   const editId = useSearchParams().get("edit");
   const { toast } = useToast();
+  const settings = useSettings();
   const lines = useCart((s) => s.lines);
   const hydrated = useCart((s) => s.hydrated);
   const add = useCart((s) => s.add);
@@ -48,12 +49,28 @@ export function ProductConfigurator({ product, batch }: { product: Product; batc
     setQty(editLine.qty);
   }, [editLine, hydrated, product.colorways]);
 
+  // Pre-select the size saved on the account, unless the shopper already picked one (or is editing a cart line).
+  const sizeTouched = useRef(false);
+  useEffect(() => {
+    if (editId) return;
+    let live = true;
+    fetch("/api/me", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((me: { defaultSize?: string | null } | null) => {
+        if (live && me?.defaultSize && !sizeTouched.current && product.sizes.includes(me.defaultSize)) setSize(me.defaultSize);
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [editId, product.sizes]);
+
   const closed = useBatchClosed(batch?.closesAt) || !batch;
   const colorway = product.colorways[cw];
 
   const onName = (raw: string) => {
     const cleaned = raw.replace(/[^A-Za-z .'-]/g, "").replace(/^ +/, "").replace(/ {2,}/g, " ");
-    setName((site.nameUppercase ? cleaned.toUpperCase() : cleaned).slice(0, site.nameMaxLength));
+    setName((settings.nameUppercase ? cleaned.toUpperCase() : cleaned).slice(0, settings.nameMaxLength));
     setView("back");
   };
 
@@ -68,7 +85,7 @@ export function ProductConfigurator({ product, batch }: { product: Product; batc
       colorway: colorway.name,
       colorwayBody: colorway.body,
       size,
-      name: normalizeName(name),
+      name: normalizeName(name, settings),
       qty,
       unitPriceInr: product.price_inr,
     };
@@ -85,7 +102,7 @@ export function ProductConfigurator({ product, batch }: { product: Product; batc
     setTimeout(() => setAdded(false), 1800);
   };
 
-  const printed = normalizeName(name);
+  const printed = normalizeName(name, settings);
 
   return (
     <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1.15fr_1fr] lg:gap-0">
@@ -147,6 +164,7 @@ export function ProductConfigurator({ product, batch }: { product: Product; batc
           options={product.sizes.map((s) => ({ value: s, label: s }))}
           value={size}
           onChange={(v) => {
+            sizeTouched.current = true;
             setSize(v);
             setSizeError(undefined);
           }}
@@ -158,18 +176,18 @@ export function ProductConfigurator({ product, batch }: { product: Product; batc
             label="Name on the back"
             aside={
               <span className="mono" aria-live="polite">
-                {name.length}/{site.nameMaxLength}
+                {name.length}/{settings.nameMaxLength}
               </span>
             }
             value={name}
             onChange={(e) => onName(e.target.value)}
             onFocus={() => setView("back")}
-            maxLength={site.nameMaxLength}
+            maxLength={settings.nameMaxLength}
             placeholder="YOUR NAME"
             autoComplete="off"
             autoCapitalize="characters"
             spellCheck={false}
-            help={`Optional. Letters, spaces and . ' - only. ${site.nameUppercase ? "Printed in capitals." : ""}`}
+            help={`Optional. Letters, spaces and . ' - only. ${settings.nameUppercase ? "Printed in capitals." : ""}`}
           />
         )}
 
@@ -197,7 +215,7 @@ export function ProductConfigurator({ product, batch }: { product: Product; batc
             </div>
             <div className="flex justify-between gap-4 bg-bg p-4">
               <dt className="text-muted">Pickup</dt>
-              <dd className="text-right">{site.pickup.location}</dd>
+              <dd className="text-right">{settings.pickupLocation}</dd>
             </div>
           </dl>
         )}

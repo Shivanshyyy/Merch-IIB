@@ -1,7 +1,9 @@
-// Regenerates supabase/seed.sql from supabase/seed.json (single source for SQL, demo store and product stills).
+// Regenerates supabase/seed.sql from supabase/seed.json + src/config/settings.defaults.json
+// (single sources for the SQL seed, the demo store and product stills).
 import { readFileSync, writeFileSync } from "node:fs";
 
 const seed = JSON.parse(readFileSync("supabase/seed.json", "utf8"));
+const settings = JSON.parse(readFileSync("src/config/settings.defaults.json", "utf8"));
 const q = (s) => `'${String(s).replaceAll("'", "''")}'`;
 
 const products = seed.products
@@ -21,6 +23,9 @@ on conflict (slug) do nothing;
 insert into batches (name, closes_at, est_delivery, status)
 select ${q(seed.batch.name)}, now() + interval '${seed.batch.closesInDays} days', ${q(seed.batch.estDelivery)}, 'open'
 where not exists (select 1 from batches);
+
+insert into settings (id, value) values (1, ${q(JSON.stringify(settings))}::jsonb)
+on conflict (id) do nothing;
 `;
 
 writeFileSync("supabase/seed.sql", sql);

@@ -11,7 +11,13 @@ export type CheckoutState = {
 
 export type UtrState = { ok: boolean; message?: string; error?: string };
 
-// What /track may reveal: no phone, no UTR, no admin notes.
-export type TrackedOrder = Pick<Order, "code" | "items" | "total_inr" | "payment_status" | "order_status" | "refund_status" | "verified_at" | "created_at">;
+// Shared by login, sign-up, profile and password forms.
+export type FormState = {
+  ok?: boolean;
+  message?: string;
+  fieldErrors?: Record<string, string>;
+  values?: Record<string, string>;
+};
 
-export type TrackState = { ok: boolean; orders?: TrackedOrder[]; error?: string; fieldErrors?: { email?: string; code?: string } };
+// What customers see of their orders: no phone, UTR or admin notes.
+export type OrderView = Pick<Order, "code" | "items" | "total_inr" | "payment_status" | "order_status" | "refund_status" | "verified_at" | "created_at">;

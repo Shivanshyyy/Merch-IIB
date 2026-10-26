@@ -171,7 +171,29 @@ All prices are in **₹ whole rupees**, displayed in mono, e.g. `₹999`.
    - Subtotal.
    - Note: "Made to order. Double-check name spelling."
 4. **`/checkout`:**
-   - Fields: full name, **email** (this is the customer's ID, so there's no login), phone (10-digit Indian), hostel and room.
+## Customer accounts (Supabase Auth)
+-## Customer accounts (Supabase Auth, email + password)
+- Sign up / log in with email + password only. Email is the user's unique ID.
+- NO email verification, NO OTP, NO magic links, NO Google. "Confirm email" is turned OFF
+  in Supabase Auth settings, and the app never sends any email.
+- Sign-up form collects: full_name (required), email (required), password (min 8),
+  phone (required, 10-digit), roll_no (optional), default_size (optional).
+  User is logged in immediately after sign-up.
+- `profiles(id uuid pk = auth.users.id, email citext unique, full_name, phone, roll_no,
+  default_size, created_at)`; RLS: users read/update only their own row.
+- Forgot password: no email reset. Show "Message Aryan on WhatsApp" link; Aryan sets a
+  new password from admin.
+- Browsing shop + cart works logged out; login required at checkout (cart survives login).
+  Checkout prefills from profile, size defaults to default_size.
+- `orders` gets `user_id` fk; `/orders` ("My orders") lists their orders with status timeline.
+  Replace the email+code `/track` page with this.
+- `/account` page to edit profile and change password.
+- Admin: customers list (search by name/email/roll no/phone), view a customer's orders,
+  edit their profile, and **reset their password** (server action using the service role).
+  Admin login stays separate (ADMIN_PASSWORD).
+- Account menu in nav: avatar initial, My orders, Account, Log out.
+- Admin: customers list (search by name/email/roll no/phone), view a customer's orders,
+- Account menu in nav: avatar initial, My orders, Account, Log out.
    - Required checkboxes:
      - "I confirmed the name spelling and sizes"
      - "I've read the refund & pickup policy" (linked)
@@ -228,6 +250,11 @@ This is protected by middleware, with a login page at `/admin/login` that takes 
 - **Vendor export:** download a CSV of verified orders in a batch, with columns product, colour, size, name, quantity and order code only. **No phone, email or payment data.** Also show a summary pivot: counts by product × colour × size.
 - **Dashboard tiles:** orders, verified revenue, pending verifications, refunds, and items per size.
 - **Products CRUD:** name, slug, type, description, price, colourways (name + body hex + stitch hex), sizes, active, sort order.
+- **Settings (`/admin/settings`):** every business value is editable here and stored in the `settings` table (one row, JSON). The site reads it through `getSettings()`; `src/config/site.ts` and `supabase/seed.json` only hold the defaults and fixed constants (order-code prefix, model credit).
+  - Editable: brand name, UPI ID + payee name, contact name / phone / WhatsApp, pickup location / room / hours, refund window (days), name max length + capitals, max pending orders per email, size chart, fabric specs.
+  - Saving takes effect immediately (cache tags are invalidated).
+  - A setup checklist on the dashboard lists values still on placeholders. In production the pay page refuses to show a QR while the UPI ID is still the placeholder.
+- **Customers:** see "Customer accounts" above.
 - The admin panel should be clean and functional (it can be lighter on animation), dark-themed and usable on a phone, since Aryan will use it from his phone.
 
 ---

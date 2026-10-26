@@ -1,0 +1,31 @@
+{
+  "brand": "MERCH—IITB",
+  "upiId": "setup-required@upi",
+  "payeeName": "Merch IITB",
+  "contactName": "Aryan",
+  "phone": "910000000000",
+  "whatsapp": "910000000000",
+  "pickupLocation": "Hostel 4",
+  "pickupRoom": "TBA",
+  "pickupHours": "TBA",
+  "refundWindowDays": 5,
+  "nameMaxLength": 12,
+  "nameUppercase": true,
+  "maxPendingOrdersPerEmail": 3,
+  "sizeChart": {
+    "unit": "cm",
+    "columns": ["Chest", "Length", "Sleeve"],
+    "rows": {
+      "S": ["—", "—", "—"],
+      "M": ["—", "—", "—"],
+      "L": ["—", "—", "—"],
+      "XL": ["—", "—", "—"],
+      "XXL": ["—", "—", "—"]
+    }
+  },
+  "fabricSpecs": [
+    { "label": "Fabric", "value": "Brushed fleece" },
+    { "label": "Weight", "value": "—" },
+    { "label": "Fit", "value": "—" }
+  ]
+}

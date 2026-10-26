@@ -1,19 +1,21 @@
 import Image from "next/image";
 import { Suspense } from "react";
 import { Button } from "@/components/ui/Button";
-import { site } from "@/config/site";
 import { getOpenBatch } from "@/lib/catalog";
 import { fmtDay } from "@/lib/format";
+import { getSettings } from "@/lib/settings";
 
 // Static hero for now. Phase 3 swaps the poster for the live 3D scene and keeps this as the WebGL-failure fallback.
-const STEPS = [
-  ["Order", "Pick a colour and size, and type the name you want on the back."],
-  ["Pay via UPI", "Scan the QR or tap to pay. Send the screenshot on WhatsApp."],
-  ["We print in batches", "Verified orders go to the vendor together after the cutoff."],
-  ["Pick up", `Collect at ${site.pickup.location}. We'll message you when it's ready.`],
-] as const;
+const steps = (pickup: string) =>
+  [
+    ["Order", "Pick a colour and size, and type the name you want on the back."],
+    ["Pay via UPI", "Scan the QR or tap to pay. Send the screenshot on WhatsApp."],
+    ["We print in batches", "Verified orders go to the vendor together after the cutoff."],
+    ["Pick up", `Collect at ${pickup}. We'll message you when it's ready.`],
+  ] as const;
 
-export default function Home() {
+export default async function Home() {
+  const s = await getSettings();
   return (
     <>
       <section className="relative isolate flex min-h-[100svh] flex-col justify-end overflow-hidden pt-[var(--nav-h)]">
@@ -36,7 +38,7 @@ export default function Home() {
             campus.
           </h1>
           <div className="mt-8 flex flex-col gap-8 md:mt-12 md:flex-row md:items-end md:justify-between">
-            <p className="max-w-sm text-[1.05rem] text-muted">Hoodies made for {site.pickup.location} and everywhere else on campus, with your name on the back.</p>
+            <p className="max-w-sm text-[1.05rem] text-muted">Hoodies made for {s.pickupLocation} and everywhere else on campus, with your name on the back.</p>
             <div className="flex items-center gap-5">
               <Button href="/shop" size="lg">
                 Preorder now
@@ -56,7 +58,7 @@ export default function Home() {
             Four steps to yours
           </h2>
           <ol className="mt-14 grid border-t border-line md:grid-cols-4">
-            {STEPS.map(([title, body], i) => (
+            {steps(s.pickupLocation).map(([title, body], i) => (
               <li key={title} className="border-b border-line py-8 md:border-b-0 md:border-r md:px-6 md:first:pl-0 md:last:border-r-0">
                 <p className="mono text-accent">{String(i + 1).padStart(2, "0")}</p>
                 <h3 className="t-display mt-5 text-[1.15rem] tracking-[-0.02em]">{title}</h3>

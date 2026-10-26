@@ -1,45 +1,91 @@
 {
-  "_todo": "Every price, size, name and date below is a PLACEHOLDER. Edit this file, then run `npm run db:seed-sql` to regenerate supabase/seed.sql.",
+  "_todo": "Placeholder catalogue so the site works out of the box. After deploy, edit products, prices and batches in /admin; business values live in /admin/settings. Edit this file only to change the seed, then run `npm run db:seed-sql`.",
   "products": [
     {
       "slug": "midnight-flame",
       "name": "Midnight Flame Hoodie",
       "type": "hoodie",
-      "description": "Made to order, with your name on the back. TODO: real product copy.",
+      "description": "Made to order, with your name on the back.",
       "price_inr": 999,
-      "sizes": ["S", "M", "L", "XL", "XXL"],
+      "sizes": [
+        "S",
+        "M",
+        "L",
+        "XL",
+        "XXL"
+      ],
       "sort": 1,
       "colorways": [
-        { "name": "Midnight", "body": "#0E0E10", "stitch": "#E01E0A" },
-        { "name": "Ember", "body": "#3A0D0A", "stitch": "#FFB547" }
+        {
+          "name": "Midnight",
+          "body": "#0E0E10",
+          "stitch": "#E01E0A"
+        },
+        {
+          "name": "Ember",
+          "body": "#3A0D0A",
+          "stitch": "#FFB547"
+        }
       ]
     },
     {
       "slug": "ash",
       "name": "Ash Hoodie",
       "type": "hoodie",
-      "description": "Made to order, with your name on the back. TODO: real product copy.",
+      "description": "Made to order, with your name on the back.",
       "price_inr": 999,
-      "sizes": ["S", "M", "L", "XL", "XXL"],
+      "sizes": [
+        "S",
+        "M",
+        "L",
+        "XL",
+        "XXL"
+      ],
       "sort": 2,
       "colorways": [
-        { "name": "Ash", "body": "#8E8C88", "stitch": "#0E0E10" },
-        { "name": "Slate", "body": "#3B3F46", "stitch": "#FF3B1F" }
+        {
+          "name": "Ash",
+          "body": "#8E8C88",
+          "stitch": "#0E0E10"
+        },
+        {
+          "name": "Slate",
+          "body": "#3B3F46",
+          "stitch": "#FF3B1F"
+        }
       ]
     },
     {
       "slug": "bone",
       "name": "Bone Hoodie",
       "type": "hoodie",
-      "description": "Made to order, with your name on the back. TODO: real product copy.",
+      "description": "Made to order, with your name on the back.",
       "price_inr": 999,
-      "sizes": ["S", "M", "L", "XL", "XXL"],
+      "sizes": [
+        "S",
+        "M",
+        "L",
+        "XL",
+        "XXL"
+      ],
       "sort": 3,
       "colorways": [
-        { "name": "Bone", "body": "#E4DFD3", "stitch": "#0E0E10" },
-        { "name": "Lake", "body": "#1F3A4D", "stitch": "#FFB547" }
+        {
+          "name": "Bone",
+          "body": "#E4DFD3",
+          "stitch": "#0E0E10"
+        },
+        {
+          "name": "Lake",
+          "body": "#1F3A4D",
+          "stitch": "#FFB547"
+        }
       ]
     }
   ],
-  "batch": { "name": "Batch 01", "closesInDays": 14, "estDelivery": "TODO: estimated delivery window" }
+  "batch": {
+    "name": "Batch 01",
+    "closesInDays": 14,
+    "estDelivery": "To be announced"
+  }
 }
