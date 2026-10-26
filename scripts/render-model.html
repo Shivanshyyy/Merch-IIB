@@ -1,0 +1,122 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>render-model</title>
+<style>
+  html, body { margin: 0; background: #0a0a0b; }
+  canvas { display: block; }
+</style>
+<script type="importmap">
+  { "imports": { "three": "/node_modules/three/build/three.module.js", "three/addons/": "/node_modules/three/examples/jsm/" } }
+</script>
+<script type="module">
+  // Offscreen shot renderer driven by scripts/render-model.mjs through window.renderShot().
+  import * as THREE from "three";
+  import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+  import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
+  import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+
+  const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
+  const cache = new Map();
+  const load = (url) => {
+    if (!cache.has(url)) cache.set(url, loader.loadAsync(url));
+    return cache.get(url);
+  };
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  document.body.appendChild(renderer.domElement);
+  const envTexture = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+
+  const isStitch = (m) => /stitch/i.test(m.name);
+
+  window.renderShot = async (o) => {
+    const { url, size = 900, az = 0, el = 0.12, fill = 0.8, mode = "shaded", body, stitch, focus, bg } = o;
+    const gltf = await load(url);
+    const root = gltf.scene.clone(true);
+    root.traverse((n) => {
+      if (!n.isMesh) return;
+      n.userData.matName = n.material.name;
+      n.material = n.material.clone();
+      if (mode === "silhouette") {
+        n.material = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+        return;
+      }
+      if (isStitch(n.material)) {
+        if (stitch) n.material.color.set(stitch);
+      } else if (body) {
+        n.material.map = null;
+        n.material.color.set(body);
+      }
+      n.material.needsUpdate = true;
+    });
+
+    const scene = new THREE.Scene();
+    scene.add(root);
+    const silhouette = mode === "silhouette";
+    if (!silhouette) {
+      scene.environment = envTexture;
+      scene.environmentIntensity = 0.55;
+      const key = new THREE.DirectionalLight(0xffd9b0, 2.4);
+      key.position.set(2.5, 3, 4);
+      const rim = new THREE.DirectionalLight(0xff3b1f, 2.0);
+      rim.position.set(-3, 1.5, -3.5);
+      const fillL = new THREE.DirectionalLight(0x9fb4ff, 0.5);
+      fillL.position.set(-3, 0.5, 3);
+      // Lights ride with the camera azimuth so every view gets the same key/rim relationship.
+      const rig = new THREE.Group();
+      rig.rotation.y = az;
+      rig.add(key, rim, fillL);
+      scene.add(rig);
+    }
+
+    // Frame: reuse the caller's frame so two models are compared through the exact same camera.
+    root.updateMatrixWorld(true);
+    let frame = o.frame;
+    if (!frame) {
+      const box = new THREE.Box3().setFromObject(root);
+      const sphere = box.getBoundingSphere(new THREE.Sphere());
+      frame = { center: sphere.center.toArray(), radius: sphere.radius };
+    }
+    let center = new THREE.Vector3(...frame.center);
+    let radius = frame.radius;
+    if (focus) {
+      const box = new THREE.Box3();
+      root.traverse((n) => {
+        if (n.isMesh && new RegExp(focus, "i").test(n.userData.matName)) box.expandByObject(n);
+      });
+      if (!box.isEmpty()) {
+        const s = box.getBoundingSphere(new THREE.Sphere());
+        center = s.center;
+        radius = s.radius;
+      }
+    }
+
+    if (o.offset) center = center.clone().add(new THREE.Vector3(...o.offset));
+    if (o.r) radius = o.r;
+
+    const fov = 28;
+    const camera = new THREE.PerspectiveCamera(fov, 1, 0.01, 50);
+    const dist = radius / Math.sin(THREE.MathUtils.degToRad(fov / 2)) / (fill * 1.6);
+    camera.position.set(
+      center.x + Math.sin(az) * Math.cos(el) * dist,
+      center.y + Math.sin(el) * dist,
+      center.z + Math.cos(az) * Math.cos(el) * dist,
+    );
+    camera.lookAt(center);
+
+    renderer.setPixelRatio(1);
+    renderer.setSize(size, size);
+    if (silhouette) {
+      renderer.toneMapping = THREE.NoToneMapping;
+      renderer.setClearColor(0x000000, 1);
+    } else {
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      bg ? renderer.setClearColor(bg, 1) : renderer.setClearColor(0x000000, 0);
+    }
+    renderer.render(scene, camera);
+    return { png: renderer.domElement.toDataURL("image/png"), frame };
+  };
+
+  window.ready = true;
+</script>

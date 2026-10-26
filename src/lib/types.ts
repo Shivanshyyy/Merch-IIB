@@ -1,0 +1,63 @@
+export type Colorway = { name: string; body: string; stitch: string };
+
+export type Product = {
+  id: string;
+  slug: string;
+  name: string;
+  type: "hoodie" | "tee";
+  description: string;
+  price_inr: number;
+  colorways: Colorway[];
+  sizes: string[];
+  personalizable: boolean;
+  active: boolean;
+  sort: number;
+};
+
+export type BatchStatus = "open" | "closed" | "ordered" | "received" | "done";
+
+export type Batch = {
+  id: string;
+  name: string;
+  opens_at: string;
+  closes_at: string;
+  est_delivery: string;
+  status: BatchStatus;
+};
+
+// Snapshot stored on the order; prices come from the DB at order time, never from the client.
+export type OrderItem = {
+  slug: string;
+  productName: string;
+  colorway: string;
+  size: string;
+  name: string;
+  qty: number;
+  unitPriceInr: number;
+};
+
+export type PaymentStatus = "pending" | "verified" | "rejected";
+export type OrderStatus = "placed" | "in_production" | "ready" | "collected" | "cancelled";
+export type RefundStatus = "none" | "requested" | "approved" | "refunded";
+
+export type Order = {
+  id: string;
+  code: string;
+  batch_id: string;
+  email: string;
+  full_name: string;
+  phone: string;
+  hostel: string;
+  room: string;
+  items: OrderItem[];
+  total_inr: number;
+  utr: string | null;
+  payment_status: PaymentStatus;
+  order_status: OrderStatus;
+  refund_status: RefundStatus;
+  admin_note: string | null;
+  verified_at: string | null;
+  created_at: string;
+};
+
+export type NewOrder = Pick<Order, "code" | "batch_id" | "email" | "full_name" | "phone" | "hostel" | "room" | "items" | "total_inr">;
