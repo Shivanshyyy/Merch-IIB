@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { AuthPanel } from "@/components/auth/AuthPanel";
+import { FreshOnVisit } from "@/components/ui/FreshOnVisit";
 import { whatsappUrl } from "@/config/site";
 import { authMode } from "@/lib/auth/mode";
 import { safeNext } from "@/lib/auth/next";
@@ -64,7 +65,9 @@ async function Login({ searchParams }: Props) {
             Login isn&apos;t set up yet. The site owner needs to add SUPABASE_URL, SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY.
           </p>
         ) : (
-          <AuthPanel next={dest} initialMode={mode === "signup" ? "signup" : "login"} forgotHref={whatsappUrl(settings.whatsapp, "Hi, I forgot my password for my merch account. Can you set a new one?")} contactName={settings.contactName} />
+          <FreshOnVisit>
+            <AuthPanel next={dest} initialMode={mode === "signup" ? "signup" : "login"} forgotHref={whatsappUrl(settings.whatsapp, "Hi, I forgot my password for my merch account. Can you set a new one?")} contactName={settings.contactName} />
+          </FreshOnVisit>
         )}
       </div>
     </div>

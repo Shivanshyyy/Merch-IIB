@@ -77,3 +77,17 @@ export type Profile = {
   created_at: string;
 };
 export type ProfileInput = Pick<Profile, "full_name" | "phone" | "roll_no" | "default_size">;
+
+// Columns an admin action may change on an order (applied atomically with its audit row).
+export type OrderPatch = Partial<Pick<Order, "payment_status" | "order_status" | "refund_status" | "admin_note" | "utr" | "verified_at" | "items">>;
+
+export type OrderFilter = {
+  q?: string;
+  payment?: PaymentStatus;
+  status?: OrderStatus;
+  refund?: RefundStatus | "open";
+  batchId?: string;
+  sort?: "new" | "old";
+  limit: number;
+  offset: number;
+};

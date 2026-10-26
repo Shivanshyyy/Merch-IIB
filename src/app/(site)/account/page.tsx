@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { logOut } from "@/actions/auth";
 import { PasswordForm } from "@/components/auth/PasswordForm";
+import { FreshOnVisit } from "@/components/ui/FreshOnVisit";
 import { ProfileForm } from "@/components/auth/ProfileForm";
 import { Button } from "@/components/ui/Button";
 import { safeNext } from "@/lib/auth/next";
@@ -41,7 +42,9 @@ async function Account({ searchParams }: Props) {
           <h2 id="profile-h" className="label mb-6 text-fg">
             [ Your details ]
           </h2>
-          <ProfileForm email={user.email} profile={profile} next={dest || undefined} name={user.name} />
+          <FreshOnVisit>
+            <ProfileForm email={user.email} profile={profile} next={dest || undefined} name={user.name} />
+          </FreshOnVisit>
         </section>
 
         {profile && (
@@ -50,7 +53,9 @@ async function Account({ searchParams }: Props) {
               <h2 id="pw-h" className="label mb-6 text-fg">
                 [ Change password ]
               </h2>
-              <PasswordForm />
+              <FreshOnVisit>
+                <PasswordForm />
+              </FreshOnVisit>
             </section>
             <section aria-label="Log out" className="border-t border-line pt-8">
               <form action={logOut}>

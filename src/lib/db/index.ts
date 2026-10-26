@@ -23,4 +23,4 @@ export function db(): Db {
   return instance;
 }
 
-export { CodeTakenError, EmailTakenError } from "./types";
+export { CodeTakenError, EmailTakenError, NotFoundError, SlugTakenError } from "./types";

@@ -2,7 +2,7 @@ import "server-only";
 import seed from "../../../supabase/seed.json";
 import type { Settings } from "@/config/site";
 import type { Batch, NewOrder, Order, OrderEvent, Product, Profile } from "@/lib/types";
-import { CodeTakenError, EmailTakenError, type Db } from "./types";
+import { CodeTakenError, EmailTakenError, NotFoundError, SlugTakenError, type Db } from "./types";
 
 export type Store = {
   products: Product[];
@@ -123,6 +123,86 @@ export function createMemoryDb(): Db {
     },
     async addEvent(orderId, type, note) {
       s.events.push({ id: ++s.eventSeq, order_id: orderId, type, note: note ?? null, created_at: new Date().toISOString() });
+    },
+
+    // ---- admin ----
+    async listAllProducts() {
+      return [...s.products].sort((a, b) => a.sort - b.sort);
+    },
+    async getProductById(id) {
+      return s.products.find((p) => p.id === id) ?? null;
+    },
+    async createProduct(input) {
+      if (s.products.some((p) => p.slug === input.slug)) throw new SlugTakenError();
+      const row: Product = { ...input, id: crypto.randomUUID() };
+      s.products.push(row);
+      return row;
+    },
+    async updateProduct(id, input) {
+      const row = s.products.find((p) => p.id === id);
+      if (!row) throw new NotFoundError("product");
+      if (s.products.some((p) => p.slug === input.slug && p.id !== id)) throw new SlugTakenError();
+      Object.assign(row, input);
+      return row;
+    },
+    async deleteProduct(id) {
+      s.products = s.products.filter((p) => p.id !== id);
+    },
+
+    async listBatches() {
+      return [...s.batches].sort((a, b) => b.opens_at.localeCompare(a.opens_at));
+    },
+    async getBatch(id) {
+      return s.batches.find((b) => b.id === id) ?? null;
+    },
+    async createBatch(input) {
+      const row: Batch = { ...input, id: crypto.randomUUID() };
+      s.batches.push(row);
+      return row;
+    },
+    async updateBatch(id, patch) {
+      const row = s.batches.find((b) => b.id === id);
+      if (!row) throw new NotFoundError("batch");
+      Object.assign(row, patch);
+      return row;
+    },
+
+    async searchOrders(f) {
+      const term = f.q?.trim().toLowerCase();
+      let rows = s.orders.filter((o) => {
+        if (f.payment && o.payment_status !== f.payment) return false;
+        if (f.status && o.order_status !== f.status) return false;
+        if (f.refund === "open" ? !["requested", "approved"].includes(o.refund_status) : f.refund && o.refund_status !== f.refund) return false;
+        if (f.batchId && o.batch_id !== f.batchId) return false;
+        if (term && ![o.code, o.email, o.full_name, o.phone].some((v) => v.toLowerCase().includes(term))) return false;
+        return true;
+      });
+      rows = rows.sort((a, b) => (f.sort === "old" ? a.created_at.localeCompare(b.created_at) : b.created_at.localeCompare(a.created_at)));
+      return { rows: rows.slice(f.offset, f.offset + f.limit), total: rows.length };
+    },
+    async listOrdersForBatch(batchId) {
+      return s.orders.filter((o) => !batchId || o.batch_id === batchId).sort((a, b) => b.created_at.localeCompare(a.created_at));
+    },
+    async getOrderById(id) {
+      return s.orders.find((o) => o.id === id) ?? null;
+    },
+    async patchOrder(id, patch, event) {
+      const o = s.orders.find((x) => x.id === id);
+      if (!o) throw new NotFoundError("order");
+      Object.assign(o, patch);
+      s.events.push({ id: ++s.eventSeq, order_id: id, type: event.type, note: event.note ?? null, created_at: new Date().toISOString() });
+      return { ...o };
+    },
+    async listEvents(orderId) {
+      return s.events.filter((e) => e.order_id === orderId).sort((a, b) => b.id - a.id);
+    },
+
+    async listProfiles(query, limit = 100) {
+      const term = query?.trim().toLowerCase();
+      return s.profiles
+        .filter((p) => !term || [p.full_name, p.email, p.roll_no ?? "", p.phone].some((v) => v.toLowerCase().includes(term)))
+        .sort((a, b) => b.created_at.localeCompare(a.created_at))
+        .slice(0, limit);
     },
   };
 }

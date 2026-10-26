@@ -1,5 +1,5 @@
 import type { Settings } from "@/config/site";
-import type { Batch, NewOrder, Order, Product, Profile, ProfileInput } from "@/lib/types";
+import type { Batch, BatchInput, NewOrder, Order, OrderEvent, OrderFilter, OrderPatch, Product, ProductInput, Profile, ProfileInput } from "@/lib/types";
 
 export class CodeTakenError extends Error {
   constructor() {
@@ -13,8 +13,20 @@ export class EmailTakenError extends Error {
   }
 }
 
+export class SlugTakenError extends Error {
+  constructor() {
+    super("a product with this slug already exists");
+  }
+}
+
+export class NotFoundError extends Error {
+  constructor(what: string) {
+    super(`${what} not found`);
+  }
+}
+
 export interface Db {
-  // catalogue
+  // catalogue (customer-facing)
   listActiveProducts(): Promise<Product[]>;
   getProductBySlug(slug: string): Promise<Product | null>;
   getOpenBatch(): Promise<Batch | null>;
@@ -28,7 +40,7 @@ export interface Db {
   createProfile(userId: string, email: string, data: ProfileInput): Promise<Profile>;
   updateProfile(userId: string, data: ProfileInput): Promise<Profile>;
 
-  // orders
+  // orders (customer-facing)
   countPendingOrders(userId: string): Promise<number>;
   insertOrder(order: NewOrder): Promise<Order>;
   getOrderByCode(code: string): Promise<Order | null>;
@@ -36,4 +48,26 @@ export interface Db {
   // Only succeeds while payment is still pending; returns false otherwise.
   setUtr(code: string, utr: string): Promise<boolean>;
   addEvent(orderId: string, type: string, note?: string): Promise<void>;
+
+  // ---- admin ----
+  listAllProducts(): Promise<Product[]>;
+  getProductById(id: string): Promise<Product | null>;
+  createProduct(input: ProductInput): Promise<Product>;
+  updateProduct(id: string, input: ProductInput): Promise<Product>;
+  deleteProduct(id: string): Promise<void>;
+
+  listBatches(): Promise<Batch[]>;
+  getBatch(id: string): Promise<Batch | null>;
+  createBatch(input: BatchInput): Promise<Batch>;
+  updateBatch(id: string, patch: Partial<BatchInput>): Promise<Batch>;
+
+  searchOrders(filter: OrderFilter): Promise<{ rows: Order[]; total: number }>;
+  // Every order (optionally one batch), for stats, exports and customer counts.
+  listOrdersForBatch(batchId?: string): Promise<Order[]>;
+  getOrderById(id: string): Promise<Order | null>;
+  // Applies the patch and writes one audit row in the same step.
+  patchOrder(id: string, patch: OrderPatch, event: { type: string; note?: string }): Promise<Order>;
+  listEvents(orderId: string): Promise<OrderEvent[]>;
+
+  listProfiles(query?: string, limit?: number): Promise<Profile[]>;
 }

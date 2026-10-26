@@ -31,10 +31,16 @@ With no `SUPABASE_*` variables set, the site uses a demo store seeded from `supa
 
 Row-level security is on for every table with no policies, so the public key can read nothing. All access is server-side with the service role.
 
+## Admin panel
+
+`/admin` (password from `ADMIN_PASSWORD`; in local development with no env set it is `admin`). Dashboard, orders (verify payments, move through production and pickup, refunds, edit a name or size, WhatsApp the customer), batches, products, customers (edit, reset a password), the vendor sheet (CSV + pivot) and **Settings** for every business value. Every change to an order is written to its history. Works on a phone.
+
 ## Business values to fill in
 
-- [`src/config/site.ts`](src/config/site.ts): UPI ID, payee name, phone/WhatsApp, pickup room and hours, size chart, fabric specs. Search for `TODO`.
-- [`supabase/seed.json`](supabase/seed.json): products, prices, sizes, colourways, batch dates. After editing run `npm run db:seed-sql` to regenerate `seed.sql`. Once the site is live, change prices in the admin panel (Phase 2), not here.
+Once the site is live, change **everything in the admin panel**: UPI ID, phone, pickup and refund days under *Settings*; prices and products under *Products*; batches under *Batches*. The files below only hold the starting values:
+
+- [`src/config/settings.defaults.json`](src/config/settings.defaults.json): the placeholder business values (UPI, phone, pickup, size chart...). The dashboard checklist shows which are still placeholders.
+- [`supabase/seed.json`](supabase/seed.json): the starter products and batch. After editing run `npm run db:seed-sql` to regenerate `seed.sql`.
 
 ## Scripts
 

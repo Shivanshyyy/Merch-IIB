@@ -284,6 +284,76 @@ body {
     border-top: 1px solid var(--line);
   }
 
+  /* ---- Admin ---- */
+  .admin-card {
+    border: 1px solid var(--line);
+    background: var(--bg-2);
+  }
+  .admin-label {
+    font-size: 0.8125rem;
+    line-height: 1.2;
+    color: var(--muted);
+  }
+  /* Status tones come from the fixed status palette; they ride on an icon + a text label, never colour alone. */
+  .tone-good { --tone: #0ca30c; }
+  .tone-warn { --tone: #fab219; }
+  .tone-serious { --tone: #ec835a; }
+  .tone-critical { --tone: #d03b3b; }
+  .tone-muted { --tone: #6b6a65; }
+  .tone-none { --tone: transparent; }
+  .row-tone {
+    box-shadow: inset 3px 0 0 var(--tone);
+    background: color-mix(in srgb, var(--tone) 7%, transparent);
+  }
+  .admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+  .admin-table th {
+    padding: 0.7rem 0.9rem;
+    text-align: left;
+    font-weight: 500;
+    font-size: 0.78rem;
+    color: var(--muted);
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+  }
+  .admin-table td {
+    padding: 0.8rem 0.9rem;
+    border-bottom: 1px solid var(--line);
+    vertical-align: middle;
+  }
+  .admin-table tr:last-child td {
+    border-bottom: 0;
+  }
+  .admin-table .num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .btn-sm {
+    min-height: 40px;
+    padding: 0 1rem;
+    font-size: 0.72rem;
+  }
+  /* The state something is already in: an outlined, checked pill rather than a faded action. */
+  .btn-current {
+    --btn-bg: transparent;
+    --btn-fg: var(--fg);
+    --btn-border: var(--fg);
+    cursor: default;
+  }
+  .btn-current:disabled {
+    opacity: 1;
+  }
+  .btn-danger {
+    --btn-bg: transparent;
+    --btn-fg: #ff7a63;
+    --btn-border: color-mix(in srgb, #d03b3b 60%, transparent);
+    --btn-fill: #d03b3b;
+    --btn-fill-fg: #fff;
+  }
+
   .skeleton {
     background: linear-gradient(100deg, var(--bg-2) 30%, #1b1b1e 50%, var(--bg-2) 70%);
     background-size: 200% 100%;

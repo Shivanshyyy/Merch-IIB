@@ -39,10 +39,10 @@ export function ProductConfigurator({ product, batch }: { product: Product; batc
   const [added, setAdded] = useState(false);
 
   const editLine = editId ? lines.find((l) => l.id === editId && l.slug === product.slug) : undefined;
-  const prefilled = useRef(false);
+  const prefilledFor = useRef<string | null>(null);
   useEffect(() => {
-    if (!editLine || !hydrated || prefilled.current) return;
-    prefilled.current = true;
+    if (!editLine || !hydrated || prefilledFor.current === editLine.id) return;
+    prefilledFor.current = editLine.id; // per line, so editing a second line later prefills too
     setCw(Math.max(0, product.colorways.findIndex((c) => c.name === editLine.colorway)));
     setSize(editLine.size);
     setName(editLine.name);

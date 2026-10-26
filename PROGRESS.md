@@ -21,3 +21,14 @@ Short log, one entry per phase: what's done, what's left, open TODOs.
   - `scripts/with-server.mjs`: runs ONE server on port 3000 around any command and always kills it.
 - **Left:** the UI to edit settings and manage customers (Phase 2).
 - **Open TODOs:** Supabase code paths could not run against a real project (no keys); they are type-checked against a hand-written `Database` type. Smoke-test after setting keys.
+
+## Phase 2 — Admin ✅
+- **Done:**
+  - Access: `ADMIN_PASSWORD` login → signed (jose) httpOnly cookie, 7 days, scoped to `/admin`; `proxy.ts` guards every `/admin` URL; every server action and the CSV route re-check the cookie; login throttle (5 misses / 10 min) + constant delay.
+  - Dashboard (batch filter scopes everything): verified revenue (hero), orders, pending verifications, open refunds, items to make, items per size (bars + table twin), "needs verifying" list, setup checklist.
+  - Orders: search (code / email / name / phone), payment / status / refund / batch filters, sort, pagination, tone-coded rows with icon + label chips, table on desktop and cards on phone. Drawer: verify / reject / reset payment, production → ready → collected, cancel / reopen, refund flow, edit a name or size, admin note, WhatsApp message per status (editable), full audit history. Every action is one atomic update + audit row.
+  - Batches (create, edit, open/close/progress; opening closes the others), vendor sheet (CSV + product × colour × size pivot; no contact or payment data), products CRUD (live in the shop immediately), customers (search, edit, reset password + WhatsApp it), **Settings** (every business value, size chart and fabric-spec editors, live immediately).
+  - 56 unit tests (flow rules, stats, CSV injection guard, tokens, throttle, admin DB ops); full browser walkthrough at desktop + phone; axe clean on all admin pages.
+  - Found and fixed: a Server → Client function prop crash; Activity (hidden-page) state leaks (stale checkout "Order placed", retained password field, armed delete buttons, stale filters) via `FreshOnVisit` and cleanups.
+- **Left:** nothing for this phase.
+- **Open TODOs:** Supabase admin queries (`.or()` search, `admin_patch_order` RPC) are type-checked and the SQL is tested, but untested against a live project. New colourways have no studio photo until the 3D viewer lands (Phase 3).
