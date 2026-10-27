@@ -32,3 +32,15 @@ Short log, one entry per phase: what's done, what's left, open TODOs.
   - Found and fixed: a Server → Client function prop crash; Activity (hidden-page) state leaks (stale checkout "Order placed", retained password field, armed delete buttons, stale filters) via `FreshOnVisit` and cleanups.
 - **Left:** nothing for this phase.
 - **Open TODOs:** Supabase admin queries (`.or()` search, `admin_patch_order` RPC) are type-checked and the SQL is tested, but untested against a live project. New colourways have no studio photo until the 3D viewer lands (Phase 3).
+
+## Phase 3 — The 3D home ✅
+- **Done:**
+  - One fixed canvas behind the page (lazy, `ssr: false`, paused when hidden or off-screen): midnight backdrop shader with an ember halo, reflective floor fading into fog, baked soft shadow, ember sparkles, a Lightformer rig with a rim light that complements each colourway. Bloom / vignette / noise on desktop only; `PerformanceMonitor` demotes quality; weak devices start on the cheap settings. The scene is only "ready" once its shaders are compiled, so it appears smoothly.
+  - Camera: 40 s idle orbit with ±0.15 bob while the hoodie turns the other way; drag to orbit (damped, no pan or zoom, can't go under the floor); dragging pauses the orbit, which blends back after 3 s or on scroll; double-click / double-tap resets with an ease.
+  - Seven scroll shots (GSAP ScrollTrigger scrub + Lenis) with their sections. Callouts are pinned to real points on the cloth and flip, wrap or hide so they stay on screen and off the text. The name on the back is a projected decal (kept inside the back panel so the sleeves never slice it); colourways cross-fade over 600 ms.
+  - Product page: live 3D viewer (Front / Back, drag, auto-turn until touched) over the studio still, which stays as the instant first paint and as the fallback; a tinted hoodie glyph stands in for colourways without a still.
+  - Reduced motion or no WebGL: a static poster that still follows the colour and name; every section works.
+  - 73 unit tests. Browser walkthrough with real assertions at 1440×900 and 390×844: idle orbit, shot poses, decal geometry, colour fade, drag → pause → resume timing, double-click reset, hero fills ~55% of the height, callouts clear of the text, fallbacks.
+  - Found and fixed on the way: name sliced by the sleeve shells at oblique angles; callout labels landing on the copy or off screen on phones; a smeared hoodie behind the "How it works" list; "ready" firing before shaders were compiled.
+- **Left:** preloader, cursor, page transitions, text reveals, marquee, add-to-cart fly (Phase 4).
+- **Open TODOs:** Frame rate was only measured on software WebGL (4–19 fps), so the 60 fps / mid-range Android targets need a check on real devices. Fabric Weight and Fit are placeholders until the vendor confirms them (Admin → Settings).

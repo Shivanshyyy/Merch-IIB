@@ -1,9 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { Stepper } from "@/components/ui/Stepper";
-import { colorwayImage, inr } from "@/lib/format";
+import { ColorwayImage } from "@/components/shop/ColorwayImage";
+import { inr } from "@/lib/format";
 import { useCart, type CartLine } from "@/store/cart";
 
 export function CartLineRow({ line, compact = false }: { line: CartLine; compact?: boolean }) {
@@ -15,7 +15,7 @@ export function CartLineRow({ line, compact = false }: { line: CartLine; compact
   return (
     <li className="flex gap-4 py-5 hair-b">
       <div className="relative shrink-0 bg-bg-2" style={{ width: thumb, height: thumb }}>
-        <Image src={colorwayImage(line.slug, line.colorway)} alt="" fill sizes={`${thumb}px`} className="object-contain" />
+        <ColorwayImage slug={line.slug} colorway={line.colorway} body={line.colorwayBody} alt="" sizes={`${thumb}px`} />
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         <div className="flex items-start justify-between gap-3">

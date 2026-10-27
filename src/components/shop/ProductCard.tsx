@@ -1,6 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
-import { colorwayImage, inr } from "@/lib/format";
+import { ColorwayImage } from "@/components/shop/ColorwayImage";
+import { inr } from "@/lib/format";
 import type { Product } from "@/lib/types";
 
 export function ProductCard({ product, index, badge, priority = false }: { product: Product; index: number; badge: string | null; priority?: boolean }) {
@@ -9,18 +9,24 @@ export function ProductCard({ product, index, badge, priority = false }: { produ
     <Link href={`/shop/${product.slug}`} data-cursor="view" className="group relative block border-b border-line md:border-r md:last:border-r-0">
       <div className="relative aspect-[4/5] overflow-hidden bg-bg-2">
         <div aria-hidden className="absolute inset-0 bg-[radial-gradient(55%_45%_at_50%_58%,rgba(255,59,31,0.3),transparent_70%)] transition-opacity duration-700 group-hover:opacity-100" />
-        <Image
-          src={colorwayImage(product.slug, first.name, "front")}
+        <ColorwayImage
+          slug={product.slug}
+          colorway={first.name}
+          body={first.body}
+          stitch={first.stitch}
+          view="front"
           alt={`${product.name} in ${first.name}, front`}
-          fill
           priority={priority}
           sizes="(min-width: 768px) 33vw, 100vw"
           className="object-contain p-4 transition-all duration-700 ease-[var(--ease)] group-hover:scale-[1.04] group-hover:opacity-0"
         />
-        <Image
-          src={colorwayImage(product.slug, first.name, "back")}
+        <ColorwayImage
+          slug={product.slug}
+          colorway={first.name}
+          body={first.body}
+          stitch={first.stitch}
+          view="back"
           alt=""
-          fill
           sizes="(min-width: 768px) 33vw, 100vw"
           className="object-contain p-4 opacity-0 transition-all duration-700 ease-[var(--ease)] group-hover:scale-[1.04] group-hover:opacity-100"
         />

@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useMemo } from "react";
@@ -11,7 +10,8 @@ import { Check } from "@/components/ui/Check";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { TextField } from "@/components/ui/TextField";
 import { useFieldErrors } from "@/components/ui/useFieldErrors";
-import { colorwayImage, fmtDate, inr } from "@/lib/format";
+import { ColorwayImage } from "@/components/shop/ColorwayImage";
+import { fmtDate, inr } from "@/lib/format";
 import type { CheckoutState } from "@/lib/form-state";
 import { makeCheckoutSchema } from "@/lib/schemas";
 import { useBatchClosed } from "@/lib/useBatchClosed";
@@ -136,7 +136,7 @@ export function CheckoutForm({ prices, batch, email, defaults }: Props) {
           {priced.map((l) => (
             <li key={l.id} className="flex gap-3">
               <div className="relative size-16 shrink-0 bg-bg">
-                <Image src={colorwayImage(l.slug, l.colorway)} alt="" fill sizes="64px" className="object-contain" />
+                <ColorwayImage slug={l.slug} colorway={l.colorway} body={l.colorwayBody} alt="" sizes="64px" />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[0.9rem] font-medium">{l.productName}</p>

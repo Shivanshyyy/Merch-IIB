@@ -6,6 +6,12 @@ const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   // Override default ignores of eslint-config-next.
+  // three.js objects (cameras, materials, textures, shared refs) are mutated imperatively in frame callbacks and effects:
+  // that is how R3F works, so the compiler's immutability rules don't apply to the 3D code.
+  {
+    files: ["src/components/three/**", "src/components/home/scene/**"],
+    rules: { "react-hooks/immutability": "off", "react-hooks/preserve-manual-memoization": "off" },
+  },
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",

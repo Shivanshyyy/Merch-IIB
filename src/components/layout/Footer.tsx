@@ -3,7 +3,7 @@ import { site, whatsappUrl, type Settings } from "@/config/site";
 
 export function Footer({ settings: s }: { settings: Settings }) {
   return (
-    <footer className="mt-auto overflow-hidden border-t border-line">
+    <footer className="relative z-10 mt-auto overflow-hidden border-t border-line bg-bg">
       <div className="shell grid gap-12 py-14 md:grid-cols-[1.4fr_1fr_1fr]">
         <div>
           <p className="label mb-4">[ Need a hand? ]</p>

@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import Image from "next/image";
+import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { SizeChart } from "@/components/shop/SizeChart";
@@ -11,12 +11,17 @@ import { Stepper } from "@/components/ui/Stepper";
 import { TextField } from "@/components/ui/TextField";
 import { useToast } from "@/components/ui/Toast";
 import { useSettings } from "@/components/SettingsProvider";
-import { colorwayImage, fmtDate, inr } from "@/lib/format";
+import { ColorwayImage } from "@/components/shop/ColorwayImage";
+import { fmtDate, inr } from "@/lib/format";
 import { buzz } from "@/lib/haptics";
 import { normalizeName } from "@/lib/schemas";
 import type { Product } from "@/lib/types";
 import { useBatchClosed } from "@/lib/useBatchClosed";
+import { prefersReducedMotion, webglAvailable } from "@/lib/webgl";
 import { useCart } from "@/store/cart";
+
+// three.js and R3F load only when the browser can run them, and only once the page has settled.
+const ProductViewer = dynamic(() => import("@/components/three/ProductViewer"), { ssr: false });
 
 type BatchInfo = { name: string; closesAt: string; estDelivery: string } | null;
 
@@ -37,6 +42,17 @@ export function ProductConfigurator({ product, batch }: { product: Product; batc
   const [view, setView] = useState<"front" | "back">("front");
   const [sizeError, setSizeError] = useState<string>();
   const [added, setAdded] = useState(false);
+  const [use3D, setUse3D] = useState(false);
+  const [viewerReady, setViewerReady] = useState(false);
+
+  // Show the studio still straight away; swap in the live 3D viewer when the browser is idle (and 3D is wanted).
+  useEffect(() => {
+    if (prefersReducedMotion() || !webglAvailable()) return;
+    const idle = window.requestIdleCallback ?? ((cb: () => void) => window.setTimeout(cb, 300));
+    const cancel = window.cancelIdleCallback ?? window.clearTimeout;
+    const id = idle(() => setUse3D(true));
+    return () => cancel(id as number);
+  }, []);
 
   const editLine = editId ? lines.find((l) => l.id === editId && l.slug === product.slug) : undefined;
   const prefilledFor = useRef<string | null>(null);
@@ -111,12 +127,18 @@ export function ProductConfigurator({ product, batch }: { product: Product; batc
         <div className="relative aspect-square max-h-[78svh] w-full overflow-hidden bg-bg-2 [container-type:inline-size] lg:max-h-[calc(100svh-var(--nav-h)-1px)]">
           <div aria-hidden className="absolute inset-0 bg-[radial-gradient(55%_50%_at_50%_55%,rgba(255,59,31,0.32),transparent_72%)]" />
           <AnimatePresence initial={false}>
-            <motion.div key={`${colorway.name}-${view}`} className="absolute inset-0" initial={{ opacity: 0, scale: 1.02 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}>
-              <Image src={colorwayImage(product.slug, colorway.name, view)} alt={`${product.name} in ${colorway.name}, ${view} view`} fill priority sizes="(min-width: 1024px) 55vw, 100vw" className="object-contain p-4" />
+            <motion.div key={`${colorway.name}-${view}`} className="absolute inset-0" initial={{ opacity: 0, scale: 1.02 }} animate={{ opacity: viewerReady ? 0 : 1, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}>
+              <ColorwayImage slug={product.slug} colorway={colorway.name} body={colorway.body} stitch={colorway.stitch} view={view} alt={`${product.name} in ${colorway.name}, ${view} view`} priority sizes="(min-width: 1024px) 55vw, 100vw" className="object-contain p-4" />
             </motion.div>
           </AnimatePresence>
 
-          {view === "back" && printed && (
+          {use3D && (
+            <div className={`absolute inset-0 transition-opacity duration-700 ${viewerReady ? "opacity-100" : "opacity-0"}`}>
+              <ProductViewer body={colorway.body} stitch={colorway.stitch} name={printed} view={view} reducedMotion={false} onReady={() => setViewerReady(true)} />
+            </div>
+          )}
+
+          {!viewerReady && view === "back" && printed && (
             <p
               aria-hidden
               className="t-display pointer-events-none absolute left-1/2 top-[35.5%] -translate-x-1/2 -translate-y-1/2 whitespace-nowrap"
@@ -133,7 +155,7 @@ export function ProductConfigurator({ product, batch }: { product: Product; batc
               </button>
             ))}
           </div>
-          {view === "back" && printed && <p className="label absolute bottom-3 right-3 hidden bg-bg/70 px-2 py-1 backdrop-blur-sm sm:block">Preview is illustrative</p>}
+          {view === "back" && printed && <p className="label absolute bottom-3 right-3 hidden bg-bg/70 px-2 py-1 backdrop-blur-sm sm:block">{viewerReady ? "Drag to turn · preview is illustrative" : "Preview is illustrative"}</p>}
         </div>
       </div>
 
