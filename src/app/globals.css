@@ -10,7 +10,9 @@
   --line: rgba(237, 235, 230, 0.12);
 
   --gutter: clamp(16px, 4vw, 56px);
-  --nav-h: 56px;
+  --bar-h: 56px; /* the nav bar */
+  --strip-h: 30px; /* the preorder marquee above it */
+  --nav-h: calc(var(--bar-h) + var(--strip-h)); /* everything fixed at the top */
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 
   /* Fluid type scale. Hero words land at 14-18vw on phones. */
@@ -35,10 +37,53 @@
   --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, monospace;
 }
 
+/* Unbounded 800 is 125.47% as wide as Arial Bold across the site's uppercase headlines (measured); ascent/descent are Unbounded's
+   (0.99 / 0.24 em) divided by that factor, because the overrides are scaled by size-adjust. */
+@font-face {
+  font-family: "Display Fallback";
+  src: local("Arial Bold"), local("Arial-BoldMT"), local("Helvetica Neue Bold"), local("Helvetica Bold");
+  font-weight: 700 900;
+  size-adjust: 125.47%;
+  ascent-override: 78.9%;
+  descent-override: 19.1%;
+  line-gap-override: 0%;
+}
+
+/* Manrope body text, measured against Arial. Overrides are Manrope's metrics (1.07 / 0.30 em) divided by the size-adjust factor. */
+@font-face {
+  font-family: "Body Fallback";
+  src: local("Arial"), local("ArialMT"), local("Helvetica Neue"), local("Helvetica");
+  font-weight: 300 500;
+  size-adjust: 101.9%;
+  ascent-override: 105%;
+  descent-override: 29.4%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Body Fallback";
+  src: local("Arial Bold"), local("Arial-BoldMT"), local("Helvetica Neue Bold"), local("Helvetica Bold");
+  font-weight: 600 800;
+  size-adjust: 98.5%;
+  ascent-override: 108.6%;
+  descent-override: 30.5%;
+  line-gap-override: 0%;
+}
+
+/* The same advance width as JetBrains Mono, so the web font swapping in doesn't move anything. */
+@font-face {
+  font-family: "Mono Fallback";
+  src: local("Courier New"), local("Courier"), local("Menlo");
+  size-adjust: 100%;
+  ascent-override: 102%; /* JetBrains Mono's vertical metrics: the 400px preloader counter would otherwise jump when the font arrives */
+  descent-override: 30%;
+  line-gap-override: 0%;
+}
+
 html {
   background: var(--bg);
   color: var(--fg);
   -webkit-text-size-adjust: 100%;
+  scrollbar-gutter: stable; /* locking scroll (preloader, cart drawer) must not make the page jump by a scrollbar's width */
 }
 
 body {
@@ -475,4 +520,276 @@ body {
 }
 .callout[data-side="left"] .callout-text {
   right: calc(var(--leader, 64px) + 8px);
+}
+
+/* ---- Phase 4: marquee strip, headline reveal, cursor, page wipe, preloader ---- */
+
+/* The preorder strip above the nav. Two copies' worth of text slide left in a loop. */
+.marquee {
+  height: var(--strip-h);
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  background: var(--accent);
+  color: var(--bg);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: pre; /* keep the double spaces around the dots, including the one that joins one copy to the next */
+}
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 60s linear infinite;
+}
+.marquee:hover .marquee-track {
+  animation-play-state: paused;
+}
+@keyframes marquee {
+  to { transform: translateX(-50%); }
+}
+
+/* Headlines: each word slides up out of its own mask. */
+.rv-w {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+  padding: 0.08em 0.04em 0.14em; /* room for overshoot, cancelled out below so layout does not move */
+  margin: -0.08em -0.04em -0.14em;
+}
+.rv-i {
+  display: inline-block;
+}
+.rv[data-rv="view"] .rv-i {
+  transform: translateY(118%);
+}
+.rv[data-rv="view"][data-in] .rv-i {
+  transform: none;
+  transition: transform 0.95s var(--ease) var(--d, 0s);
+}
+.rv[data-rv="load"] .rv-i {
+  animation: rv-up 0.95s var(--ease) var(--d, 0s) both;
+}
+@keyframes rv-up {
+  from { transform: translateY(118%); }
+  to { transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rv .rv-i {
+    transform: none !important;
+    animation: none !important;
+    transition: none !important;
+  }
+  .marquee-track {
+    animation: none;
+  }
+}
+
+/* Custom cursor (fine pointers only; Cursor.tsx adds .has-cursor on the first mouse move). */
+.cursor {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+html.has-cursor .cursor {
+  opacity: 1;
+}
+.cursor[data-hidden="true"] {
+  opacity: 0 !important;
+}
+.cursor-dot,
+.cursor-ring {
+  position: absolute;
+  left: 0;
+  top: 0;
+  will-change: transform;
+}
+.cursor-dot-i {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  border-radius: 9999px;
+  background: #fff;
+  mix-blend-mode: difference;
+  transition: transform 0.25s var(--ease);
+}
+.cursor[data-kind="link"] .cursor-dot-i {
+  transform: scale(3.4);
+}
+.cursor[data-down="true"] .cursor-dot-i {
+  transform: scale(0.6);
+}
+.cursor[data-kind="view"] .cursor-dot-i,
+.cursor[data-kind="drag"] .cursor-dot-i {
+  transform: scale(0);
+}
+.cursor-ring-i {
+  position: absolute;
+  width: 88px;
+  height: 88px;
+  margin: -44px 0 0 -44px;
+  border-radius: 9999px;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  line-height: 1;
+  transform: scale(0);
+  transition: transform 0.45s var(--ease);
+}
+.cursor[data-kind="view"] .cursor-ring-i {
+  transform: scale(1);
+  background: var(--accent);
+  color: var(--bg);
+}
+.cursor[data-kind="drag"] .cursor-ring-i {
+  transform: scale(1);
+  background: rgba(237, 235, 230, 0.1);
+  border: 1px solid rgba(237, 235, 230, 0.5);
+  color: var(--fg);
+  backdrop-filter: blur(4px);
+}
+.cursor[data-down="true"][data-kind="drag"] .cursor-ring-i,
+.cursor[data-down="true"][data-kind="view"] .cursor-ring-i {
+  transform: scale(0.88);
+}
+html.has-cursor,
+html.has-cursor * {
+  cursor: none !important;
+}
+html.has-cursor :is(input, textarea, select, [contenteditable="true"]) {
+  cursor: auto !important;
+}
+
+/* Red wipe between pages. */
+.wipe {
+  position: fixed;
+  inset: 0;
+  z-index: 115;
+  display: grid;
+  place-items: center;
+  background: var(--accent);
+  color: var(--bg);
+  pointer-events: all;
+}
+.wipe::before,
+.wipe::after {
+  content: "";
+  position: absolute;
+  left: -10%;
+  right: -10%;
+  height: 14vh;
+  background: var(--accent);
+}
+.wipe::before {
+  bottom: calc(100% - 1px); /* overlap by a pixel so no hairline shows at the seam */
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+}
+.wipe::after {
+  top: calc(100% - 1px);
+  border-radius: 0 0 50% 50% / 0 0 100% 100%;
+}
+.wipe-label {
+  font-family: var(--font-display);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: -0.05em;
+  line-height: 0.9;
+  font-size: clamp(3rem, 16vw, 14rem);
+}
+
+/* Home preloader: a 000 -> 100 counter that splits along its middle to reveal the scene. */
+.preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 130;
+}
+html.booted .preloader,
+:root:not(.js) .preloader {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .preloader {
+    display: none;
+  }
+}
+.preloader[data-state="leaving"] {
+  pointer-events: none; /* sliding away: the page underneath is already usable */
+}
+.preloader-half {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 50%;
+  overflow: hidden;
+  background: var(--bg);
+  transition: transform 0.95s cubic-bezier(0.76, 0, 0.24, 1);
+}
+.preloader-top { top: 0; }
+.preloader-bottom { bottom: 0; }
+.preloader[data-state="leaving"] .preloader-top { transform: translateY(-101%); }
+.preloader[data-state="leaving"] .preloader-bottom { transform: translateY(101%); }
+.preloader-inner {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 200%; /* the whole screen, of which each half shows its own half */
+}
+.preloader-top .preloader-inner { top: 0; }
+.preloader-bottom .preloader-inner { bottom: 0; }
+.preloader-count {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  text-align: center;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: clamp(7rem, 30vw, 26rem);
+  line-height: 1;
+  letter-spacing: -0.06em;
+  color: var(--fg);
+  transition: color 0.3s;
+}
+.preloader[data-done="true"] .preloader-count {
+  color: var(--accent);
+}
+
+/* Shop turntable: one shared canvas floats over the hovered card's picture. */
+.turntable-box {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 5;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.45s var(--ease);
+}
+.turntable-box[data-on="true"] {
+  opacity: 1;
+}
+/* The canvas wrapper asks for pointer events by default; it must never take the hover from the card beneath it. */
+.turntable-box,
+.turntable-box * {
+  pointer-events: none !important;
+}
+/* While the live view is available, hovering keeps the front still until it is ready, then hands over to it. */
+html.turntable .tt-card:hover .tt-front {
+  opacity: 1 !important;
+  transform: none !important;
+}
+html.turntable .tt-card:hover .tt-back {
+  opacity: 0 !important;
+}
+html.turntable .tt-card[data-tt="ready"] .tt-front {
+  opacity: 0 !important;
 }

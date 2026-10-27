@@ -12,7 +12,7 @@ import * as THREE from "three";
 import { DecalGeometry } from "three/examples/jsm/geometries/DecalGeometry.js";
 import type { GLTF } from "three-stdlib";
 
-export const HOODIE_URL = "/models/hoodie.glb";
+import { HOODIE_URL } from "@/lib/model";
 
 type GLTFResult = GLTF & {
   nodes: { cuffs: THREE.Mesh; body: THREE.Mesh; hood: THREE.Mesh; stitches: THREE.Mesh };

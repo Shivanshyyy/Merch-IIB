@@ -2,10 +2,11 @@ import "server-only";
 import { randomBytes, randomUUID, scryptSync, timingSafeEqual } from "node:crypto";
 import { jwtVerify, SignJWT } from "jose";
 import { cookies } from "next/headers";
+import { DEMO_COOKIE } from "./cookies";
 import type { AuthBackend, SessionUser } from "./types";
 
 // Local stand-in for Supabase Auth when no keys are set. Never active on the live site (see mode.ts).
-const COOKIE = "merch_demo_session";
+const COOKIE = DEMO_COOKIE;
 const secret = new TextEncoder().encode("demo-only-secret-never-used-in-production-0000");
 
 type DemoUser = { id: string; email: string; name: string; salt: string; hash: string };

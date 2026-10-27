@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSettings } from "@/components/SettingsProvider";
 import { Button } from "@/components/ui/Button";
+import { Reveal } from "@/components/ui/Reveal";
 import { fmtDay } from "@/lib/format";
 import { normalizeName } from "@/lib/schemas";
 import { Countdown } from "./Countdown";
@@ -25,7 +26,7 @@ const Copy = ({ children }: { children: React.ReactNode }) => <p className="max-
 
 export function Sections({ colorways, batch }: { colorways: HomeColorway[]; batch: HomeBatch }) {
   const s = useSettings();
-  const { colorway, setColorway, name, setName } = useHome();
+  const { colorway, setColorway, name, setName, boot } = useHome();
   const printed = normalizeName(name, s);
 
   return (
@@ -34,13 +35,9 @@ export function Sections({ colorways, batch }: { colorways: HomeColorway[]; batc
       <Panel shot="hero" index={0} height={100} id="hero-h">
         <div className="shell">
           <Label>{batch ? `[ ${batch.name} ] — Closes ${fmtDay(batch.closesAt)}` : "[ Preorders closed ]"}</Label>
-          <h1 id="hero-h" className="t-display text-[clamp(3.1rem,15vw,15rem)] leading-[0.84]">
-            Wear
-            <br />
-            the
-            <br />
-            campus.
-          </h1>
+          <Reveal as="h1" id="hero-h" when={boot !== "pending"} className="t-display text-[clamp(3.1rem,15vw,15rem)] leading-[0.84]">
+            {"Wear\nthe\ncampus."}
+          </Reveal>
           <div className="mt-8 flex flex-col gap-8 md:mt-12 md:flex-row md:items-end md:justify-between">
             <p className="max-w-sm text-[1.05rem] text-muted">
               Hoodies made for {s.pickupLocation} and everywhere else on campus, with your name on the back.
@@ -62,9 +59,9 @@ export function Sections({ colorways, batch }: { colorways: HomeColorway[]; batc
         <div className="shell">
           <div data-copy className="max-w-sm">
             <Label>[ 02 ] — The fabric</Label>
-            <h2 id="fabric-h" className="t-display t-h2">
+            <Reveal as="h2" id="fabric-h" className="t-display t-h2">
               Made to be worn in
-            </h2>
+            </Reveal>
             <div className="mt-5">
               <Copy>Every hoodie is made to order. Here is what the vendor tells us about the cloth.</Copy>
             </div>
@@ -85,9 +82,9 @@ export function Sections({ colorways, batch }: { colorways: HomeColorway[]; batc
         <div className="shell md:flex md:justify-end">
           <div data-copy className="max-w-sm md:text-right">
             <Label>[ 03 ] — The details</Label>
-            <h2 id="cuff-h" className="t-display t-h2">
+            <Reveal as="h2" id="cuff-h" className="t-display t-h2">
               Cuffs &amp; stitching
-            </h2>
+            </Reveal>
             <div className="mt-5 grid gap-3 md:justify-items-end">
               <Copy>Snug ribbed cuffs and hem that keep their shape.</Copy>
               <Copy>Flame outlines stitched in a contrast thread, doubled up so they stand out.</Copy>
@@ -99,9 +96,9 @@ export function Sections({ colorways, batch }: { colorways: HomeColorway[]; batc
         <div className="shell">
           <div data-copy className="max-w-sm">
             <Label>[ 03 ] — The hood</Label>
-            <h2 id="hood-h" className="t-display t-h2">
+            <Reveal as="h2" id="hood-h" className="t-display t-h2">
               Room to spare
-            </h2>
+            </Reveal>
             <div className="mt-5">
               <Copy>A full hood that sits high on the neck and drapes when it&apos;s down.</Copy>
             </div>
@@ -114,9 +111,9 @@ export function Sections({ colorways, batch }: { colorways: HomeColorway[]; batc
         <div className="shell">
           <div className="max-w-sm">
             <Label>[ 04 ] — Make it yours</Label>
-            <h2 id="name-h" className="t-display t-h2">
+            <Reveal as="h2" id="name-h" className="t-display t-h2">
               Your name, on the back
-            </h2>
+            </Reveal>
             <label className="pointer-events-auto mt-6 block">
               <span className="label mb-2 flex justify-between">
                 <span>Try a name</span>
@@ -147,9 +144,9 @@ export function Sections({ colorways, batch }: { colorways: HomeColorway[]; batc
       <Panel shot="colour" index={4} height={130} id="colour-h">
         <div className="shell">
           <Label>[ 05 ] — Colourways</Label>
-          <h2 id="colour-h" className="t-display t-h2 max-w-md">
+          <Reveal as="h2" id="colour-h" className="t-display t-h2 max-w-md">
             Pick your colour
-          </h2>
+          </Reveal>
           <div className="pointer-events-auto mt-6 flex flex-wrap gap-2" role="radiogroup" aria-label="Colourway">
             {colorways.map((c) => (
               <button
@@ -179,9 +176,9 @@ export function Sections({ colorways, batch }: { colorways: HomeColorway[]; batc
       <Panel shot="wide" index={5} height={110} id="how-h">
         <div className="shell">
           <Label>[ 06 ] — How it works</Label>
-          <h2 id="how-h" className="t-display t-h2 max-w-xl">
+          <Reveal as="h2" id="how-h" className="t-display t-h2 max-w-xl">
             Four steps to yours
-          </h2>
+          </Reveal>
           <ol className="mt-6 grid grid-cols-2 border-t border-line bg-bg/40 md:mt-8 md:grid-cols-4">
             {[
               ["Order", "Pick a colour and size, and type the name you want on the back."],

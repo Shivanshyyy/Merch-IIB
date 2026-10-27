@@ -5,16 +5,19 @@ import { Button } from "@/components/ui/Button";
 import { requireProfile } from "@/lib/auth/guards";
 import { db } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
+import { Reveal } from "@/components/ui/Reveal";
 
-export const metadata: Metadata = { title: "My orders" };
+export const metadata: Metadata = { title: "My orders", robots: { index: false } };
 
 export default function OrdersPage() {
   return (
     <div className="page">
       <div className="shell">
         <p className="label">[ 04 ] — Your orders</p>
-        <h1 className="t-display t-h1 mt-4">My orders</h1>
-        <Suspense fallback={<div className="skeleton mt-12 h-72" aria-hidden />}>
+        <Reveal as="h1" trigger="load" className="t-display t-h1 mt-4">
+          My orders
+        </Reveal>
+        <Suspense fallback={<div className="skeleton mt-12 h-72 min-h-[calc(100svh-16rem)]" aria-hidden />}>
           <Orders />
         </Suspense>
       </div>

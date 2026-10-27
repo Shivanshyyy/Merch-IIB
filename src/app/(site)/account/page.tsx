@@ -8,8 +8,9 @@ import { Button } from "@/components/ui/Button";
 import { safeNext } from "@/lib/auth/next";
 import { requireUser } from "@/lib/auth/guards";
 import { db } from "@/lib/db";
+import { Reveal } from "@/components/ui/Reveal";
 
-export const metadata: Metadata = { title: "Account" };
+export const metadata: Metadata = { title: "Account", robots: { index: false } };
 
 type Props = { searchParams: Promise<{ next?: string }> };
 
@@ -17,7 +18,7 @@ export default function AccountPage({ searchParams }: Props) {
   return (
     <div className="page">
       <div className="shell">
-        <Suspense fallback={<div className="skeleton h-[560px]" aria-hidden />}>
+        <Suspense fallback={<div className="skeleton h-[560px] min-h-[calc(100svh-16rem)]" aria-hidden />}>
           <Account searchParams={searchParams} />
         </Suspense>
       </div>
@@ -34,7 +35,9 @@ async function Account({ searchParams }: Props) {
   return (
     <>
       <p className="label">[ 07 ] — Account</p>
-      <h1 className="t-display t-h1 mt-4">{profile ? "Account" : "Finish up"}</h1>
+      <Reveal as="h1" trigger="load" className="t-display t-h1 mt-4">
+        {profile ? "Account" : "Finish up"}
+      </Reveal>
       {!profile && <p className="mt-6 max-w-lg text-muted">Your login is ready, but we still need a few details before you can order.</p>}
 
       <div className="mt-12 grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-24">

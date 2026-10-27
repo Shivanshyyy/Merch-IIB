@@ -53,7 +53,7 @@ export default function SceneRoot() {
   }, []);
 
   return (
-    <div aria-hidden data-scene-ready={ready} className={`fixed inset-0 z-0 transition-opacity duration-1000 ${ready ? "opacity-100" : "opacity-0"}`} style={{ touchAction: "pan-y" }}>
+    <div aria-hidden data-cursor="drag" data-scene-ready={ready} className={`fixed inset-0 z-0 transition-opacity duration-1000 ${ready ? "opacity-100" : "opacity-0"}`} style={{ touchAction: "pan-y" }}>
       <Canvas
         dpr={[1, quality === "high" ? 1.75 : 1.25]}
         camera={{ fov: 28, near: 0.05, far: 120, position: [0, 0.3, 2.4] }}

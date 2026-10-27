@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { site, whatsappUrl } from "@/config/site";
 import { getSettings } from "@/lib/settings";
+import { Reveal } from "@/components/ui/Reveal";
 
 export const metadata: Metadata = { title: "Refunds, pickup & privacy" };
 
@@ -30,7 +31,9 @@ export default async function PoliciesPage() {
     <div className="page">
       <div className="shell">
         <p className="label">[ 05 ] — The small print</p>
-        <h1 className="t-display t-h1 mt-4">Policies</h1>
+        <Reveal as="h1" trigger="load" className="t-display t-h1 mt-4">
+          Policies
+        </Reveal>
 
         <div className="mt-14 grid grid-cols-1 gap-12 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-20">
           <nav aria-label="On this page" className="hidden lg:block">

@@ -23,7 +23,7 @@ export default function PayPage({ params }: Props) {
   return (
     <div className="page ember">
       <div className="shell">
-        <Suspense fallback={<div className="skeleton h-[480px]" aria-hidden />}>
+        <Suspense fallback={<div className="skeleton h-[480px] min-h-[calc(100svh-12rem)]" aria-hidden />}>
           <Pay params={params} />
         </Suspense>
       </div>

@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { ProductCard } from "@/components/shop/ProductCard";
+import { ShopTurntable } from "@/components/shop/ShopTurntable";
 import { getOpenBatch, getProducts } from "@/lib/catalog";
 import { fmtDate } from "@/lib/format";
+import { Reveal } from "@/components/ui/Reveal";
 
 export const metadata: Metadata = { title: "Shop" };
 
@@ -11,14 +13,13 @@ export default function ShopPage() {
     <div className="page ember">
       <div className="shell">
         <p className="label">[ 01 ] — The drop</p>
-        <h1 className="t-display t-h1 mt-4">
-          Pick your
-          <br />
-          hoodie
-        </h1>
+        <Reveal as="h1" trigger="load" className="t-display t-h1 mt-4">
+          {"Pick your\nhoodie"}
+        </Reveal>
         <Suspense fallback={<GridSkeleton />}>
           <Catalog />
         </Suspense>
+        <ShopTurntable />
       </div>
     </div>
   );

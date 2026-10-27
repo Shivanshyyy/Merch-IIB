@@ -38,6 +38,7 @@ const debugState = (page) =>
 
 async function scene(browser, label, viewport, opts = {}) {
   const ctx = await browser.newContext({ viewport, deviceScaleFactor: opts.dpr ?? 1, hasTouch: !!opts.touch, isMobile: !!opts.touch });
+  await ctx.addInitScript(() => sessionStorage.setItem("merch-boot", "1")); // the preloader has its own walkthrough (polish.mjs)
   const page = await ctx.newPage();
   watch(page, label);
   const shot = async (name) => {

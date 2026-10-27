@@ -12,7 +12,7 @@ export function CartView() {
 
   if (!hydrated) {
     return (
-      <div className="mt-12 grid gap-px" aria-hidden>
+      <div className="mt-12 grid min-h-[32rem] content-start gap-px" aria-hidden>
         {[0, 1].map((i) => (
           <div key={i} className="skeleton h-36" />
         ))}
@@ -22,7 +22,7 @@ export function CartView() {
 
   if (lines.length === 0) {
     return (
-      <div className="mt-12 flex flex-col items-center gap-8 border border-dashed border-line px-6 py-20 text-center">
+      <div className="mt-12 flex min-h-[32rem] flex-col items-center justify-center gap-8 border border-dashed border-line px-6 py-20 text-center">
         <EmptyHanger />
         <div>
           <p className="t-display text-2xl">Your cart is empty</p>
@@ -36,7 +36,7 @@ export function CartView() {
   }
 
   return (
-    <div className="mt-12 grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-16">
+    <div className="mt-12 grid min-h-[32rem] grid-cols-1 content-start gap-12 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-16">
       <ul className="border-t border-line">
         {lines.map((l) => (
           <CartLineRow key={l.id} line={l} />

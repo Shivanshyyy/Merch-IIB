@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { SiteChrome } from "@/components/layout/SiteChrome";
 import { Button } from "@/components/ui/Button";
+import { Reveal } from "@/components/ui/Reveal";
 
 export default function NotFound() {
   return (
@@ -11,7 +12,9 @@ export default function NotFound() {
       </div>
       <div className="shell relative flex min-h-[70svh] flex-col justify-end">
         <p className="label">[ 404 ] — Off the rail</p>
-        <h1 className="t-display t-hero mt-4">Gone.</h1>
+        <Reveal as="h1" trigger="load" className="t-display t-hero mt-4">
+          Gone.
+        </Reveal>
         <p className="mt-6 max-w-md text-muted">That page slipped off its hanger and hit the floor. It may have moved, or the link may be wrong.</p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Button href="/shop" size="lg">

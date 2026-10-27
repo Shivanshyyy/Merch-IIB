@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Suspense, useEffect, useRef, type ReactNode } from "react";
 import { useSettings } from "@/components/SettingsProvider";
 import { cartCount, useCart, useCartHydration } from "@/store/cart";
+import { useFly } from "@/store/fly";
 
 const LINKS = [{ href: "/shop", label: "Shop" }];
 
@@ -24,10 +25,11 @@ function ActiveLinks() {
   return <LinkList pathname={usePathname()} />;
 }
 
-export function Nav({ account }: { account: ReactNode }) {
+export function Nav({ account, strip }: { account: ReactNode; strip: ReactNode }) {
   const { brand } = useSettings();
   useCartHydration();
-  const count = useCart((s) => cartCount(s.lines));
+  const inflight = useFly((s) => s.inflight);
+  const count = useCart((s) => Math.max(0, cartCount(s.lines) - inflight)); // a thumbnail still in the air isn't in the cart yet
   const hydrated = useCart((s) => s.hydrated);
   const bumps = useCart((s) => s.bumps);
   const openDrawer = useCart((s) => s.openDrawer);
@@ -45,10 +47,11 @@ export function Nav({ account }: { account: ReactNode }) {
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-line bg-bg/80 backdrop-blur-md">
+      {strip}
       <a href="#main" className="absolute left-4 top-2 z-10 -translate-y-20 bg-accent px-3 py-2 font-mono text-xs uppercase text-bg focus:translate-y-0">
         Skip to content
       </a>
-      <nav aria-label="Main" className="shell flex h-[var(--nav-h)] items-center justify-between">
+      <nav aria-label="Main" className="shell flex h-[var(--bar-h)] items-center justify-between">
         <Link href="/" className="font-mono text-[0.8rem] font-medium tracking-[0.2em]" aria-label={`${brand} home`}>
           {right !== undefined ? (
             <>
@@ -67,6 +70,7 @@ export function Nav({ account }: { account: ReactNode }) {
           <button
             type="button"
             onClick={openDrawer}
+            data-cart-target
             className="label flex min-h-11 items-center gap-2 border border-line px-3 text-fg transition-colors hover:border-fg"
             aria-label={`Open cart, ${hydrated ? count : 0} items`}
           >

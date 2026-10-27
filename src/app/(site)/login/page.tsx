@@ -8,8 +8,9 @@ import { authMode } from "@/lib/auth/mode";
 import { safeNext } from "@/lib/auth/next";
 import { getSessionUser } from "@/lib/auth/session";
 import { getSettings } from "@/lib/settings";
+import { Reveal } from "@/components/ui/Reveal";
 
-export const metadata: Metadata = { title: "Log in" };
+export const metadata: Metadata = { title: "Log in", robots: { index: false } };
 
 type Props = { searchParams: Promise<{ next?: string; mode?: string }> };
 
@@ -17,7 +18,7 @@ export default function LoginPage({ searchParams }: Props) {
   return (
     <div className="page ember">
       <div className="shell">
-        <Suspense fallback={<div className="skeleton h-[520px]" aria-hidden />}>
+        <Suspense fallback={<div className="skeleton h-[1000px] min-h-[calc(100svh-16rem)] lg:h-[640px]" aria-hidden />}>
           <Login searchParams={searchParams} />
         </Suspense>
       </div>
@@ -36,11 +37,9 @@ async function Login({ searchParams }: Props) {
     <div className="grid grid-cols-1 gap-12 lg:grid-cols-[1fr_minmax(0,480px)] lg:gap-24">
       <div>
         <p className="label">[ 00 ] — Your account</p>
-        <h1 className="t-display t-h1 mt-4">
-          Log in
-          <br />
-          to order
-        </h1>
+        <Reveal as="h1" trigger="load" className="t-display t-h1 mt-4">
+          {"Log in\nto order"}
+        </Reveal>
         <p className="mt-8 max-w-md text-muted">Browse and fill your cart without an account. You only need one to check out and to follow your orders from payment to pickup.</p>
         <ul className="mt-10 grid max-w-md gap-4 text-[0.95rem]">
           {["Email and password. No codes, no verification emails.", "Your details are saved, so checkout takes seconds.", "Every order and its status in one place."].map((t) => (

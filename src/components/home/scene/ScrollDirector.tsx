@@ -2,25 +2,21 @@
 
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import Lenis from "lenis";
 import { useEffect, type MutableRefObject } from "react";
+import { getLenis } from "@/lib/smooth-scroll";
 import { shotsFor, type Pose } from "../shots";
 
 const KEYS: (keyof Pose)[] = ["az", "el", "r", "tx", "ty", "tz", "fov", "ox", "oy", "orbit", "spin"];
 
-// Smooth scrolling plus the camera choreography: a GSAP timeline, scrubbed by scroll, that tweens the shared pose
-// between each section's shot. The pose is a plain object the camera rig reads every frame.
+// The camera choreography: a GSAP timeline, scrubbed by scroll, that tweens the shared pose between each section's shot.
+// The pose is a plain object the camera rig reads every frame. Smooth scrolling itself is the site-wide SmoothScroll.
 export function ScrollDirector({ pose, onScroll }: { pose: MutableRefObject<Pose>; onScroll: () => void }) {
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
-    const lenis = new Lenis({ lerp: 0.1, smoothWheel: true }); // touch keeps native scrolling
-    lenis.on("scroll", () => {
-      ScrollTrigger.update();
-      onScroll();
-    });
-    const tick = (t: number) => lenis.raf(t * 1000);
-    gsap.ticker.add(tick);
-    gsap.ticker.lagSmoothing(0);
+    const onNative = () => onScroll();
+    addEventListener("scroll", onNative, { passive: true });
+    // Lenis moves the page in its own frame loop; tell ScrollTrigger in the same frame rather than a frame later.
+    const offLenis = getLenis()?.on("scroll", ScrollTrigger.update);
 
     let tl: gsap.core.Timeline | null = null;
     const build = () => {
@@ -69,8 +65,8 @@ export function ScrollDirector({ pose, onScroll }: { pose: MutableRefObject<Pose
       removeEventListener("resize", onResize);
       tl?.scrollTrigger?.kill();
       tl?.kill();
-      gsap.ticker.remove(tick);
-      lenis.destroy();
+      removeEventListener("scroll", onNative);
+      offLenis?.();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- built once; pose and onScroll are stable refs
   }, []);

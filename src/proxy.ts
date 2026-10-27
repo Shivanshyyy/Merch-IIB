@@ -1,7 +1,11 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { ADMIN_COOKIE, verifyAdminToken } from "@/lib/admin/token";
+import { DEMO_COOKIE } from "@/lib/auth/cookies";
 import { authMode } from "@/lib/auth/mode";
+import { loginPath } from "@/lib/auth/next";
+
+const NEEDS_LOGIN = /^\/(orders|account|order\/[^/]+\/pay)\/?$/;
 
 export async function proxy(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
@@ -19,6 +23,19 @@ export async function proxy(req: NextRequest) {
     res.headers.set("Cache-Control", "private, no-store");
     res.headers.set("X-Robots-Tag", "noindex, nofollow");
     return res;
+  }
+
+  // Pages that need an account. A visitor with no session cookie at all gets a real redirect before anything renders; sending
+  // them from inside the page instead would paint a skeleton first and then swap the whole page (a flash and a layout shift).
+  if (NEEDS_LOGIN.test(pathname)) {
+    const mode = authMode();
+    const signedIn = mode === "demo" ? req.cookies.has(DEMO_COOKIE) : mode === "supabase" ? req.cookies.getAll().some((c) => c.name.startsWith("sb-")) : true;
+    if (!signedIn) {
+      const url = req.nextUrl.clone();
+      url.pathname = "/login";
+      url.search = loginPath(pathname + search).slice("/login".length);
+      return NextResponse.redirect(url);
+    }
   }
 
   // Customers: refresh an expiring Supabase session. Server Components can't write cookies, so it has to happen here.

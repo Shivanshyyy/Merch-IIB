@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useEffect } from "react";
 import { prefersReducedMotion, webglAvailable } from "@/lib/webgl";
 import { Poster } from "./Poster";
+import { Preloader } from "./Preloader";
 import { Sections, type HomeBatch } from "./Sections";
 import { useHome, type HomeColorway } from "./store";
 
@@ -12,6 +13,7 @@ const SceneRoot = dynamic(() => import("./scene/SceneRoot"), { ssr: false });
 
 export function HomeExperience({ colorways, batch }: { colorways: HomeColorway[]; batch: HomeBatch }) {
   const mode = useHome((s) => s.mode);
+  const posterReady = useHome((s) => s.posterReady);
 
   // Choose 3D or the static poster, and keep choosing if the visitor changes their motion preference.
   useEffect(() => {
@@ -20,8 +22,12 @@ export function HomeExperience({ colorways, batch }: { colorways: HomeColorway[]
     const query = matchMedia("(prefers-reduced-motion: reduce)");
     const decide = () => setMode(!prefersReducedMotion() && webglAvailable() ? "webgl" : "poster");
     decide();
+    const patience = window.setTimeout(() => useHome.getState().setPosterReady(), 3000); // a stuck image must not hold the scene back
     query.addEventListener("change", decide);
-    return () => query.removeEventListener("change", decide);
+    return () => {
+      clearTimeout(patience);
+      query.removeEventListener("change", decide);
+    };
   }, [colorways]);
 
   // Which section is in view: drives callouts, the poster's front/back view and the camera shot.
@@ -62,8 +68,9 @@ export function HomeExperience({ colorways, batch }: { colorways: HomeColorway[]
 
   return (
     <>
+      <Preloader batch={batch} />
       <Poster />
-      {mode === "webgl" && <SceneRoot />}
+      {mode === "webgl" && posterReady && <SceneRoot />}
       <Sections colorways={colorways} batch={batch} />
     </>
   );

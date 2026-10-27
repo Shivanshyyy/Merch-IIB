@@ -46,3 +46,7 @@ scripts/.out/
 
 # 43 MB Sketchfab source; the optimised model in public/models is what ships
 assets-raw/
+
+# playwright
+/test-results/
+/playwright-report/

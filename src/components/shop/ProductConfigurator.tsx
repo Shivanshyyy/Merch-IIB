@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { SizeChart } from "@/components/shop/SizeChart";
 import { Button } from "@/components/ui/Button";
+import { Reveal } from "@/components/ui/Reveal";
 import { ChipGroup } from "@/components/ui/ChipGroup";
 import { Stepper } from "@/components/ui/Stepper";
 import { TextField } from "@/components/ui/TextField";
@@ -19,6 +20,7 @@ import type { Product } from "@/lib/types";
 import { useBatchClosed } from "@/lib/useBatchClosed";
 import { prefersReducedMotion, webglAvailable } from "@/lib/webgl";
 import { useCart } from "@/store/cart";
+import { flyToCart } from "@/store/fly";
 
 // three.js and R3F load only when the browser can run them, and only once the page has settled.
 const ProductViewer = dynamic(() => import("@/components/three/ProductViewer"), { ssr: false });
@@ -44,14 +46,25 @@ export function ProductConfigurator({ product, batch }: { product: Product; batc
   const [added, setAdded] = useState(false);
   const [use3D, setUse3D] = useState(false);
   const [viewerReady, setViewerReady] = useState(false);
+  const stage = useRef<HTMLDivElement>(null);
 
-  // Show the studio still straight away; swap in the live 3D viewer when the browser is idle (and 3D is wanted).
+  // The studio still is the first paint. The live viewer (three.js and the model, about 1.5 MB) loads as soon as the
+  // shopper reaches for the picture, or after a calm moment on a machine that can afford it. Phones and slow or
+  // data-saving connections wait for the touch, so the page stays quick for everyone else.
   useEffect(() => {
-    if (prefersReducedMotion() || !webglAvailable()) return;
-    const idle = window.requestIdleCallback ?? ((cb: () => void) => window.setTimeout(cb, 300));
-    const cancel = window.cancelIdleCallback ?? window.clearTimeout;
-    const id = idle(() => setUse3D(true));
-    return () => cancel(id as number);
+    const el = stage.current;
+    if (!el || prefersReducedMotion() || !webglAvailable()) return;
+    const start = () => setUse3D(true);
+    const intent = ["pointerenter", "touchstart", "focusin"] as const;
+    for (const e of intent) el.addEventListener(e, start, { once: true, passive: true });
+
+    const conn = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection; // not in the DOM typings
+    const modest = matchMedia("(pointer: coarse)").matches || innerWidth < 768 || (navigator.hardwareConcurrency ?? 8) <= 4 || conn?.saveData || /^(slow-2g|2g|3g)$/.test(conn?.effectiveType ?? "");
+    const timer = modest ? 0 : window.setTimeout(() => (window.requestIdleCallback ?? window.setTimeout)(start), 4000);
+    return () => {
+      clearTimeout(timer);
+      for (const e of intent) el.removeEventListener(e, start);
+    };
   }, []);
 
   const editLine = editId ? lines.find((l) => l.id === editId && l.slug === product.slug) : undefined;
@@ -113,6 +126,8 @@ export function ProductConfigurator({ product, batch }: { product: Product; batc
     }
     add(payload);
     buzz(10);
+    // The picture on the page lifts off and lands in the cart button.
+    flyToCart(stage.current?.getBoundingClientRect() ?? null, { src: stage.current?.querySelector("img")?.currentSrc ?? "", body: colorway.body, qty });
     toast({ message: "Added to cart", action: { label: "View cart", href: "/cart" } });
     setAdded(true);
     setTimeout(() => setAdded(false), 1800);
@@ -124,7 +139,7 @@ export function ProductConfigurator({ product, batch }: { product: Product; batc
     <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1.15fr_1fr] lg:gap-0">
       {/* Image panel */}
       <div className="lg:sticky lg:top-[calc(var(--nav-h)+1px)] lg:self-start lg:border-r lg:border-line">
-        <div className="relative aspect-square max-h-[78svh] w-full overflow-hidden bg-bg-2 [container-type:inline-size] lg:max-h-[calc(100svh-var(--nav-h)-1px)]">
+        <div ref={stage} className="relative aspect-square max-h-[78svh] w-full overflow-hidden bg-bg-2 [container-type:inline-size] lg:max-h-[calc(100svh-var(--nav-h)-1px)]">
           <div aria-hidden className="absolute inset-0 bg-[radial-gradient(55%_50%_at_50%_55%,rgba(255,59,31,0.32),transparent_72%)]" />
           <AnimatePresence initial={false}>
             <motion.div key={`${colorway.name}-${view}`} className="absolute inset-0" initial={{ opacity: 0, scale: 1.02 }} animate={{ opacity: viewerReady ? 0 : 1, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}>
@@ -133,7 +148,7 @@ export function ProductConfigurator({ product, batch }: { product: Product; batc
           </AnimatePresence>
 
           {use3D && (
-            <div className={`absolute inset-0 transition-opacity duration-700 ${viewerReady ? "opacity-100" : "opacity-0"}`}>
+            <div data-cursor="drag" className={`absolute inset-0 transition-opacity duration-700 ${viewerReady ? "opacity-100" : "opacity-0"}`}>
               <ProductViewer body={colorway.body} stitch={colorway.stitch} name={printed} view={view} reducedMotion={false} onReady={() => setViewerReady(true)} />
             </div>
           )}
@@ -163,7 +178,9 @@ export function ProductConfigurator({ product, batch }: { product: Product; batc
       <div className="flex min-w-0 flex-col gap-8 px-[var(--gutter)] pb-16 lg:px-10 lg:py-10 xl:px-14">
         <header>
           <p className="label">[ Shop / {product.type} ]</p>
-          <h1 className="t-display mt-3 text-[clamp(2rem,4.6vw,3.6rem)]">{product.name}</h1>
+          <Reveal as="h1" trigger="load" className="t-display mt-3 text-[clamp(2rem,4.6vw,3.6rem)]">
+            {product.name}
+          </Reveal>
           <div className="mt-5 flex items-baseline gap-4">
             <p className="mono text-3xl">{inr(product.price_inr)}</p>
             {batch && <p className="label">{batch.name} · preorder</p>}

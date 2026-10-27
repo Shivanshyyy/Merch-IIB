@@ -9,16 +9,19 @@ import { getSessionUser } from "@/lib/auth/session";
 import { getOpenBatch, getProducts } from "@/lib/catalog";
 import { db } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
+import { Reveal } from "@/components/ui/Reveal";
 
-export const metadata: Metadata = { title: "Checkout" };
+export const metadata: Metadata = { title: "Checkout", robots: { index: false } };
 
 export default function CheckoutPage() {
   return (
     <div className="page">
       <div className="shell">
         <p className="label">[ 03 ] — Checkout</p>
-        <h1 className="t-display t-h1 mt-4">Checkout</h1>
-        <Suspense fallback={<div className="skeleton mt-12 h-96" aria-hidden />}>
+        <Reveal as="h1" trigger="load" className="t-display t-h1 mt-4">
+          Checkout
+        </Reveal>
+        <Suspense fallback={<div className="skeleton mt-12 h-96 min-h-[calc(100svh-16rem)]" aria-hidden />}>
           <Checkout />
         </Suspense>
       </div>

@@ -28,6 +28,7 @@ type CartState = {
   setQty: (id: string, qty: number) => void;
   remove: (id: string) => void;
   clear: () => void;
+  bump: () => void;
   openDrawer: () => void;
   closeDrawer: () => void;
 };
@@ -48,12 +49,13 @@ export const useCart = create<CartState>()(
           const lines = hit
             ? s.lines.map((l) => (l === hit ? { ...l, qty: clampQty(l.qty + line.qty) } : l))
             : [...s.lines, { ...line, qty: clampQty(line.qty), id: crypto.randomUUID() }];
-          return { lines, bumps: s.bumps + 1 };
+          return { lines };
         }),
       replace: (id, line) => set((s) => ({ lines: s.lines.map((l) => (l.id === id ? { ...line, qty: clampQty(line.qty), id } : l)) })),
       setQty: (id, qty) => set((s) => ({ lines: s.lines.map((l) => (l.id === id ? { ...l, qty: clampQty(qty) } : l)) })),
       remove: (id) => set((s) => ({ lines: s.lines.filter((l) => l.id !== id) })),
       clear: () => set({ lines: [] }),
+      bump: () => set((s) => ({ bumps: s.bumps + 1 })), // the badge nudge, once the thumbnail has landed
       openDrawer: () => set({ drawerOpen: true }),
       closeDrawer: () => set({ drawerOpen: false }),
     }),
