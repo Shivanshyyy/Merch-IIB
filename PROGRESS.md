@@ -62,3 +62,11 @@ Short log, one entry per phase: what's done, what's left, open TODOs.
   - Found and fixed on the way: the preloader's own timer was cancelled by its cleanup (it would have stayed on the page, invisible and blocking clicks); R3F's canvas wrapper took the pointer from the card beneath it; layout shifts from web-font swaps, a login redirect that painted a skeleton first, and unsized skeletons.
 - **Left:** deploy and connect the domain (Phase 5), which needs your accounts.
 - **Open TODOs:** frame rate and Lighthouse were measured on a laptop with software WebGL or a GPU, not on a ₹12k Android, so re-run PageSpeed Insights on the live URL and try it on a real phone. The font fallbacks are matched to Arial/Helvetica, so a first-ever visit on Android may still move text by a pixel or two. The shop turntable downloads the model (1.4 MB) on the first hover.
+
+## Phase 5 — Ship ⏳ (everything that can be done without your accounts is done)
+- **Done:**
+  - README for the team: the go-live checklist, environment variables, Supabase setup, Vercel deploy and domain, and how to run the shop day to day (change a price, add a product, open a batch, verify a payment, send the vendor sheet, pickup, refunds, reset a password, edit business values), plus a scripts table and troubleshooting.
+  - `scripts/smoke-supabase.mjs`: run it once after the Supabase steps. It checks the tables and columns, the seed data, that the public key reads nothing and cannot call the admin function, that *Confirm email* is off, and that the admin can create, log in and reset a customer (it deletes its test customer).
+  - `vercel.json` pins the functions to Mumbai (`bom1`); `SITE_URL` added to `.env.example`; Node `>=20.9` declared.
+- **Left (needs you):** create the Supabase project and Vercel project, add the environment variables, connect the domain, fill in Admin → Settings, then run `node scripts/smoke-supabase.mjs` and place one real test order.
+- **Open TODOs:** the Supabase code paths have only ever run against the in-memory demo store and the PGlite SQL tests, never a live project, so the smoke test above is the first real check. Pickup room and hours, the UPI ID, WhatsApp number, size chart and fabric weight/fit are still placeholders (Admin → Settings).
