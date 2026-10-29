@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ProductForm } from "@/components/admin/ProductForm";
+import { ProductPhotos } from "@/components/admin/ProductPhotos";
 import { FreshOnVisit } from "@/components/ui/FreshOnVisit";
 import { requireAdmin } from "@/lib/admin/guard";
 import { db } from "@/lib/db";
@@ -34,6 +35,9 @@ async function Editor({ params }: Props) {
       <h1 className="t-display text-3xl">{product.name}</h1>
       <FreshOnVisit>
         <ProductForm key={product.id} product={product} />
+        <div className="mt-10">
+          <ProductPhotos productId={product.id} photos={product.photos} />
+        </div>
       </FreshOnVisit>
     </>
   );

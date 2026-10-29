@@ -5,13 +5,15 @@ import type { Batch, NewOrder, Order, OrderEvent, Product, Profile } from "@/lib
 
 type Table<Row, Insert = Row, Update = Partial<Row>> = { Row: Row; Insert: Insert; Update: Update; Relationships: [] };
 
-type ProductRow = Product & { created_at: string };
+type ProductRow = Omit<Product, "photos"> & { created_at: string };
+type ProductPhotoRow = { id: string; product_id: string; mime: string; data: string; created_at: string };
 type ProfileRow = Profile;
 
 export type Database = {
   public: {
     Tables: {
-      products: Table<ProductRow, Omit<Product, "id"> & { id?: string }>;
+      products: Table<ProductRow, Omit<Product, "id" | "photos"> & { id?: string }>;
+      product_photos: Table<ProductPhotoRow, { product_id: string; mime: string; data: string }>;
       batches: Table<Batch, Omit<Batch, "id"> & { id?: string }>;
       orders: Table<Order, NewOrder>;
       order_events: Table<OrderEvent, { order_id: string; type: string; note?: string | null }>;

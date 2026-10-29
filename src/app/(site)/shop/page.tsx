@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { ProductCard } from "@/components/shop/ProductCard";
-import { ShopTurntable } from "@/components/shop/ShopTurntable";
 import { getOpenBatch, getProducts } from "@/lib/catalog";
 import { fmtDate } from "@/lib/format";
 import { Reveal } from "@/components/ui/Reveal";
@@ -19,7 +18,6 @@ export default function ShopPage() {
         <Suspense fallback={<GridSkeleton />}>
           <Catalog />
         </Suspense>
-        <ShopTurntable />
       </div>
     </div>
   );

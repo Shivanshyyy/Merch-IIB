@@ -1,11 +1,12 @@
 import "server-only";
 import seed from "../../../supabase/seed.json";
 import type { Settings } from "@/config/site";
-import type { Batch, NewOrder, Order, OrderEvent, Product, Profile } from "@/lib/types";
+import type { Batch, NewOrder, Order, OrderEvent, PhotoBlob, Product, Profile } from "@/lib/types";
 import { CodeTakenError, EmailTakenError, NotFoundError, SlugTakenError, type Db } from "./types";
 
 export type Store = {
   products: Product[];
+  photoData: Record<string, PhotoBlob>; // by photo id; each product lists its own ids in `photos`
   batches: Batch[];
   orders: Order[];
   events: OrderEvent[];
@@ -32,7 +33,9 @@ function init(): Store {
       personalizable: true,
       active: true,
       sort: p.sort,
+      photos: [],
     })),
+    photoData: {},
     batches: [
       {
         id: "00000000-0000-4000-8000-0000000000b1",
@@ -51,7 +54,13 @@ function init(): Store {
   };
 }
 
-export const memoryStore = (): Store => (g.__merchMemoryStore ??= init());
+export const memoryStore = (): Store => {
+  const store = (g.__merchMemoryStore ??= init());
+  // A store left over from before photos existed (dev HMR keeps globalThis alive) gets the new fields.
+  store.photoData ??= {};
+  for (const p of store.products) p.photos ??= [];
+  return store;
+};
 
 export function createMemoryDb(): Db {
   const s = memoryStore();
@@ -62,6 +71,9 @@ export function createMemoryDb(): Db {
     },
     async getProductBySlug(slug) {
       return s.products.find((p) => p.slug === slug && p.active) ?? null;
+    },
+    async getPhoto(id) {
+      return s.photoData[id] ?? null;
     },
     async getOpenBatch() {
       return [...s.batches].filter((b) => b.status === "open").sort((a, b) => b.opens_at.localeCompare(a.opens_at))[0] ?? null;
@@ -134,7 +146,7 @@ export function createMemoryDb(): Db {
     },
     async createProduct(input) {
       if (s.products.some((p) => p.slug === input.slug)) throw new SlugTakenError();
-      const row: Product = { ...input, id: crypto.randomUUID() };
+      const row: Product = { ...input, id: crypto.randomUUID(), photos: [] };
       s.products.push(row);
       return row;
     },
@@ -146,7 +158,22 @@ export function createMemoryDb(): Db {
       return row;
     },
     async deleteProduct(id) {
+      for (const photoId of s.products.find((p) => p.id === id)?.photos ?? []) delete s.photoData[photoId];
       s.products = s.products.filter((p) => p.id !== id);
+    },
+    async addProductPhoto(productId, photo) {
+      const row = s.products.find((p) => p.id === productId);
+      if (!row) throw new NotFoundError("product");
+      const id = crypto.randomUUID();
+      s.photoData[id] = photo;
+      row.photos = [...row.photos, id];
+      return id;
+    },
+    async removeProductPhoto(productId, photoId) {
+      const row = s.products.find((p) => p.id === productId);
+      if (!row) throw new NotFoundError("product");
+      row.photos = row.photos.filter((id) => id !== photoId);
+      delete s.photoData[photoId];
     },
 
     async listBatches() {

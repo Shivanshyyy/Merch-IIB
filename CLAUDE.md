@@ -158,7 +158,7 @@ All prices are in **₹ whole rupees**, displayed in mono, e.g. `₹999`.
 
 1. **`/shop`:** a grid of product cards from the `products` table.
    - Each card shows the name, price and colour dots.
-   - On hover (desktop), the card's still render cross-fades into a slow 360° turntable (a pre-rendered image sequence or a small shared canvas).
+   - Cards are plain photos, never the 3D model. The admin adds and removes each product's photos; the first is the cover and, on hover (desktop), the card cross-fades to the second. A product with no photos falls back to its studio still.
    - Badge: "Batch 01 · preorder".
 2. **`/shop/[slug]`** (product detail):
    - Left: a 3D viewer using the same model, with this product's colourways and drag to rotate.
@@ -249,7 +249,7 @@ This is protected by middleware, with a login page at `/admin/login` that takes 
 - **Batch management:** create a batch, open or close it, set its cutoff and estimated delivery, and see the active batch's stats.
 - **Vendor export:** download a CSV of verified orders in a batch, with columns product, colour, size, name, quantity and order code only. **No phone, email or payment data.** Also show a summary pivot: counts by product × colour × size.
 - **Dashboard tiles:** orders, verified revenue, pending verifications, refunds, and items per size.
-- **Products CRUD:** name, slug, type, description, price, colourways (name + body hex + stitch hex), sizes, active, sort order.
+- **Products CRUD:** name, slug, type, description, price, colourways (name + body hex + stitch hex), sizes, active, sort order, and the shop-card photos (add or remove).
 - **Settings (`/admin/settings`):** every business value is editable here and stored in the `settings` table (one row, JSON). The site reads it through `getSettings()`; `src/config/site.ts` and `supabase/seed.json` only hold the defaults and fixed constants (order-code prefix, model credit).
   - Editable: brand name, UPI ID + payee name, contact name / phone / WhatsApp, pickup location / room / hours, refund window (days), name max length + capitals, max pending orders per email, size chart, fabric specs.
   - Saving takes effect immediately (cache tags are invalidated).

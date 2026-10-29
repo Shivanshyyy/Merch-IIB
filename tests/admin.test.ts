@@ -37,7 +37,7 @@ const order = (over: Partial<Order> = {}): Order => ({
   created_at: "2026-10-30T08:00:00Z",
   ...over,
 });
-const product = (over: Partial<Product> = {}): Product => ({ id: "p1", slug: "flame", name: "Flame Hoodie", type: "hoodie", description: "", price_inr: 1000, colorways: [{ name: "Midnight", body: "#000000", stitch: "#ff0000" }], sizes: ["S", "M", "L"], personalizable: true, active: true, sort: 1, ...over });
+const product = (over: Partial<Product> = {}): Product => ({ id: "p1", slug: "flame", name: "Flame Hoodie", type: "hoodie", description: "", price_inr: 1000, colorways: [{ name: "Midnight", body: "#000000", stitch: "#ff0000" }], sizes: ["S", "M", "L"], personalizable: true, active: true, sort: 1, photos: [], ...over });
 const plan = (o: Order, a: OrderAction, products = [product()]) => planOrderAction(o, a, { now, products, rules });
 const paid = (over: Partial<Order> = {}) => order({ payment_status: "verified", verified_at: now.toISOString(), ...over });
 

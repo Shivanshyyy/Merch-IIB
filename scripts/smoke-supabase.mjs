@@ -23,8 +23,8 @@ const opts = { auth: { persistSession: false, autoRefreshToken: false } };
 const service = createClient(url, serviceKey, opts);
 const anon = createClient(url, anonKey, opts);
 
-console.log("\nTables (migrations 0001 and 0002)");
-for (const [table, cols] of [["products", "slug,price_inr,colorways"], ["batches", "name,status,closes_at"], ["orders", "code,user_id,items,payment_status"], ["order_events", "order_id,type"], ["profiles", "email,full_name,roll_no"], ["settings", "*"]]) {
+console.log("\nTables (migrations 0001 to 0003)");
+for (const [table, cols] of [["products", "slug,price_inr,colorways"], ["batches", "name,status,closes_at"], ["orders", "code,user_id,items,payment_status"], ["order_events", "order_id,type"], ["profiles", "email,full_name,roll_no"], ["settings", "*"], ["product_photos", "product_id,mime"]]) {
   const { error } = await service.from(table).select(cols).limit(1);
   check(!error, `table ${table} exists with the columns the app reads`, error && `${error.message}. Run the SQL files in supabase/migrations in order.`);
 }
@@ -36,9 +36,9 @@ const open = await service.from("batches").select("name").eq("status", "open");
 check((open.data?.length ?? 0) === 1, `exactly one open batch (${open.data?.map((b) => b.name).join(", ") || "none"})`, "Open one batch in /admin/batches; opening a batch closes the others.");
 
 console.log("\nRow-level security (the public key must see nothing)");
-for (const table of ["products", "batches", "orders", "profiles", "settings"]) {
+for (const table of ["products", "batches", "orders", "profiles", "settings", "product_photos"]) {
   const { data, error } = await anon.from(table).select("*").limit(1);
-  check(!error && (data?.length ?? 0) === 0, `anon key reads no rows from ${table}`, "Enable RLS on every table and add no policies (see 0001/0002).");
+  check(!error && (data?.length ?? 0) === 0, `anon key reads no rows from ${table}`, "Enable RLS on every table and add no policies (see 0001 to 0003).");
 }
 const rpcAnon = await anon.rpc("admin_patch_order", { p_id: "00000000-0000-0000-0000-000000000000", p_patch: {}, p_event_type: "smoke" });
 check(!!rpcAnon.error, "anon key cannot call admin_patch_order", "The function must be executable by service_role only (end of 0002).");

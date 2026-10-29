@@ -38,7 +38,7 @@ Set these in `.env.local` while developing and in Vercel → Project → Setting
 ## Set up the database (Supabase)
 
 1. Create a project at supabase.com (pick the Mumbai region, it is closest to campus).
-2. **SQL Editor → New query:** paste each file in [`supabase/migrations/`](supabase/migrations) in order (`0001_init.sql`, then `0002_accounts_settings.sql`) and **Run**.
+2. **SQL Editor → New query:** paste each file in [`supabase/migrations/`](supabase/migrations) in order (`0001_init.sql`, then `0002_accounts_settings.sql`, then `0003_product_photos.sql`) and **Run**.
 3. New query again: paste [`supabase/seed.sql`](supabase/seed.sql) and **Run** (three placeholder hoodies, one open batch and the default settings; safe to run twice).
 4. **Authentication → Providers → Email:** turn **Confirm email OFF**. Customers sign up with email and password only, and the app never sends email.
 5. Copy the project URL, `anon` key and `service_role` key into the environment variables above.
@@ -61,6 +61,8 @@ Everything below is in the admin panel at `/admin`. It works on a phone.
 
 **Change a price or add a product.** *Products* → open one (or *New product*) → change **Price**, colourways (name, body colour, stitch colour), sizes, *Active* → Save. It is live in the shop straight away. Orders already placed keep the price they were made at. A new colourway shows a tinted hoodie until it has studio pictures: add it to `supabase/seed.json` and run `npm run stills`, or drop `<slug>-<colour>-front.webp` and `-back.webp` into `public/products/`.
 
+**Add or remove the photos on the shop cards.** *Products* → open one → *Photos* → **Add photos** (pictures straight from a phone camera are fine: they are shrunk and cleaned of location data automatically, up to 8 per product). The first photo is the cover and the second appears when someone hovers the card; **Remove** (two taps) deletes one. The shop cards never load the 3D model. A product with no photos shows its studio picture instead. The photos are stored in the database, so there is no storage bucket to set up.
+
 **Open a batch.** *Batches* → *New batch*: name, estimated delivery, when it opens, the cutoff (IST), and leave *Open now* ticked → Create. Opening a batch closes the others. At the cutoff the shop stops taking orders by itself. Move a batch along with its buttons: *Open → Closed → Sent to vendor → Received → Done*.
 
 **Verify a payment.** *Orders* → filter *Payment: pending* → open an order. Look in your UPI app for a credit with the order code in the note (the customer may also have given a UTR, which shows in the order). When the amount matches, press **Verify payment**. The customer's *My orders* page updates immediately. If it does not match, **Reject payment** and use the WhatsApp button to ask for the screenshot.
@@ -75,9 +77,9 @@ Everything below is in the admin panel at `/admin`. It works on a phone.
 
 ## How it is built
 
-Next.js (App Router, Cache Components) with TypeScript and Tailwind. The home page is one fixed three.js canvas behind scrolling HTML, with the camera moved between shots by GSAP ScrollTrigger and Lenis smooth scrolling; the product page and shop cards reuse the same model. Zustand holds the cart (localStorage); Supabase Postgres holds everything else, reached only from server actions and route handlers. Prices and totals are always recalculated on the server. Admin access is one password signed into an httpOnly cookie by `proxy.ts`. With reduced motion or without WebGL the site falls back to a static poster and everything still works.
+Next.js (App Router, Cache Components) with TypeScript and Tailwind. The home page is one fixed three.js canvas behind scrolling HTML, with the camera moved between shots by GSAP ScrollTrigger and Lenis smooth scrolling; the product page reuses the same model, while the shop cards are plain photos the admin uploads. Zustand holds the cart (localStorage); Supabase Postgres holds everything else, reached only from server actions and route handlers. Prices and totals are always recalculated on the server. Admin access is one password signed into an httpOnly cookie by `proxy.ts`. With reduced motion or without WebGL the site falls back to a static poster and everything still works.
 
-The 43 MB source model is never served: `npm run model:optimize` turns it into a 1.4 MB file (277k triangles, silhouette within 0.1% of the original).
+The 17 MB source model (`assets-raw/hoodie.glb`) is never served: `npm run model:optimize` turns it into a 1.1 MB file (158k triangles, silhouette within 0.2% of the original) and scales it to the size the camera shots expect. The model is one mesh with one material, so a colourway recolours the cloth with its body colour and the chest emblem (and the name on the back) with its stitch colour; the metal drawstring tips keep their own colour. After swapping the model, run `npm run model:optimize`, `npm run model:compare` and `npm run stills`.
 
 ## Scripts
 
@@ -87,7 +89,7 @@ The 43 MB source model is never served: `npm run model:optimize` turns it into a
 | `npm run lint` / `typecheck` / `test` | checks and unit tests (pricing, validation, checkout rules, accounts, admin, the SQL, motion helpers) |
 | `npm run e2e` | Playwright: add to cart → sign up → checkout → pay page → admin verifies → customer sees it verified |
 | `node scripts/with-server.mjs [--build] -- <cmd>` | starts **one** production server on :3000, runs the command, always stops it |
-| `node scripts/polish.mjs --out=<dir>` | headless-browser walkthrough of the polish: marquee, headline reveals, cursor, page wipe, add-to-cart flight, shop turntable, preloader, reduced motion, layout shift on every page |
+| `node scripts/polish.mjs --out=<dir>` | headless-browser walkthrough of the polish: marquee, headline reveals, cursor, page wipe, add-to-cart flight, plain shop cards, preloader, reduced motion, layout shift on every page |
 | `node scripts/screenshots-home.mjs --out=<dir>` | the 3D home and product viewer: camera shots, drag, colourways, name on the back, fallbacks |
 | `node scripts/screenshots-admin.mjs`, `scripts/screenshots-site.mjs` | admin and shop walkthroughs with screenshots |
 | `node scripts/a11y.mjs [--admin]` | axe accessibility scan of every page at phone and desktop size |
@@ -107,4 +109,4 @@ Run the browser scripts through `with-server.mjs` (for example `node scripts/wit
 
 ## Credits
 
-3D model "Classic Black Flame Hoodie" by [kril](https://sketchfab.com/3d-models/classic-black-flame-hoodie-0fd0effa321e456cb2a7467e2899b658), CC BY 4.0. Credited in the site footer and on `/policies`. The 43 MB original is git-ignored (`assets-raw/`); download it again from the link to re-run the optimiser.
+The current hoodie model has no recorded author or licence, so no credit is shown. If its licence asks for one, fill in `modelCredit` in `src/config/site.ts`; the site footer and `/policies` show it as soon as it is set. The 17 MB original is git-ignored (`assets-raw/`), so keep a copy of it to re-run the optimiser.

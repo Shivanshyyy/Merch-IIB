@@ -28,6 +28,7 @@ async function Form() {
   return (
     <FreshOnVisit>
       <ProductForm />
+      <p className="admin-label mt-8">Photos: save the product first, then open it from the list to add pictures for its shop card.</p>
     </FreshOnVisit>
   );
 }

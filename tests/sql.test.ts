@@ -72,6 +72,17 @@ test("RLS with no policies hides everything else from anon and authenticated", a
   }
 });
 
+test("product photos: private to the service role, and they go when their product goes", async () => {
+  const product = (await db.query<{ id: string }>("insert into products (slug,name,type,price_inr) values ('photo-test','Photo test','hoodie',100) returning id")).rows[0].id;
+  await db.query("insert into product_photos (product_id, mime, data) values ($1,'image/webp','AAAA')", [product]);
+  assert.equal((await as("anon", null, () => db.query("select * from product_photos"))).rows.length, 0);
+  assert.equal((await as("authenticated", alice, () => db.query("select * from product_photos"))).rows.length, 0);
+  assert.equal((await as("service_role", null, () => db.query("select * from product_photos"))).rows.length, 1);
+
+  await db.query("delete from products where id=$1", [product]);
+  assert.deepEqual((await db.query("select count(*)::int n from product_photos")).rows[0], { n: 0 });
+});
+
 test("admin_patch_order: atomic update + audit row, service role only", async () => {
   const batch = (await db.query<{ id: string }>("select id from batches limit 1")).rows[0].id;
   const order = (

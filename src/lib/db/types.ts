@@ -1,5 +1,5 @@
 import type { Settings } from "@/config/site";
-import type { Batch, BatchInput, NewOrder, Order, OrderEvent, OrderFilter, OrderPatch, Product, ProductInput, Profile, ProfileInput } from "@/lib/types";
+import type { Batch, BatchInput, NewOrder, Order, OrderEvent, OrderFilter, OrderPatch, PhotoBlob, Product, ProductInput, Profile, ProfileInput } from "@/lib/types";
 
 export class CodeTakenError extends Error {
   constructor() {
@@ -29,6 +29,7 @@ export interface Db {
   // catalogue (customer-facing)
   listActiveProducts(): Promise<Product[]>;
   getProductBySlug(slug: string): Promise<Product | null>;
+  getPhoto(id: string): Promise<PhotoBlob | null>;
   getOpenBatch(): Promise<Batch | null>;
 
   // runtime settings: the stored JSON (possibly partial), merged with defaults by the caller
@@ -55,6 +56,9 @@ export interface Db {
   createProduct(input: ProductInput): Promise<Product>;
   updateProduct(id: string, input: ProductInput): Promise<Product>;
   deleteProduct(id: string): Promise<void>;
+  // Appends to the product's photos and returns the new photo's id.
+  addProductPhoto(productId: string, photo: PhotoBlob): Promise<string>;
+  removeProductPhoto(productId: string, photoId: string): Promise<void>;
 
   listBatches(): Promise<Batch[]>;
   getBatch(id: string): Promise<Batch | null>;

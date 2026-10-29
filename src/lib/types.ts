@@ -12,8 +12,13 @@ export type Product = {
   personalizable: boolean;
   active: boolean;
   sort: number;
+  /** Ids of the admin-uploaded photos, in display order; the first is the cover. Served from /photos/<id>. */
+  photos: string[];
 };
-export type ProductInput = Omit<Product, "id">;
+export type ProductInput = Omit<Product, "id" | "photos">;
+
+/** An uploaded photo as stored: always WebP, already resized. */
+export type PhotoBlob = { mime: string; bytes: Buffer };
 
 export type BatchStatus = "open" | "closed" | "ordered" | "received" | "done";
 

@@ -1,5 +1,5 @@
-// Phase 4 in a real (software-WebGL) browser: marquee, headline reveals, cursor, page wipe, add-to-cart flight, shop
-// turntable, home preloader, reduced motion, and layout shift on every page.
+// Phase 4 in a real (software-WebGL) browser: marquee, headline reveals, cursor, page wipe, add-to-cart flight, plain
+// shop cards, home preloader, reduced motion, and layout shift on every page.
 //   npm run with-server -- node scripts/polish.mjs --out=<dir> [--only=shop|home|reduced|cls]
 import assert from "node:assert/strict";
 import { mkdirSync } from "node:fs";
@@ -34,7 +34,7 @@ const atRest = (t) => t === "none" || t === "matrix(1, 0, 0, 1, 0, 0)";
 
 const browser = await chromium.launch({ args: GL });
 try {
-  // ---------------------------------------------------------------- the shop: strip, reveals, cursor, wipe, turntable, flight
+  // ---------------------------------------------------------------- the shop: strip, reveals, cursor, wipe, plain cards, flight
   if (run("shop")) {
     const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
     const page = await ctx.newPage();
@@ -70,20 +70,13 @@ try {
     await until(() => page.locator('.cursor[data-kind="view"]').count(), 3000, "the VIEW ring");
     assert.equal((await page.locator(".cursor-ring-i").textContent())?.trim(), "VIEW");
 
-    // turntable: hover hands the picture to the live model, leaving hands it back
-    const stage = await page.locator("[data-turntable-stage]").first().boundingBox();
+    // shop cards are plain pictures: hovering one cross-fades photos and never starts the 3D model
+    const stage = await page.locator('a[data-cursor="view"] > div').first().boundingBox();
     await page.mouse.move(stage.x + stage.width / 2, stage.y + stage.height / 2, { steps: 4 });
-    await page.locator('.turntable-box[data-on="true"]').waitFor({ timeout: 120000 });
-    assert.equal(await page.locator('a[data-tt="ready"]').count(), 1, "the hovered card swaps its still for the live view");
-    const box = await page.locator(".turntable-box").boundingBox();
-    assert.ok(Math.abs(box.width - stage.width) < 2 && Math.abs(box.x - stage.x) < 2, "the canvas sits exactly on the card's picture");
-    await sleep(2500);
-    await page.screenshot({ path: `${OUT}/shop-02-turntable.png` });
-    const spin = async () => page.evaluate(() => document.querySelector(".turntable-box canvas").toDataURL("image/png").length);
+    await sleep(1200);
+    assert.equal(await page.locator("canvas").count(), 0, "no 3D canvas on the shop");
+    await page.screenshot({ path: `${OUT}/shop-02-hover.png` });
     await page.mouse.move(40, 500, { steps: 6 });
-    await page.locator('.turntable-box[data-on="false"]').waitFor({ timeout: 5000 });
-    assert.equal(await page.locator('a[data-tt="ready"]').count(), 0, "moving away restores the still");
-    void spin;
 
     // page wipe: a click on an in-app link covers, navigates, lifts
     await page.locator('footer a[href="/policies"]').click();
@@ -196,10 +189,10 @@ try {
     await page.locator('footer a[href="/shop"]').click();
     await page.waitForURL("**/shop", { timeout: 15000 });
     assert.equal(await page.locator(".wipe").count(), 0, "navigation without the wipe");
-    const stage = await page.locator("[data-turntable-stage]").first().boundingBox();
+    const stage = await page.locator('a[data-cursor="view"] > div').first().boundingBox();
     await page.mouse.move(stage.x + stage.width / 2, stage.y + stage.height / 2, { steps: 4 });
     await sleep(800);
-    assert.equal(await page.locator(".turntable-box").count(), 0, "cards keep the plain still");
+    assert.equal(await page.locator("canvas").count(), 0, "cards stay plain pictures");
     await ctx.close();
   }
 

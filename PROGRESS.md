@@ -3,7 +3,7 @@
 Short log, one entry per phase: what's done, what's left, open TODOs.
 
 ## Phase 0 — Setup ✅
-- **Done:** Next.js 16 (Cache Components) + Tailwind 4 scaffold; design tokens, fluid type, film grain, direction-aware buttons; layout shell (nav, footer, cart drawer); model pipeline 43 MB → 1.4 MB (277k tris, silhouette ≥ 99.93%) with headless-WebGL compare/stills renderer; typed `HoodieModel`; Supabase schema + seed (RLS on, validated on a real Postgres engine).
+- **Done:** Next.js 16 (Cache Components) + Tailwind 4 scaffold; design tokens, fluid type, film grain, direction-aware buttons; layout shell (nav, footer, cart drawer); model pipeline (now the IITB-emblem hoodie: 17 MB → 1.1 MB, 158k tris, silhouette ≥ 99.8%; replaced the first flame hoodie on 2026-10-27, which was 43 MB → 1.4 MB) with headless-WebGL compare/stills renderer; typed `HoodieModel`; Supabase schema + seed (RLS on, validated on a real Postgres engine).
 - **Left:** nothing for this phase.
 - **Open TODOs:** none.
 
@@ -53,15 +53,25 @@ Short log, one entry per phase: what's done, what's left, open TODOs.
   - **Red page wipe** (Framer Motion `AnimatePresence`) that names the page being opened. Only plain in-app link clicks play it (not back/forward, forms, new-tab clicks or the admin), and a failsafe never leaves anyone under it.
   - **Headline reveals**: words slide up out of masks, line after line (on load for page titles, on scroll for the rest; the hero waits for the preloader). **Lenis** smooth scroll site-wide.
   - **Add to cart**: the picture lifts off, arcs into the cart button and the badge bumps when it lands (the count only includes it then), plus a haptic tick.
-  - **Shop cards**: hovering one cross-fades its still into a slow turn of the live 3D model in that colourway. One shared canvas follows the hovered card and loads on first hover; touch and reduced motion keep the plain still.
+  - **Shop cards**: built with a hover turntable (a shared live-3D canvas); replaced by admin-managed photos, see *Shop photos* below.
   - **Share previews and meta**: OG image (the real hero) and per-product images, app icons, web manifest, `robots.txt`, sitemap, Product JSON-LD; private pages are noindex.
   - **Performance and stability**: the product page loads its 3D viewer when you reach for the picture (or after 4 s on a capable machine) instead of at page load; the home 3D code waits for the poster image; logged-out visitors are redirected in `proxy.ts` before any page renders; fallback fonts are metric-matched to Unbounded, Manrope and JetBrains Mono so the swap moves nothing; streamed pages reserve their height.
-  - **Reduced motion**: no preloader, cursor, wipe, turntable, Lenis, marquee scroll or reveals; static poster.
+  - **Reduced motion**: no preloader, cursor, wipe, Lenis, marquee scroll or reveals; static poster.
   - **Tests**: 73 unit tests; `npm run e2e` (Playwright: add to cart → sign up → checkout → pay page → admin verifies → customer sees it verified); `scripts/polish.mjs` walkthrough of everything above, with layout shift measured on every page at phone and desktop size, logged in and out (0.000 on nearly all, 0.009 at worst); axe clean on every page.
   - **Lighthouse, mobile** (simulated slow 4G + 4× CPU, one run each, Chrome with a GPU on this laptop): Home 85, Shop 90, Product 90, Cart 91, Checkout 90, Login 89, Policies 92; Accessibility 100 on all. SEO reads 63 on cart, checkout, orders and login only because they are deliberately `noindex`.
   - Found and fixed on the way: the preloader's own timer was cancelled by its cleanup (it would have stayed on the page, invisible and blocking clicks); R3F's canvas wrapper took the pointer from the card beneath it; layout shifts from web-font swaps, a login redirect that painted a skeleton first, and unsized skeletons.
 - **Left:** deploy and connect the domain (Phase 5), which needs your accounts.
-- **Open TODOs:** frame rate and Lighthouse were measured on a laptop with software WebGL or a GPU, not on a ₹12k Android, so re-run PageSpeed Insights on the live URL and try it on a real phone. The font fallbacks are matched to Arial/Helvetica, so a first-ever visit on Android may still move text by a pixel or two. The shop turntable downloads the model (1.4 MB) on the first hover.
+- **Open TODOs:** frame rate and Lighthouse were measured on a laptop with software WebGL or a GPU, not on a ₹12k Android, so re-run PageSpeed Insights on the live URL and try it on a real phone. The font fallbacks are matched to Arial/Helvetica, so a first-ever visit on Android may still move text by a pixel or two.
+
+## Shop photos (spec change after Phase 4) ✅
+- **Done:**
+  - The shop grid no longer loads the 3D model: cards are plain photos. The shared turntable canvas, its hover wiring and CSS are gone (home and the product page still use the model). `/shop` renders no canvas.
+  - Admin → Products → (open one) → **Photos**: add several at once, remove with two taps, up to 8 per product. The first photo is the cover and the second cross-fades in on hover. A product with no photos still shows its studio still (or the tinted glyph), so nothing goes blank.
+  - Uploads are shrunk in the browser first (a 4.6 MB phone photo became a 401 KB WebP), then the server decodes and re-encodes everything (JPG, PNG and WebP only; SVG, GIF and anything else refused), turns it upright and drops EXIF/GPS. Stored in a new `product_photos` table (migration `0003`, RLS on, no policies, cascade-deleted with the product) and served by `/photos/<id>` with immutable caching. No storage bucket to set up. Both the demo store and Supabase implement it behind the same `Db` interface.
+  - Server Action body limit raised to 4 MB (Vercel's cap is 4.5 MB); `sharp` moved to `dependencies`; `/photos` excluded from `proxy.ts`.
+  - 79 unit tests (+6: image processing, photo lifecycle, serving route, SQL privacy and cascade); `npm run e2e` now has 4 tests (admin uploads, card shows it with no canvas, bad file refused, remove restores the studio picture); `polish.mjs` shop and layout-shift sections pass (shop CLS 0.000).
+- **Left:** run migration `0003` in Supabase (the README lists it) before the first deploy, or the shop will error when it reads photos.
+- **Open TODOs:** the Supabase photo queries are type-checked and the SQL is tested on PGlite, but have never run against a live project (the smoke test now checks the table). No reordering or "make cover" button: to change the cover, remove the photos and re-add them in the order you want.
 
 ## Phase 5 — Ship ⏳ (everything that can be done without your accounts is done)
 - **Done:**

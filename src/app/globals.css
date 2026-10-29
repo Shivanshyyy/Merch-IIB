@@ -763,33 +763,3 @@ html.booted .preloader,
 .preloader[data-done="true"] .preloader-count {
   color: var(--accent);
 }
-
-/* Shop turntable: one shared canvas floats over the hovered card's picture. */
-.turntable-box {
-  position: fixed;
-  left: 0;
-  top: 0;
-  z-index: 5;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.45s var(--ease);
-}
-.turntable-box[data-on="true"] {
-  opacity: 1;
-}
-/* The canvas wrapper asks for pointer events by default; it must never take the hover from the card beneath it. */
-.turntable-box,
-.turntable-box * {
-  pointer-events: none !important;
-}
-/* While the live view is available, hovering keeps the front still until it is ready, then hands over to it. */
-html.turntable .tt-card:hover .tt-front {
-  opacity: 1 !important;
-  transform: none !important;
-}
-html.turntable .tt-card:hover .tt-back {
-  opacity: 0 !important;
-}
-html.turntable .tt-card[data-tt="ready"] .tt-front {
-  opacity: 0 !important;
-}

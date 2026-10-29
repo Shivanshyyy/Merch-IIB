@@ -18,6 +18,7 @@ const product = (over: Partial<Product> = {}): Product => ({
   personalizable: true,
   active: true,
   sort: 1,
+  photos: [],
   ...over,
 });
 

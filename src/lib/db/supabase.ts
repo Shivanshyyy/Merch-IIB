@@ -1,5 +1,5 @@
 import "server-only";
-import type { Batch, Order, OrderEvent, Product, Profile } from "@/lib/types";
+import type { Batch, Order, OrderEvent, PhotoBlob, Product, Profile } from "@/lib/types";
 import { CodeTakenError, EmailTakenError, NotFoundError, SlugTakenError, type Db } from "./types";
 import type { ServiceClient } from "./supabase-client";
 
@@ -11,17 +11,34 @@ export function createSupabaseDb(sb: ServiceClient): Db {
     throw new Error(`supabase ${what}: ${error.message}`);
   };
 
+  // The photo ids of each product, oldest first. One extra query for the whole list; the image bytes are never selected here.
+  const withPhotos = async (rows: Omit<Product, "photos">[]): Promise<Product[]> => {
+    if (rows.length === 0) return [];
+    const { data, error } = await sb.from("product_photos").select("id,product_id").in("product_id", rows.map((r) => r.id)).order("created_at").order("id");
+    if (error) fail("product photos", error);
+    const byProduct = new Map<string, string[]>();
+    for (const r of data ?? []) byProduct.set(r.product_id, [...(byProduct.get(r.product_id) ?? []), r.id]);
+    return rows.map((r) => ({ ...r, photos: byProduct.get(r.id) ?? [] }));
+  };
+  const withPhotosOne = async (row: Omit<Product, "photos"> | null): Promise<Product | null> => (row ? (await withPhotos([row]))[0] : null);
+
   return {
     async listActiveProducts() {
       const { data, error } = await sb.from("products").select("*").eq("active", true).order("sort");
       if (error) fail("listActiveProducts", error);
-      return (data ?? []) as Product[];
+      return withPhotos(data ?? []);
     },
 
     async getProductBySlug(slug) {
       const { data, error } = await sb.from("products").select("*").eq("slug", slug).eq("active", true).maybeSingle();
       if (error) fail("getProductBySlug", error);
-      return (data as Product | null) ?? null;
+      return withPhotosOne(data);
+    },
+
+    async getPhoto(id) {
+      const { data, error } = await sb.from("product_photos").select("mime,data").eq("id", id).maybeSingle();
+      if (error) fail("getPhoto", error);
+      return data ? { mime: data.mime, bytes: Buffer.from(data.data, "base64") } : null;
     },
 
     async getOpenBatch() {
@@ -109,13 +126,13 @@ export function createSupabaseDb(sb: ServiceClient): Db {
     async listAllProducts() {
       const { data, error } = await sb.from("products").select("*").order("sort").order("created_at");
       if (error) fail("listAllProducts", error);
-      return (data ?? []) as Product[];
+      return withPhotos(data ?? []);
     },
 
     async getProductById(id) {
       const { data, error } = await sb.from("products").select("*").eq("id", id).maybeSingle();
       if (error) fail("getProductById", error);
-      return (data as Product | null) ?? null;
+      return withPhotosOne(data);
     },
 
     async createProduct(input) {
@@ -124,7 +141,7 @@ export function createSupabaseDb(sb: ServiceClient): Db {
         if (error.code === "23505") throw new SlugTakenError();
         fail("createProduct", error);
       }
-      return data as Product;
+      return { ...(data as Omit<Product, "photos">), photos: [] };
     },
 
     async updateProduct(id, input) {
@@ -134,12 +151,26 @@ export function createSupabaseDb(sb: ServiceClient): Db {
         fail("updateProduct", error);
       }
       if (!data) throw new NotFoundError("product");
-      return data as Product;
+      return (await withPhotosOne(data))!;
     },
 
     async deleteProduct(id) {
-      const { error } = await sb.from("products").delete().eq("id", id);
+      const { error } = await sb.from("products").delete().eq("id", id); // its photos go with it (on delete cascade)
       if (error) fail("deleteProduct", error);
+    },
+
+    async addProductPhoto(productId, photo: PhotoBlob) {
+      const { data, error } = await sb.from("product_photos").insert({ product_id: productId, mime: photo.mime, data: photo.bytes.toString("base64") }).select("id").single();
+      if (error) {
+        if (error.code === "23503") throw new NotFoundError("product");
+        fail("addProductPhoto", error);
+      }
+      return (data as { id: string }).id;
+    },
+
+    async removeProductPhoto(productId, photoId) {
+      const { error } = await sb.from("product_photos").delete().eq("id", photoId).eq("product_id", productId);
+      if (error) fail("removeProductPhoto", error);
     },
 
     async listBatches() {
