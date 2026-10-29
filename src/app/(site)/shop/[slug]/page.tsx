@@ -11,7 +11,8 @@ type Props = { params: Promise<{ slug: string }> };
 
 export async function generateStaticParams() {
   const products = await getProducts();
-  return products.map((p) => ({ slug: p.slug }));
+  // Cache Components needs at least one param; an empty catalogue gets a placeholder that 404s.
+  return products.length ? products.map((p) => ({ slug: p.slug })) : [{ slug: "__none__" }];
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
