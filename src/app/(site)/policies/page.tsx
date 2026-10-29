@@ -27,6 +27,7 @@ function Section({ id, n, title, children }: { id: string; n: string; title: str
 
 export default async function PoliciesPage() {
   const s = await getSettings();
+  const sections = site.modelCredit ? SECTIONS : SECTIONS.filter((x) => x.id !== "credits");
   return (
     <div className="page">
       <div className="shell">
@@ -38,7 +39,7 @@ export default async function PoliciesPage() {
         <div className="mt-14 grid grid-cols-1 gap-12 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-20">
           <nav aria-label="On this page" className="hidden lg:block">
             <ul className="sticky top-[calc(var(--nav-h)+24px)] grid gap-1">
-              {SECTIONS.map((s, i) => (
+              {sections.map((s, i) => (
                 <li key={s.id}>
                   <a href={`#${s.id}`} className="label flex min-h-11 items-center gap-3 hover:text-fg">
                     <span className="mono">{String(i + 1).padStart(2, "0")}</span>
@@ -100,15 +101,17 @@ export default async function PoliciesPage() {
               <p>To have your data removed after your order is complete, message {s.contactName}.</p>
             </Section>
 
-            <Section id="credits" n="05" title="Credits">
-              <p>
-                The 3D hoodie model, &ldquo;{site.modelCredit.title}&rdquo;, is by{" "}
-                <a href={site.modelCredit.url} className="underline underline-offset-4 hover:text-accent-2" target="_blank" rel="noopener noreferrer">
-                  {site.modelCredit.author}
-                </a>{" "}
-                on Sketchfab, licensed under {site.modelCredit.license}. It has been optimised for the web and recoloured.
-              </p>
-            </Section>
+            {site.modelCredit && (
+              <Section id="credits" n="05" title="Credits">
+                <p>
+                  The 3D hoodie model, &ldquo;{site.modelCredit.title}&rdquo;, is by{" "}
+                  <a href={site.modelCredit.url} className="underline underline-offset-4 hover:text-accent-2" target="_blank" rel="noopener noreferrer">
+                    {site.modelCredit.author}
+                  </a>
+                  , licensed under {site.modelCredit.license}. It has been optimised for the web and recoloured.
+                </p>
+              </Section>
+            )}
           </div>
         </div>
       </div>

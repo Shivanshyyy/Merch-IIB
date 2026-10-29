@@ -87,7 +87,7 @@ export function Sections({ colorways, batch }: { colorways: HomeColorway[]; batc
             </Reveal>
             <div className="mt-5 grid gap-3 md:justify-items-end">
               <Copy>Snug ribbed cuffs and hem that keep their shape.</Copy>
-              <Copy>Flame outlines stitched in a contrast thread, doubled up so they stand out.</Copy>
+              <Copy>The emblem and your name come in a contrast colour, so they stand out.</Copy>
             </div>
           </div>
         </div>

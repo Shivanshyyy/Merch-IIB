@@ -14,6 +14,7 @@
   import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
   import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
   import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+  import { tintHoodie } from "/src/lib/hoodie-tint.js";
 
   const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
   const cache = new Map();
@@ -28,28 +29,30 @@
   document.body.appendChild(renderer.domElement);
   const envTexture = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
 
-  const isStitch = (m) => /stitch/i.test(m.name);
-
   window.renderShot = async (o) => {
-    const { url, size = 900, az = 0, el = 0.12, fill = 0.8, mode = "shaded", body, stitch, focus, bg } = o;
+    const { url, size = 900, az = 0, el = 0.12, fill = 0.8, mode = "shaded", body, stitch, bg } = o;
     const gltf = await load(url);
     const root = gltf.scene.clone(true);
     root.traverse((n) => {
       if (!n.isMesh) return;
-      n.userData.matName = n.material.name;
-      n.material = n.material.clone();
       if (mode === "silhouette") {
         n.material = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
         return;
       }
-      if (isStitch(n.material)) {
-        if (stitch) n.material.color.set(stitch);
-      } else if (body) {
-        n.material.map = null;
-        n.material.color.set(body);
+      n.material = n.material.clone();
+      if (body) {
+        const u = tintHoodie(n.material);
+        u.uBody.value.set(body);
+        u.uEmblem.value.set(stitch ?? "#ffffff");
+        u.uGlow.value = 0.45;
       }
-      n.material.needsUpdate = true;
     });
+
+    // `height` rescales the model to that height, so the raw and the optimised file can be compared through one camera.
+    if (o.height) {
+      root.updateMatrixWorld(true);
+      root.scale.setScalar(o.height / new THREE.Box3().setFromObject(root).getSize(new THREE.Vector3()).y);
+    }
 
     const scene = new THREE.Scene();
     scene.add(root);
@@ -80,18 +83,6 @@
     }
     let center = new THREE.Vector3(...frame.center);
     let radius = frame.radius;
-    if (focus) {
-      const box = new THREE.Box3();
-      root.traverse((n) => {
-        if (n.isMesh && new RegExp(focus, "i").test(n.userData.matName)) box.expandByObject(n);
-      });
-      if (!box.isEmpty()) {
-        const s = box.getBoundingSphere(new THREE.Sphere());
-        center = s.center;
-        radius = s.radius;
-      }
-    }
-
     if (o.offset) center = center.clone().add(new THREE.Vector3(...o.offset));
     if (o.r) radius = o.r;
 

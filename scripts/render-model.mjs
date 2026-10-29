@@ -51,15 +51,18 @@ async function compare(outDir) {
   const ORIG = "assets-raw/hoodie.glb";
   const OPT = flag("opt", "public/models/hoodie.glb");
   const SIZE = 560;
+  const HEIGHT = 0.64; // both files are scaled to this, as the optimiser does, so one camera frames them identically
   const views = [
     { name: "front", az: 0, el: 0.1 },
     { name: "three-quarter", az: 0.8, el: 0.2 },
     { name: "side", az: 1.5708, el: 0.05 },
     { name: "back", az: 3.1416, el: 0.1 },
-    { name: "cuff close-up", az: 0.4, el: 0.1, focus: "^Rib_2X2", fill: 0.9 },
-    { name: "hood close-up", az: 0.5, el: 0.25, focus: "^Sweat_hood", fill: 0.9 },
-    { name: "front flame close-up", az: 0, el: 0.05, offset: [-0.045, 0.025, 0], r: 0.08, fill: 0.9 },
-    { name: "back flame close-up", az: 3.1416, el: 0.05, offset: [0, 0.03, 0], r: 0.12, fill: 0.9 },
+    // Close-ups: offsets are from the hoodie's centre, in the 0.64-tall frame both files are scaled to.
+    { name: "cuff close-up", az: 0.4, el: 0.1, offset: [-0.23, -0.25, 0.05], r: 0.1, fill: 0.9 },
+    { name: "drawstring close-up", az: 0.3, el: 0.2, offset: [0, 0.2, 0.12], r: 0.12, fill: 0.9 },
+    { name: "emblem close-up", az: 0, el: 0.05, offset: [0.095, 0.057, 0.16], r: 0.09, fill: 0.9 },
+    { name: "pocket close-up", az: 0.2, el: 0.1, offset: [0, -0.15, 0.17], r: 0.2, fill: 0.9 },
+    { name: "back close-up", az: 3.1416, el: 0.05, offset: [0, 0.03, -0.14], r: 0.2, fill: 0.9 },
   ];
   const only = new RegExp(flag("only", "."), "i");
   const look = { body: "#8a8a8c", stitch: "#c8200e" };
@@ -67,7 +70,7 @@ async function compare(outDir) {
 
   await withRenderer(async (shot) => {
     for (const v of views.filter((x) => only.test(x.name))) {
-      const base = { size: SIZE, az: v.az, el: v.el, focus: v.focus, fill: v.fill, offset: v.offset, r: v.r };
+      const base = { size: SIZE, az: v.az, el: v.el, fill: v.fill, offset: v.offset, r: v.r, height: HEIGHT };
       const frame = (await shot({ ...base, model: ORIG, mode: "silhouette" })).frame;
       const [sA, sB, shA, shB] = await Promise.all([
         shot({ ...base, model: ORIG, mode: "silhouette", frame }),

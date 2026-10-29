@@ -1,10 +1,10 @@
 "use client";
 
-// Based on the gltfjsx output for public/models/hoodie.glb (nodes + materials), extended with:
-//  - colourways that cross-fade in ~600 ms (the base map is dropped: it is near-black and would multiply every colour to black)
+// Typed after public/models/hoodie.glb (one mesh, one material), extended with:
+//  - colourways that cross-fade in ~600 ms: the cloth takes the body colour, the emblem the stitch colour (see lib/hoodie-tint.js)
 //  - a name decal projected onto the back, rendered from a CanvasTexture
 //  - anchor points on the surface, found by ray casting, for callouts and camera shots
-// Model: "Classic Black Flame Hoodie" by kril, CC BY 4.0 (credit lives in site.modelCredit).
+// The model's credit, if it needs one, lives in site.modelCredit.
 import { useFrame, type ThreeElements } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -12,16 +12,12 @@ import * as THREE from "three";
 import { DecalGeometry } from "three/examples/jsm/geometries/DecalGeometry.js";
 import type { GLTF } from "three-stdlib";
 
+import { tintHoodie } from "@/lib/hoodie-tint";
 import { HOODIE_URL } from "@/lib/model";
 
 type GLTFResult = GLTF & {
-  nodes: { cuffs: THREE.Mesh; body: THREE.Mesh; hood: THREE.Mesh; stitches: THREE.Mesh };
-  materials: {
-    Rib_2X2_468gsm_hoodie_end: THREE.MeshStandardMaterial;
-    Sweat_Rib_1X1_319gsm_hoodie: THREE.MeshStandardMaterial;
-    Sweat_hood_Rib_1X1_319gsm_hood: THREE.MeshStandardMaterial;
-    stitches: THREE.MeshStandardMaterial;
-  };
+  nodes: { hoodie: THREE.Mesh };
+  materials: { fabric: THREE.MeshStandardMaterial };
 };
 
 // Points on the garment in the hoodie group's own coordinates.
@@ -31,7 +27,7 @@ type Props = {
   body: string;
   stitch: string;
   name?: string;
-  /** Emissive strength of the stitches (Bloom picks this up). */
+  /** Emissive strength of the emblem (Bloom picks this up). */
   glow?: number;
   onReady?: (anchors: HoodieAnchors) => void;
 } & Omit<ThreeElements["group"], "ref">;
@@ -71,11 +67,14 @@ const ray = new THREE.Raycaster();
 export function Hoodie({ body, stitch, name = "", glow = 0.55, onReady, ...group }: Props) {
   const { nodes, materials } = useGLTF(HOODIE_URL) as unknown as GLTFResult;
   const root = useRef<THREE.Group>(null);
-  const bodyMesh = useRef<THREE.Mesh>(null);
+  const garment = useRef<THREE.Mesh>(null);
   const [decalGeometry, setDecalGeometry] = useState<THREE.BufferGeometry | null>(null);
 
   // ---- colourway cross-fade
-  const fabric = useMemo(() => [materials.Rib_2X2_468gsm_hoodie_end, materials.Sweat_Rib_1X1_319gsm_hoodie, materials.Sweat_hood_Rib_1X1_319gsm_hood], [materials]);
+  // Own copy of the material: the GLTF cache is shared, and every canvas needs its own colour uniforms.
+  const fabric = useMemo(() => materials.fabric.clone(), [materials]);
+  const tint = useMemo(() => tintHoodie(fabric), [fabric]);
+  useEffect(() => () => fabric.dispose(), [fabric]);
   const fade = useRef({ from: { body: new THREE.Color(body), stitch: new THREE.Color(stitch) }, to: { body: new THREE.Color(body), stitch: new THREE.Color(stitch) }, now: { body: new THREE.Color(body), stitch: new THREE.Color(stitch) }, t: 1 });
 
   // ---- name decal
@@ -99,15 +98,13 @@ export function Hoodie({ body, stitch, name = "", glow = 0.55, onReady, ...group
 
   const apply = () => {
     const f = fade.current;
-    for (const m of fabric) m.color.copy(f.now.body);
-    materials.stitches.color.copy(f.now.stitch);
-    materials.stitches.emissive.copy(f.now.stitch);
-    materials.stitches.emissiveIntensity = glow;
+    tint.uBody.value.copy(f.now.body);
+    tint.uEmblem.value.copy(f.now.stitch);
+    tint.uGlow.value = glow;
     decalMaterial.color.copy(f.now.stitch);
   };
 
   useLayoutEffect(() => {
-    for (const m of fabric) m.map = null; // keep the normal + roughness maps for the knit
     const f = fade.current;
     f.now.body.set(body);
     f.now.stitch.set(stitch);
@@ -143,7 +140,7 @@ export function Hoodie({ body, stitch, name = "", glow = 0.55, onReady, ...group
   // ---- surface anchors + the decal geometry, once the meshes are in the scene
   useLayoutEffect(() => {
     const r = root.current;
-    const b = bodyMesh.current;
+    const b = garment.current;
     if (!r || !b) return;
     r.updateMatrixWorld(true);
     const inv = new THREE.Matrix4().copy(r.matrixWorld).invert();
@@ -158,43 +155,25 @@ export function Hoodie({ body, stitch, name = "", glow = 0.55, onReady, ...group
       const n = h.face.normal.clone().transformDirection(mesh.matrixWorld).transformDirection(inv).normalize();
       return { point: h.point.clone().applyMatrix4(inv), normal: n };
     };
-    // `Center` moves the container, not the geometry, so the garment sits wherever the raw model puts it.
-    // Anchors below are written relative to the garment's own centre, and shifted to wherever that really is.
+    // The optimiser centres the geometry on the origin and `Center` only moves the container, so this is ~0; anchors below
+    // are written relative to the garment's own centre and shifted by whatever it measures.
     const centre = new THREE.Box3().setFromObject(r).applyMatrix4(inv).getCenter(new THREE.Vector3());
     const v = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z).add(centre);
     const dirV = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
     const at = (mesh: THREE.Mesh, from: THREE.Vector3, dir: THREE.Vector3, fallback: THREE.Vector3) => hit(mesh, from, dir)?.point ?? fallback;
 
-    // The stitch vertex nearest a target (the threads are too thin to ray cast reliably).
-    const nearestStitch = (target: THREE.Vector3) => {
-      const pos = nodes.stitches.geometry.attributes.position;
-      const m = nodes.stitches.matrixWorld;
-      const p = new THREE.Vector3();
-      let best = Infinity;
-      const out = target.clone();
-      for (let i = 0; i < pos.count; i += 4) {
-        p.fromBufferAttribute(pos, i).applyMatrix4(m).applyMatrix4(inv);
-        const d = p.distanceToSquared(target);
-        if (d < best) {
-          best = d;
-          out.copy(p);
-        }
-      }
-      return out;
-    };
-
     const anchors: HoodieAnchors = {
-      chest: at(b, v(-0.12, 0.08, 1), dirV(0, 0, -1), v(-0.12, 0.08, 0.15)),
-      hem: at(b, v(0.14, -0.2, 1), dirV(0, 0, -1), v(0.14, -0.2, 0.14)),
-      cuff: at(nodes.cuffs, v(-1, -0.26, 0.06), dirV(1, 0, 0), v(-0.28, -0.26, 0.06)),
-      stitch: nearestStitch(v(0.1, 0.1, 0.14)),
-      hood: at(nodes.hood, v(0, 1, -0.06), dirV(0, -1, 0), v(0, 0.3, -0.06)),
-      backName: v(0, 0.03, -0.16),
+      chest: at(b, v(-0.11, 0.07, 1), dirV(0, 0, -1), v(-0.11, 0.07, 0.17)),
+      hem: at(b, v(0.14, -0.2, 1), dirV(0, 0, -1), v(0.14, -0.2, 0.17)),
+      cuff: at(b, v(-1, -0.25, 0.05), dirV(1, 0, 0), v(-0.27, -0.25, 0.05)),
+      stitch: at(b, v(-0.12, -0.265, 1), dirV(0, 0, -1), v(-0.12, -0.265, 0.17)),
+      hood: at(b, v(0, 1, -0.05), dirV(0, -1, 0), v(0, 0.3, -0.05)),
+      backName: v(0, 0.06, -0.16),
     };
 
     // Project a name-sized rectangle onto the back so it follows the cloth's curve. Kept narrower than the back panel:
     // past the side seams the sleeve shells sit in front and would slice the letters.
-    const back = hit(b, v(0, 0.03, -1), dirV(0, 0, 1));
+    const back = hit(b, v(0, 0.06, -1), dirV(0, 0, 1));
     if (back) {
       anchors.backName.copy(back.point);
       const world = back.point.clone().applyMatrix4(r.matrixWorld);
@@ -222,10 +201,8 @@ export function Hoodie({ body, stitch, name = "", glow = 0.55, onReady, ...group
 
   return (
     <group ref={root} {...group} dispose={null}>
-      <mesh name="cuffs" geometry={nodes.cuffs.geometry} material={materials.Rib_2X2_468gsm_hoodie_end} position={[-0.001, 0.872, -0.049]} scale={0.296} />
-      <mesh ref={bodyMesh} name="body" geometry={nodes.body.geometry} material={materials.Sweat_Rib_1X1_319gsm_hoodie} position={[0.001, 1.147, -0.071]} scale={0.305} />
-      <mesh name="hood" geometry={nodes.hood.geometry} material={materials.Sweat_hood_Rib_1X1_319gsm_hood} position={[-0.004, 1.371, -0.098]} scale={0.116} />
-      <mesh name="stitches" geometry={nodes.stitches.geometry} material={materials.stitches} position={[0.005, 1.176, -0.05]} scale={0.225} />
+      {/* The node's own transform undoes the geometry quantisation. */}
+      <mesh ref={garment} name="hoodie" geometry={nodes.hoodie.geometry} material={fabric} position={nodes.hoodie.position} scale={nodes.hoodie.scale} />
       {decalGeometry && <mesh geometry={decalGeometry} material={decalMaterial} visible={name.length > 0} renderOrder={2} />}
     </group>
   );

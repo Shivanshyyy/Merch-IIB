@@ -24,7 +24,7 @@ export async function generateMetadata(): Promise<Metadata> {
     title: { default: title, template: `%s — ${s.brand}` },
     description,
     applicationName: s.brand,
-    openGraph: { type: "website", siteName: s.brand, title, description, images: [{ url: "/og.jpg", width: 1200, height: 630, alt: "A black hoodie with red flame stitching and the words Wear the campus" }] },
+    openGraph: { type: "website", siteName: s.brand, title, description, images: [{ url: "/og.jpg", width: 1200, height: 630, alt: "A black hoodie with a red emblem on the chest and the words Wear the campus" }] },
     twitter: { card: "summary_large_image", title, description, images: ["/og.jpg"] },
   };
 }

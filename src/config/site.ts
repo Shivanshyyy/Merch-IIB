@@ -30,12 +30,9 @@ export const defaultSettings: Settings = defaults;
 export const site = {
   orderCodePrefix: "HD",
   maxQtyPerLine: 10,
-  modelCredit: {
-    title: "Classic Black Flame Hoodie",
-    author: "kril",
-    url: "https://sketchfab.com/3d-models/classic-black-flame-hoodie-0fd0effa321e456cb2a7467e2899b658",
-    license: "CC BY 4.0",
-  },
+  // TODO: the current hoodie model has no recorded author or licence. If its licence asks for a credit, fill this in;
+  // the footer and policies page show it only once it is set.
+  modelCredit: null as { title: string; author: string; url: string; license: string } | null,
 } as const;
 
 export const whatsappUrl = (number: string, text: string) => `https://wa.me/${number}?text=${encodeURIComponent(text)}`;

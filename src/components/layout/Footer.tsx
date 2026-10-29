@@ -39,13 +39,15 @@ export function Footer({ settings: s }: { settings: Settings }) {
             <br />
             {s.pickupHours}
           </p>
-          <p className="label normal-case leading-relaxed tracking-normal">
-            3D model &ldquo;{site.modelCredit.title}&rdquo; by{" "}
-            <a href={site.modelCredit.url} className="underline underline-offset-4 hover:text-fg" rel="noopener noreferrer" target="_blank">
-              {site.modelCredit.author}
-            </a>
-            , licensed {site.modelCredit.license}.
-          </p>
+          {site.modelCredit && (
+            <p className="label normal-case leading-relaxed tracking-normal">
+              3D model &ldquo;{site.modelCredit.title}&rdquo; by{" "}
+              <a href={site.modelCredit.url} className="underline underline-offset-4 hover:text-fg" rel="noopener noreferrer" target="_blank">
+                {site.modelCredit.author}
+              </a>
+              , licensed {site.modelCredit.license}.
+            </p>
+          )}
         </div>
       </div>
 

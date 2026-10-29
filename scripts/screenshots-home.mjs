@@ -23,14 +23,13 @@ const debugState = (page) =>
   page.evaluate(() => {
     const h = window.__homeScene;
     if (!h) return null;
-    const stitches = h.scene.getObjectByName("stitches");
-    const body = h.scene.getObjectByName("body");
+    const tint = h.scene.getObjectByName("hoodie")?.material.userData.tint;
     return {
       cam: h.camera.position.toArray().map((v) => +v.toFixed(3)),
       pose: { ...h.pose },
       stage: { ...h.stage },
-      stitch: stitches?.material.color.getHexString(),
-      bodyColor: body?.material.color.getHexString(),
+      stitch: tint?.uEmblem.value.getHexString(),
+      bodyColor: tint?.uBody.value.getHexString(),
       shot: h.store.getState().shot,
       mode: h.store.getState().mode,
     };
@@ -72,7 +71,7 @@ const wrapDiff = (a, b) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
 const hoodieFill = (page) =>
   page.evaluate(() => {
     const h = window.__homeScene;
-    const root = h.scene.getObjectByName("body").parent;
+    const root = h.scene.getObjectByName("hoodie").parent;
     root.updateMatrixWorld(true);
     const V = root.position.constructor;
     let minY = Infinity, maxY = -Infinity, minX = Infinity, maxX = -Infinity;
@@ -171,7 +170,7 @@ try {
     await shot("05-back-name");
     const decal = await page.evaluate(() => {
       const h = window.__homeScene;
-      const hood = h.scene.getObjectByName("body").parent;
+      const hood = h.scene.getObjectByName("hoodie").parent;
       const d = hood.children.find((c) => c.isMesh && c.name === "" && c.renderOrder === 2);
       return d ? { visible: d.visible, verts: d.geometry.attributes.position.count } : null;
     });
@@ -184,9 +183,9 @@ try {
     // Record the body colour on every animation frame, so the fade is measured rather than sampled at a guessed moment.
     await page.evaluate(() => {
       window.__samples = [];
-      const body = window.__homeScene.scene.getObjectByName("body");
+      const tint = window.__homeScene.scene.getObjectByName("hoodie").material.userData.tint;
       const loop = () => {
-        window.__samples.push(body.material.color.getHexString());
+        window.__samples.push(tint.uBody.value.getHexString());
         if (!window.__stopSamples) requestAnimationFrame(loop);
       };
       window.__stopSamples = false;
@@ -269,10 +268,10 @@ try {
     const read = () =>
       page.evaluate(() => {
         const h = window.__productScene;
-        const body = h.scene.getObjectByName("body");
+        const body = h.scene.getObjectByName("hoodie");
         const root = body.parent;
         const decal = root.children.find((c) => c.isMesh && c.renderOrder === 2);
-        return { body: body.material.color.getHexString(), az: Math.atan2(h.camera.position.x, h.camera.position.z), decal: decal ? { visible: decal.visible } : null };
+        return { body: body.material.userData.tint.uBody.value.getHexString(), az: Math.atan2(h.camera.position.x, h.camera.position.z), decal: decal ? { visible: decal.visible } : null };
       });
     const poll = async (pred, ms = 40000) => {
       for (const t0 = Date.now(); Date.now() - t0 < ms; ) {
