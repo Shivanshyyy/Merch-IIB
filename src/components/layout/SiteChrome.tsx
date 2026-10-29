@@ -8,7 +8,6 @@ import { Grain } from "@/components/layout/Grain";
 import { Marquee } from "@/components/layout/Marquee";
 import { Nav } from "@/components/layout/Nav";
 import { PageTransition } from "@/components/layout/PageTransition";
-import { SmoothScroll } from "@/components/layout/SmoothScroll";
 import { SettingsProvider } from "@/components/SettingsProvider";
 import { getOpenBatch } from "@/lib/catalog";
 import { getSettings } from "@/lib/settings";
@@ -18,7 +17,6 @@ export async function SiteChrome({ children }: { children: ReactNode }) {
   const [settings, batch] = await Promise.all([getSettings(), getOpenBatch()]);
   return (
     <SettingsProvider settings={settings}>
-      <SmoothScroll />
       <Nav
         strip={<Marquee batch={batch ? { name: batch.name, closesAt: batch.closes_at } : null} pickup={settings.pickupLocation} />}
         account={

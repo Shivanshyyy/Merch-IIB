@@ -1,6 +1,5 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { bootProgress, counterText } from "@/components/home/boot";
 import { marqueeParts } from "@/components/layout/marquee-text";
 import { lineIndexes, revealDelay, splitWords } from "@/lib/reveal";
 import { wipeDestination, wipeLabel } from "@/lib/transition";
@@ -15,29 +14,6 @@ test("words on the same visual line share a line number, and lines cascade", () 
   assert.deepEqual(lineIndexes([10, 10, 11, 52, 52, 94]), [0, 0, 0, 1, 1, 2]);
   assert.ok(revealDelay(1, 0) > revealDelay(0, 2), "a new line starts after the previous one's last word");
   assert.equal(revealDelay(0, 0), 0);
-});
-
-test("the boot counter only moves forward, never reaches 100 before the first frame, and ends at exactly 100", () => {
-  const base = { modelTotal: 1_000_000, ready: false };
-  let last = -1;
-  for (let i = 0; i <= 20; i++) {
-    const p = bootProgress({ ...base, elapsedMs: i * 300, modelBytes: i * 60_000 });
-    assert.ok(p >= last, `monotonic at step ${i}`);
-    assert.ok(p <= 0.99, "held back until ready");
-    last = p;
-  }
-  assert.equal(bootProgress({ ...base, elapsedMs: 5000, modelBytes: 1_000_000, ready: true }), 1);
-  assert.ok(bootProgress({ ...base, elapsedMs: 5000, modelBytes: 5_000_000 }) <= 0.99, "over-reported bytes are clamped");
-  assert.ok(bootProgress({ elapsedMs: 800, modelBytes: 0, modelTotal: 0, ready: false }) > 0, "moves even when the size is unknown");
-});
-
-test("the counter is always three digits", () => {
-  assert.equal(counterText(0), "000");
-  assert.equal(counterText(0.074), "007");
-  assert.equal(counterText(0.5), "050");
-  assert.equal(counterText(1), "100");
-  assert.equal(counterText(1.7), "100");
-  assert.equal(counterText(-1), "000");
 });
 
 const click = { button: 0, metaKey: false, ctrlKey: false, shiftKey: false, altKey: false, defaultPrevented: false };

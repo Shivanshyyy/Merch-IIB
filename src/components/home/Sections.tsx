@@ -1,6 +1,8 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
+import { ColorwayImage } from "@/components/shop/ColorwayImage";
 import { useSettings } from "@/components/SettingsProvider";
 import { Button } from "@/components/ui/Button";
 import { Reveal } from "@/components/ui/Reveal";
@@ -10,54 +12,74 @@ import { Countdown } from "./Countdown";
 import { useHome, type HomeColorway } from "./store";
 
 export type HomeBatch = { name: string; closesAt: string } | null;
+export type HomePhoto = { src: string; alt: string; slug: string } | null;
 
-// Each section is tall; its content is pinned (sticky) while the camera moves through that stretch of scroll.
-// The wrapper ignores the pointer so you can still drag the 3D hoodie through the gaps; controls opt back in.
-function Panel({ shot, index, height, id, children, align = "end" }: { shot: string; index: number; height: number; id?: string; children: React.ReactNode; align?: "end" | "center" }) {
+// Plain sections in normal page flow: nothing pinned, nothing hijacking the scroll.
+function Panel({ id, children, className = "" }: { id?: string; children: React.ReactNode; className?: string }) {
   return (
-    <section data-section={index} data-shot={shot} aria-labelledby={id} className="relative" style={{ height: `${height}svh` }}>
-      <div className={`sticky top-0 flex h-svh flex-col pt-[var(--nav-h)] ${align === "end" ? "justify-end pb-10 md:pb-16" : "justify-center"}`}>{children}</div>
+    <section aria-labelledby={id} className={`border-b border-line py-16 md:py-24 ${className}`}>
+      {children}
     </section>
+  );
+}
+
+// Studio still of the picked colourway; flips to the back with the name once one is typed.
+function Preview({ printed }: { printed: string }) {
+  const colorway = useHome((s) => s.colorway);
+  if (!colorway) return null;
+  const view = printed ? "back" : "front";
+  return (
+    <div className="relative aspect-square w-full overflow-hidden bg-bg-2 [container-type:inline-size]">
+      <div aria-hidden className="absolute inset-0 bg-[radial-gradient(55%_50%_at_50%_55%,rgba(255,59,31,0.32),transparent_72%)]" />
+      <ColorwayImage slug={colorway.slug} colorway={colorway.name} body={colorway.body} stitch={colorway.stitch} view={view} alt={`${colorway.name} hoodie, ${view} view`} sizes="(min-width: 768px) 45vw, 100vw" className="object-contain p-4" />
+      {printed && (
+        <p aria-hidden className="t-display absolute left-1/2 top-[35.5%] -translate-x-1/2 -translate-y-1/2 whitespace-nowrap" style={{ color: colorway.stitch, fontSize: `min(4.6cqw, calc(30cqw / ${Math.max(printed.length * 0.9, 6)}))`, letterSpacing: "0.06em" }}>
+          {printed}
+        </p>
+      )}
+    </div>
   );
 }
 
 const Label = ({ children }: { children: React.ReactNode }) => <p className="label mb-4 text-fg">{children}</p>;
 const Copy = ({ children }: { children: React.ReactNode }) => <p className="max-w-sm text-[1.02rem] leading-relaxed text-[color-mix(in_srgb,var(--fg)_82%,transparent)]">{children}</p>;
 
-export function Sections({ colorways, batch }: { colorways: HomeColorway[]; batch: HomeBatch }) {
+export function Sections({ colorways, batch, hero }: { colorways: HomeColorway[]; batch: HomeBatch; hero: HomePhoto }) {
   const s = useSettings();
-  const { colorway, setColorway, name, setName, boot } = useHome();
+  const { colorway, setColorway, name, setName } = useHome();
   const printed = normalizeName(name, s);
 
   return (
-    <div data-home-root className="pointer-events-none relative z-10">
+    <div className="relative">
       {/* 01 Hero */}
-      <Panel shot="hero" index={0} height={100} id="hero-h">
-        <div className="shell">
-          <Label>{batch ? `[ ${batch.name} ] — Closes ${fmtDay(batch.closesAt)}` : "[ Preorders closed ]"}</Label>
-          <Reveal as="h1" id="hero-h" when={boot !== "pending"} className="t-display text-[clamp(3.1rem,15vw,15rem)] leading-[0.84]">
-            {"Wear\nthe\ncampus."}
-          </Reveal>
-          <div className="mt-8 flex flex-col gap-8 md:mt-12 md:flex-row md:items-end md:justify-between">
-            <p className="max-w-sm text-[1.05rem] text-muted">
-              Hoodies made for {s.pickupLocation} and everywhere else on campus, with your name on the back.
-            </p>
-            <div className="pointer-events-auto flex items-center gap-5">
+      <section aria-labelledby="hero-h" className="border-b border-line pb-12 pt-[calc(var(--nav-h)+2rem)] md:pb-20">
+        <div className="shell grid items-center gap-10 md:grid-cols-2">
+          <div>
+            <Label>{batch ? `[ ${batch.name} ] — Closes ${fmtDay(batch.closesAt)}` : "[ Preorders closed ]"}</Label>
+            <Reveal as="h1" id="hero-h" trigger="load" className="t-display text-[clamp(3.1rem,15vw,6rem)] md:text-[clamp(3rem,6.8vw,7rem)] leading-[0.84]">
+              {"Wear\nthe\ncampus."}
+            </Reveal>
+            <p className="mt-8 max-w-sm text-[1.05rem] text-muted">Hoodies made for {s.pickupLocation} and everywhere else on campus, with your name on the back.</p>
+            <div className="mt-8">
               <Button href="/shop" size="lg">
                 Preorder now
               </Button>
-              <span className="label hidden items-center gap-2 sm:flex">
-                Scroll <span aria-hidden>↓</span>
-              </span>
             </div>
           </div>
+          <Link href={hero ? `/shop/${hero.slug}` : "/shop"} className="relative block aspect-[4/5] overflow-hidden bg-bg-2 md:aspect-square">
+            {hero ? (
+              <Image src={hero.src} alt={hero.alt} fill priority sizes="(min-width: 768px) 45vw, 100vw" className="object-cover" />
+            ) : colorway ? (
+              <ColorwayImage slug={colorway.slug} colorway={colorway.name} body={colorway.body} stitch={colorway.stitch} alt={`${colorway.name} hoodie`} priority sizes="(min-width: 768px) 45vw, 100vw" className="object-contain p-4" />
+            ) : null}
+          </Link>
         </div>
-      </Panel>
+      </section>
 
       {/* 02 The fabric */}
-      <Panel shot="fabric" index={1} height={130} id="fabric-h">
+      <Panel id="fabric-h">
         <div className="shell">
-          <div data-copy className="max-w-sm">
+          <div className="max-w-sm">
             <Label>[ 02 ] — The fabric</Label>
             <Reveal as="h2" id="fabric-h" className="t-display t-h2">
               Made to be worn in
@@ -78,27 +100,21 @@ export function Sections({ colorways, batch }: { colorways: HomeColorway[]; batc
       </Panel>
 
       {/* 03 The details */}
-      <Panel shot="cuff" index={2} height={110} id="cuff-h">
-        <div className="shell md:flex md:justify-end">
-          <div data-copy className="max-w-sm md:text-right">
+      <Panel id="cuff-h">
+        <div className="shell grid gap-12 md:grid-cols-2">
+          <div className="max-w-sm">
             <Label>[ 03 ] — The details</Label>
             <Reveal as="h2" id="cuff-h" className="t-display t-h2">
               Cuffs &amp; stitching
             </Reveal>
-            <div className="mt-5 grid gap-3 md:justify-items-end">
+            <div className="mt-5 grid gap-3">
               <Copy>Snug ribbed cuffs and hem that keep their shape.</Copy>
               <Copy>The emblem and your name come in a contrast colour, so they stand out.</Copy>
             </div>
           </div>
-        </div>
-      </Panel>
-      <Panel shot="hood" index={2} height={110} id="hood-h">
-        <div className="shell">
-          <div data-copy className="max-w-sm">
+          <div className="max-w-sm">
             <Label>[ 03 ] — The hood</Label>
-            <Reveal as="h2" id="hood-h" className="t-display t-h2">
-              Room to spare
-            </Reveal>
+            <h3 className="t-display t-h2">Room to spare</h3>
             <div className="mt-5">
               <Copy>A full hood that sits high on the neck and drapes when it&apos;s down.</Copy>
             </div>
@@ -107,14 +123,14 @@ export function Sections({ colorways, batch }: { colorways: HomeColorway[]; batc
       </Panel>
 
       {/* 04 Make it yours */}
-      <Panel shot="back" index={3} height={130} id="name-h">
-        <div className="shell">
+      <Panel id="name-h">
+        <div className="shell grid items-center gap-10 md:grid-cols-[1fr_1.1fr]">
           <div className="max-w-sm">
             <Label>[ 04 ] — Make it yours</Label>
             <Reveal as="h2" id="name-h" className="t-display t-h2">
               Your name, on the back
             </Reveal>
-            <label className="pointer-events-auto mt-6 block">
+            <label className="mt-6 block">
               <span className="label mb-2 flex justify-between">
                 <span>Try a name</span>
                 <span className="mono" aria-live="polite">
@@ -136,46 +152,38 @@ export function Sections({ colorways, batch }: { colorways: HomeColorway[]; batc
               />
             </label>
             <p className="label mt-3 normal-case tracking-normal">Letters, spaces and . &apos; - only. You&apos;ll set the real one when you order.</p>
+            <p className="label mb-3 mt-8">Pick your colour</p>
+            <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Colourway">
+              {colorways.map((c) => (
+                <button
+                  key={`${c.slug}-${c.name}`}
+                  type="button"
+                  role="radio"
+                  aria-checked={colorway?.name === c.name && colorway.slug === c.slug}
+                  onClick={() => setColorway(c)}
+                  className="chip"
+                >
+                  <span aria-hidden className="size-3.5 rounded-full border border-current/30" style={{ background: c.body, boxShadow: `inset 0 0 0 2px ${c.body}, 0 0 0 1px ${c.stitch}` }} />
+                  {c.name}
+                </button>
+              ))}
+            </div>
+            {colorway && (
+              <p className="mt-4">
+                <Link href={`/shop/${colorway.slug}`} className="label underline underline-offset-4 hover:text-fg">
+                  Shop the {colorway.name} →
+                </Link>
+              </p>
+            )}
           </div>
+          <Preview printed={printed} />
         </div>
       </Panel>
 
-      {/* 05 Colourways */}
-      <Panel shot="colour" index={4} height={130} id="colour-h">
+      {/* 05 How it works */}
+      <Panel id="how-h">
         <div className="shell">
-          <Label>[ 05 ] — Colourways</Label>
-          <Reveal as="h2" id="colour-h" className="t-display t-h2 max-w-md">
-            Pick your colour
-          </Reveal>
-          <div className="pointer-events-auto mt-6 flex flex-wrap gap-2" role="radiogroup" aria-label="Colourway">
-            {colorways.map((c) => (
-              <button
-                key={`${c.slug}-${c.name}`}
-                type="button"
-                role="radio"
-                aria-checked={colorway?.name === c.name && colorway.slug === c.slug}
-                onClick={() => setColorway(c)}
-                className="chip"
-              >
-                <span aria-hidden className="size-3.5 rounded-full border border-current/30" style={{ background: c.body, boxShadow: `inset 0 0 0 2px ${c.body}, 0 0 0 1px ${c.stitch}` }} />
-                {c.name}
-              </button>
-            ))}
-          </div>
-          {colorway && (
-            <p className="pointer-events-auto mt-4">
-              <Link href={`/shop/${colorway.slug}`} className="label underline underline-offset-4 hover:text-fg">
-                Shop the {colorway.name} →
-              </Link>
-            </p>
-          )}
-        </div>
-      </Panel>
-
-      {/* 06 How it works */}
-      <Panel shot="wide" index={5} height={110} id="how-h">
-        <div className="shell">
-          <Label>[ 06 ] — How it works</Label>
+          <Label>[ 05 ] — How it works</Label>
           <Reveal as="h2" id="how-h" className="t-display t-h2 max-w-xl">
             Four steps to yours
           </Reveal>
@@ -201,10 +209,10 @@ export function Sections({ colorways, batch }: { colorways: HomeColorway[]; batc
         </div>
       </Panel>
 
-      {/* 07 CTA */}
-      <Panel shot="hero" index={6} height={100} id="cta-h">
+      {/* 06 CTA */}
+      <Panel id="cta-h">
         <div className="shell">
-          <Label>[ 07 ] — Your turn</Label>
+          <Label>[ 06 ] — Your turn</Label>
           <h2 id="cta-h" className="t-display text-balance text-[clamp(2.2rem,8.5vw,8rem)] leading-[0.9]">
             {batch ? batch.name : "The next batch"}
             <br />
@@ -216,7 +224,7 @@ export function Sections({ colorways, batch }: { colorways: HomeColorway[]; batc
               "opens soon."
             )}
           </h2>
-          <div className="pointer-events-auto mt-8">
+          <div className="mt-8">
             <Button href="/shop" size="lg" className="w-full sm:w-auto sm:min-w-[22rem]">
               {batch ? "Preorder now" : "See the hoodies"}
             </Button>

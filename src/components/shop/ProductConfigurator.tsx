@@ -1,7 +1,6 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { SizeChart } from "@/components/shop/SizeChart";
@@ -13,17 +12,14 @@ import { TextField } from "@/components/ui/TextField";
 import { useToast } from "@/components/ui/Toast";
 import { useSettings } from "@/components/SettingsProvider";
 import { ColorwayImage } from "@/components/shop/ColorwayImage";
+import { PhotoGallery } from "@/components/shop/PhotoGallery";
 import { fmtDate, inr } from "@/lib/format";
 import { buzz } from "@/lib/haptics";
 import { normalizeName } from "@/lib/schemas";
 import type { Product } from "@/lib/types";
 import { useBatchClosed } from "@/lib/useBatchClosed";
-import { prefersReducedMotion, webglAvailable } from "@/lib/webgl";
 import { useCart } from "@/store/cart";
 import { flyToCart } from "@/store/fly";
-
-// three.js and R3F load only when the browser can run them, and only once the page has settled.
-const ProductViewer = dynamic(() => import("@/components/three/ProductViewer"), { ssr: false });
 
 type BatchInfo = { name: string; closesAt: string; estDelivery: string } | null;
 
@@ -44,28 +40,7 @@ export function ProductConfigurator({ product, batch }: { product: Product; batc
   const [view, setView] = useState<"front" | "back">("front");
   const [sizeError, setSizeError] = useState<string>();
   const [added, setAdded] = useState(false);
-  const [use3D, setUse3D] = useState(false);
-  const [viewerReady, setViewerReady] = useState(false);
   const stage = useRef<HTMLDivElement>(null);
-
-  // The studio still is the first paint. The live viewer (three.js and the model, about 1.5 MB) loads as soon as the
-  // shopper reaches for the picture, or after a calm moment on a machine that can afford it. Phones and slow or
-  // data-saving connections wait for the touch, so the page stays quick for everyone else.
-  useEffect(() => {
-    const el = stage.current;
-    if (!el || prefersReducedMotion() || !webglAvailable()) return;
-    const start = () => setUse3D(true);
-    const intent = ["pointerenter", "touchstart", "focusin"] as const;
-    for (const e of intent) el.addEventListener(e, start, { once: true, passive: true });
-
-    const conn = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection; // not in the DOM typings
-    const modest = matchMedia("(pointer: coarse)").matches || innerWidth < 768 || (navigator.hardwareConcurrency ?? 8) <= 4 || conn?.saveData || /^(slow-2g|2g|3g)$/.test(conn?.effectiveType ?? "");
-    const timer = modest ? 0 : window.setTimeout(() => (window.requestIdleCallback ?? window.setTimeout)(start), 4000);
-    return () => {
-      clearTimeout(timer);
-      for (const e of intent) el.removeEventListener(e, start);
-    };
-  }, []);
 
   const editLine = editId ? lines.find((l) => l.id === editId && l.slug === product.slug) : undefined;
   const prefilledFor = useRef<string | null>(null);
@@ -96,11 +71,12 @@ export function ProductConfigurator({ product, batch }: { product: Product; batc
 
   const closed = useBatchClosed(batch?.closesAt) || !batch;
   const colorway = product.colorways[cw];
+  const hasPhotos = product.photos.length > 0;
 
   const onName = (raw: string) => {
     const cleaned = raw.replace(/[^A-Za-z .'-]/g, "").replace(/^ +/, "").replace(/ {2,}/g, " ");
     setName((settings.nameUppercase ? cleaned.toUpperCase() : cleaned).slice(0, settings.nameMaxLength));
-    setView("back");
+    if (!hasPhotos) setView("back");
   };
 
   const submit = () => {
@@ -140,37 +116,37 @@ export function ProductConfigurator({ product, batch }: { product: Product; batc
       {/* Image panel */}
       <div className="lg:sticky lg:top-[calc(var(--nav-h)+1px)] lg:self-start lg:border-r lg:border-line">
         <div ref={stage} className="relative aspect-square max-h-[78svh] w-full overflow-hidden bg-bg-2 [container-type:inline-size] lg:max-h-[calc(100svh-var(--nav-h)-1px)]">
-          <div aria-hidden className="absolute inset-0 bg-[radial-gradient(55%_50%_at_50%_55%,rgba(255,59,31,0.32),transparent_72%)]" />
-          <AnimatePresence initial={false}>
-            <motion.div key={`${colorway.name}-${view}`} className="absolute inset-0" initial={{ opacity: 0, scale: 1.02 }} animate={{ opacity: viewerReady ? 0 : 1, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}>
-              <ColorwayImage slug={product.slug} colorway={colorway.name} body={colorway.body} stitch={colorway.stitch} view={view} alt={`${product.name} in ${colorway.name}, ${view} view`} priority sizes="(min-width: 1024px) 55vw, 100vw" className="object-contain p-4" />
-            </motion.div>
-          </AnimatePresence>
+          {hasPhotos ? (
+            <PhotoGallery photos={product.photos} alt={product.name} />
+          ) : (
+            <>
+              <div aria-hidden className="absolute inset-0 bg-[radial-gradient(55%_50%_at_50%_55%,rgba(255,59,31,0.32),transparent_72%)]" />
+              <AnimatePresence initial={false}>
+                <motion.div key={`${colorway.name}-${view}`} className="absolute inset-0" initial={{ opacity: 0, scale: 1.02 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}>
+                  <ColorwayImage slug={product.slug} colorway={colorway.name} body={colorway.body} stitch={colorway.stitch} view={view} alt={`${product.name} in ${colorway.name}, ${view} view`} priority sizes="(min-width: 1024px) 55vw, 100vw" className="object-contain p-4" />
+                </motion.div>
+              </AnimatePresence>
 
-          {use3D && (
-            <div data-cursor="drag" className={`absolute inset-0 transition-opacity duration-700 ${viewerReady ? "opacity-100" : "opacity-0"}`}>
-              <ProductViewer body={colorway.body} stitch={colorway.stitch} name={printed} view={view} reducedMotion={false} onReady={() => setViewerReady(true)} />
-            </div>
+              {view === "back" && printed && (
+                <p
+                  aria-hidden
+                  className="t-display pointer-events-none absolute left-1/2 top-[35.5%] -translate-x-1/2 -translate-y-1/2 whitespace-nowrap"
+                  style={{ color: colorway.stitch, fontSize: `min(4.6cqw, calc(30cqw / ${Math.max(printed.length * 0.9, 6)}))`, letterSpacing: "0.06em", textShadow: "0 1px 0 rgba(0,0,0,.35)" }}
+                >
+                  {printed}
+                </p>
+              )}
+
+              <div role="group" aria-label="View" className="absolute bottom-3 left-3 flex border border-line bg-bg/80 backdrop-blur-sm">
+                {(["front", "back"] as const).map((v) => (
+                  <button key={v} type="button" aria-pressed={view === v} onClick={() => setView(v)} className="label flex min-h-11 items-center px-4 transition-colors aria-pressed:bg-fg aria-pressed:text-bg">
+                    {v}
+                  </button>
+                ))}
+              </div>
+              {view === "back" && printed && <p className="label absolute bottom-3 right-3 hidden bg-bg/70 px-2 py-1 backdrop-blur-sm sm:block">Preview is illustrative</p>}
+            </>
           )}
-
-          {!viewerReady && view === "back" && printed && (
-            <p
-              aria-hidden
-              className="t-display pointer-events-none absolute left-1/2 top-[35.5%] -translate-x-1/2 -translate-y-1/2 whitespace-nowrap"
-              style={{ color: colorway.stitch, fontSize: `min(4.6cqw, calc(30cqw / ${Math.max(printed.length * 0.9, 6)}))`, letterSpacing: "0.06em", textShadow: "0 1px 0 rgba(0,0,0,.35)" }}
-            >
-              {printed}
-            </p>
-          )}
-
-          <div role="group" aria-label="View" className="absolute bottom-3 left-3 flex border border-line bg-bg/80 backdrop-blur-sm">
-            {(["front", "back"] as const).map((v) => (
-              <button key={v} type="button" aria-pressed={view === v} onClick={() => setView(v)} className="label flex min-h-11 items-center px-4 transition-colors aria-pressed:bg-fg aria-pressed:text-bg">
-                {v}
-              </button>
-            ))}
-          </div>
-          {view === "back" && printed && <p className="label absolute bottom-3 right-3 hidden bg-bg/70 px-2 py-1 backdrop-blur-sm sm:block">{viewerReady ? "Drag to turn · preview is illustrative" : "Preview is illustrative"}</p>}
         </div>
       </div>
 
@@ -220,7 +196,7 @@ export function ProductConfigurator({ product, batch }: { product: Product; batc
             }
             value={name}
             onChange={(e) => onName(e.target.value)}
-            onFocus={() => setView("back")}
+            onFocus={() => !hasPhotos && setView("back")}
             maxLength={settings.nameMaxLength}
             placeholder="YOUR NAME"
             autoComplete="off"
