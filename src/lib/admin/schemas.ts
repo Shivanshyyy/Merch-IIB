@@ -15,6 +15,7 @@ export const productSchema = z.object({
   description: z.string().trim().max(400, "At most 400 characters"),
   price_inr: z.number({ error: "Enter a price" }).int("Whole rupees only").min(0, "Can't be negative").max(100000, "Too high"),
   compare_at_inr: z.number().int("Whole rupees only").min(1, "Must be above 0").max(100000, "Too high").nullable(),
+  name_fee_inr: z.number({ error: "Enter an amount (0 for free)" }).int("Whole rupees only").min(0, "Can't be negative").max(10000, "Too high"),
   sizes: z.array(z.string().regex(/^[A-Z0-9]{1,8}$/, "Sizes are 1–8 letters or digits")).min(1, "Add at least one size").max(10, "At most 10 sizes"),
   colorways: z
     .array(colorwaySchema)

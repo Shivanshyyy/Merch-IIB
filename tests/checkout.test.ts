@@ -35,7 +35,8 @@ test("places an order for the logged-in user, re-priced from the DB, with a vali
   assert.equal(r.ok, true, r.message);
   const order = s().orders[0];
   assert.equal(order.code, r.code);
-  assert.equal(order.total_inr, 999 * 2);
+  assert.equal(order.total_inr, (999 + 99) * 2 - 220, "₹99 name print, then 10% off above ₹1499");
+  assert.equal(order.discount_inr, 220);
   assert.equal(order.payment_status, "pending");
   assert.equal(order.user_id, user.id);
   assert.equal(order.email, user.email, "email comes from the account, not the form");

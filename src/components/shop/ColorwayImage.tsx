@@ -2,10 +2,10 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import { colorwayImage } from "@/lib/format";
+import { colorwayImage, type StillView } from "@/lib/format";
 import { HoodieGlyph } from "./HoodieGlyph";
 
-type Props = { slug: string; colorway: string; body: string; stitch?: string; view?: "front" | "back"; alt: string; sizes: string; priority?: boolean; className?: string };
+type Props = { slug: string; colorway: string; body: string; stitch?: string; view?: StillView; alt: string; sizes: string; priority?: boolean; className?: string };
 
 // The studio render for a colourway, or a tinted hoodie glyph when there isn't one yet. Fills its (relative) parent.
 export function ColorwayImage({ slug, colorway, body, stitch, view = "front", alt, sizes, priority, className = "object-contain" }: Props) {

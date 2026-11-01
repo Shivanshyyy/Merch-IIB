@@ -3,8 +3,8 @@
 import { CartLineRow } from "@/components/cart/CartLineRow";
 import { EmptyHanger } from "@/components/cart/CartDrawer";
 import { Button } from "@/components/ui/Button";
-import { inr } from "@/lib/format";
-import { cartCount, cartSubtotal, useCart } from "@/store/cart";
+import { CartOffer } from "@/components/cart/CartOffer";
+import { cartCount, useCart } from "@/store/cart";
 
 export function CartView() {
   const lines = useCart((s) => s.lines);
@@ -49,11 +49,10 @@ export function CartView() {
             <dt className="text-muted">Items</dt>
             <dd>{cartCount(lines)}</dd>
           </div>
-          <div className="flex items-baseline justify-between border-t border-line pt-4">
-            <dt className="text-muted">Subtotal</dt>
-            <dd className="text-2xl">{inr(cartSubtotal(lines))}</dd>
-          </div>
         </dl>
+        <div className="mt-4 border-t border-line pt-4">
+          <CartOffer lines={lines} />
+        </div>
         <p className="label mt-5 normal-case leading-relaxed tracking-normal">Made to order. Double-check name spelling. The final total is confirmed at checkout.</p>
         <Button href="/checkout" size="lg" block className="mt-6">
           Checkout

@@ -53,7 +53,7 @@ async function Checkout() {
   return (
     <FreshOnVisit>
       <CheckoutForm
-      prices={Object.fromEntries(products.map((p) => [p.slug, p.price_inr]))}
+      catalog={Object.fromEntries(products.map((p) => [p.slug, { price_inr: p.price_inr, name_fee_inr: p.name_fee_inr, type: p.type }]))}
       batch={batch ? { name: batch.name, closesAt: batch.closes_at } : null}
       email={user.email}
       defaults={{ fullName: profile.full_name, phone: profile.phone, hostel: last?.hostel ?? "", room: last?.room ?? "" }}

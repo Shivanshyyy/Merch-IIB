@@ -29,9 +29,10 @@ function init(): Store {
       description: p.description,
       price_inr: p.price_inr,
       compare_at_inr: p.compare_at_inr ?? null,
+      name_fee_inr: p.name_fee_inr ?? 0,
       colorways: p.colorways,
       sizes: p.sizes,
-      personalizable: true,
+      personalizable: (p as { personalizable?: boolean }).personalizable ?? true,
       active: true,
       sort: p.sort,
       photos: [],
@@ -62,8 +63,13 @@ export const memoryStore = (): Store => {
   for (const p of store.products) {
     p.photos ??= [];
     p.compare_at_inr ??= null;
+    p.name_fee_inr ??= 0;
   }
-  for (const o of store.orders) o.freebie ??= false;
+  for (const o of store.orders) {
+    o.freebie ??= false;
+    o.discount_inr ??= 0;
+    o.discount_label ??= null;
+  }
   return store;
 };
 

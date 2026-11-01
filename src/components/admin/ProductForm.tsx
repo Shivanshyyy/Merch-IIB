@@ -95,7 +95,10 @@ export function ProductForm({ product }: { product?: Product }) {
         <div className="mt-2 min-h-[1.5rem]">{f.error("description") && <p className="field-error m-0">{f.error("description")}</p>}</div>
       </div>
 
-      <TextField label="Sizes" name="sizes" defaultValue={v("sizes", (product?.sizes ?? ["S", "M", "L", "XL", "XXL"]).join(", "))} error={f.error("sizes")} help="Separate with commas, e.g. S, M, L, XL" required />
+      <div className="grid gap-x-5 sm:grid-cols-[2fr_1fr]">
+        <TextField label="Sizes" name="sizes" defaultValue={v("sizes", (product?.sizes ?? ["S", "M", "L", "XL", "XXL"]).join(", "))} error={f.error("sizes")} help="Separate with commas, e.g. S, M, L, XL" required />
+        <TextField label="Name print fee (₹)" name="name_fee_inr" type="number" inputMode="numeric" min={0} step={1} defaultValue={v("name_fee_inr", String(product?.name_fee_inr ?? 0))} error={f.error("name_fee_inr")} help="Extra when a name is added. 0 = free" />
+      </div>
 
       <fieldset className="mt-2">
         <legend className="label mb-3">Colourways</legend>

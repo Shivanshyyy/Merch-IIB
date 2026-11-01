@@ -8,10 +8,10 @@ import { promoView } from "@/lib/promo";
 import { mergeSettings } from "@/lib/settings-schema";
 import type { Order, Product } from "@/lib/types";
 
-const product = (over: Partial<Product> = {}): Product => ({ id: "p1", slug: "hood", name: "Hood", type: "hoodie", description: "", price_inr: 999, compare_at_inr: 1299, colorways: [{ name: "Black", body: "#000000", stitch: "#ffffff" }], sizes: ["M"], personalizable: true, active: true, sort: 1, photos: [], ...over });
+const product = (over: Partial<Product> = {}): Product => ({ id: "p1", slug: "hood", name: "Hood", type: "hoodie", description: "", price_inr: 999, compare_at_inr: 1299, name_fee_inr: 0, colorways: [{ name: "Black", body: "#000000", stitch: "#ffffff" }], sizes: ["M"], personalizable: true, active: true, sort: 1, photos: [], ...over });
 const order = (over: Partial<Order> = {}): Order => ({
   id: "o1", code: "HD-AAAA", batch_id: "b1", user_id: "u1", email: "a@b.c", full_name: "A", phone: "9876543210", hostel: "H4", room: "1",
-  items: [], total_inr: 999, utr: null, payment_status: "pending", order_status: "placed", refund_status: "none", admin_note: null, verified_at: null, freebie: false, created_at: "2026-11-01T00:00:00Z", ...over,
+  items: [], total_inr: 999, discount_inr: 0, discount_label: null, utr: null, payment_status: "pending", order_status: "placed", refund_status: "none", admin_note: null, verified_at: null, freebie: false, created_at: "2026-11-01T00:00:00Z", ...over,
 });
 const ctx = (taken: number, enabled = true) => ({ now: new Date("2026-11-01T10:00:00Z"), products: [], rules: defaultSettings, promo: { enabled, limit: 200, taken } });
 
@@ -23,7 +23,7 @@ test("sale price: shown as a discount only when the original is higher", () => {
 
 test("customers pay the selling price, never the original", () => {
   const r = priceOrder([{ slug: "hood", colorway: "Black", size: "M", name: "", qty: 2 }], [product()], defaultSettings);
-  assert.ok(r.ok && r.total === 1998);
+  assert.ok(r.ok && r.subtotal === 1998);
 });
 
 test("verifying payment claims a freebie spot while any are left", () => {

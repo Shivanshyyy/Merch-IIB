@@ -38,7 +38,7 @@ Set these in `.env.local` while developing and in Vercel → Project → Setting
 ## Set up the database (Supabase)
 
 1. Create a project at supabase.com (pick the Mumbai region, it is closest to campus).
-2. **SQL Editor → New query:** paste each file in [`supabase/migrations/`](supabase/migrations) in order (`0001_init.sql`, then `0002_accounts_settings.sql`, then `0003_product_photos.sql`, then `0004_discounts_freebies.sql`) and **Run**.
+2. **SQL Editor → New query:** paste each file in [`supabase/migrations/`](supabase/migrations) in order (`0001_init.sql`, then `0002_accounts_settings.sql`, then `0003_product_photos.sql`, then `0004_discounts_freebies.sql`, then `0005_name_fee_cart_offers.sql`) and **Run**.
 3. New query again: paste [`supabase/seed.sql`](supabase/seed.sql) and **Run** (three placeholder hoodies, one open batch and the default settings; safe to run twice).
 4. **Authentication → Providers → Email:** turn **Confirm email OFF**. Customers sign up with email and password only, and the app never sends email.
 5. Copy the project URL, `anon` key and `service_role` key into the environment variables above.

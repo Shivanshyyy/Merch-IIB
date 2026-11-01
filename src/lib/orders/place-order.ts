@@ -63,8 +63,10 @@ export async function placeOrderFor(user: SessionUser, input: PlaceOrderInput): 
           room: data.room,
           items: priced.items,
           total_inr: priced.total,
+          discount_inr: priced.discount?.amount ?? 0,
+          discount_label: priced.discount?.label ?? null,
         });
-        await d.addEvent(order.id, "placed", `Total ₹${priced.total}`);
+        await d.addEvent(order.id, "placed", priced.discount ? `Total ₹${priced.total} (${priced.discount.label}, −₹${priced.discount.amount})` : `Total ₹${priced.total}`);
         return { ok: true, code, values };
       } catch (e) {
         if (!(e instanceof CodeTakenError)) throw e;

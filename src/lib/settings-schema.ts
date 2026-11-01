@@ -24,6 +24,11 @@ export const settingsSchema = z.object({
     columns: z.array(z.string().trim().min(1).max(20)).min(1).max(6),
     rows: z.record(z.string().max(8), z.array(z.string().trim().max(12)).max(6)),
   }),
+  offers: z.object({
+    comboPercent: z.number().int("Whole number").min(0, "0 or more").max(50, "At most 50"),
+    bulkAbove: z.number().int("Whole rupees").min(0, "0 or more").max(100000, "Too high"),
+    bulkPercent: z.number().int("Whole number").min(0, "0 or more").max(50, "At most 50"),
+  }),
   promo: z.object({
     enabled: z.boolean(),
     limit: z.number().int("Whole number").min(1, "At least 1").max(10000, "At most 10000"),

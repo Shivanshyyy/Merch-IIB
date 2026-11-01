@@ -13,5 +13,7 @@ export const slugify = (s: string) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
 
-export const colorwayImage = (productSlug: string, colorwayName: string, view: "front" | "back" = "front") =>
+export type StillView = "front" | "back";
+
+export const colorwayImage = (productSlug: string, colorwayName: string, view: StillView = "front") =>
   `/products/${productSlug}-${slugify(colorwayName)}-${view}.webp`;

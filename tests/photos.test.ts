@@ -37,7 +37,7 @@ test("anything that isn't a JPG, PNG or WebP photo is refused, whatever the file
   }
 });
 
-const input = { slug: "photo-tee", name: "Photo Tee", type: "tee" as const, description: "", price_inr: 499, compare_at_inr: null, colorways: [{ name: "Bone", body: "#e4dfd3", stitch: "#111111" }], sizes: ["M"], personalizable: true, active: true, sort: 9 };
+const input = { slug: "photo-tee", name: "Photo Tee", type: "tee" as const, description: "", price_inr: 499, compare_at_inr: null, name_fee_inr: 0, colorways: [{ name: "Bone", body: "#e4dfd3", stitch: "#111111" }], sizes: ["M"], personalizable: true, active: true, sort: 9 };
 const blob = (text: string) => ({ mime: "image/webp", bytes: Buffer.from(text) });
 
 test("product photos: added in order, served, removed; hiding a product keeps them; deleting it deletes them", async () => {

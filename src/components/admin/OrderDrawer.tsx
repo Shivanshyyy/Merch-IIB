@@ -105,7 +105,10 @@ export function OrderDrawer({ order, events, batchName, closeHref, templates, de
             </h3>
             <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-[0.9rem]">
               <dt className="text-muted">Total</dt>
-              <dd className="mono">{inr(order.total_inr)}</dd>
+              <dd className="mono">
+                {inr(order.total_inr)}
+                {order.discount_inr > 0 && <span className="ml-2 text-[0.8rem] text-accent-2">after −{inr(order.discount_inr)} ({order.discount_label ?? "discount"})</span>}
+              </dd>
               <dt className="text-muted">UTR</dt>
               <dd className="flex flex-wrap items-center gap-3">
                 {order.utr ? (
@@ -292,7 +295,7 @@ function ItemRow({ item, index, sizes, busy, onSave }: { item: Order["items"][nu
             {item.productName} <span className="text-muted">×{item.qty}</span>
           </p>
           <p className="admin-label mt-0.5">
-            {item.colorway} · size {item.size} · {inr(item.unitPriceInr)} each
+            {item.colorway} · size {item.size} · {inr(item.unitPriceInr)} each{item.nameFeeInr ? ` (incl. ${inr(item.nameFeeInr)} name print)` : ""}
           </p>
           <p className="mono mt-1 text-accent-2">{item.name || <span className="text-muted">No name</span>}</p>
         </div>

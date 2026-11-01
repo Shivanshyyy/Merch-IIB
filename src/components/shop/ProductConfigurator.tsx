@@ -14,6 +14,8 @@ import { useSettings } from "@/components/SettingsProvider";
 import { ColorwayImage } from "@/components/shop/ColorwayImage";
 import { PhotoGallery } from "@/components/shop/PhotoGallery";
 import { BackName } from "@/components/shop/BackName";
+import { nameSpot } from "@/lib/name-spots";
+import { unitPrice } from "@/lib/offers";
 import { Price } from "@/components/shop/Price";
 import { fmtDate, inr } from "@/lib/format";
 import { buzz } from "@/lib/haptics";
@@ -96,7 +98,8 @@ export function ProductConfigurator({ product, batch, promo }: { product: Produc
       size,
       name: normalizeName(name, settings),
       qty,
-      unitPriceInr: product.price_inr,
+      unitPriceInr: unitPrice(product, normalizeName(name, settings)),
+      productType: product.type,
     };
     if (editLine) {
       replace(editLine.id, payload);
@@ -114,6 +117,8 @@ export function ProductConfigurator({ product, batch, promo }: { product: Produc
   };
 
   const printed = normalizeName(name, settings);
+  const spot = nameSpot(product.slug);
+  const unit = unitPrice(product, printed);
 
   return (
     <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1.15fr_1fr] lg:gap-0">
@@ -130,7 +135,7 @@ export function ProductConfigurator({ product, batch, promo }: { product: Produc
                 </motion.div>
               </AnimatePresence>
 
-              {view === "back" && product.personalizable && <BackName name={printed} />}
+              {view === "back" && product.personalizable && spot && <BackName name={printed} spot={spot} body={colorway.body} ink={colorway.stitch} />}
 
               <div role="group" aria-label="View" className="absolute left-3 top-3 flex border border-line bg-bg/80 backdrop-blur-sm">
                 {(["front", "back"] as const).map((v) => (
@@ -202,7 +207,7 @@ export function ProductConfigurator({ product, batch, promo }: { product: Produc
             autoComplete="off"
             autoCapitalize="characters"
             spellCheck={false}
-            help={`Optional. Letters, spaces and . ' - only. ${settings.nameUppercase ? "Printed in capitals." : ""}`}
+            help={`Optional${product.name_fee_inr ? `, +${inr(product.name_fee_inr)} for the name print` : ""}. Letters, spaces and . ' - only.${settings.nameUppercase ? " Printed in capitals." : ""}`}
           />
         )}
 
@@ -213,7 +218,7 @@ export function ProductConfigurator({ product, batch, promo }: { product: Produc
 
         <div className="grid gap-5">
           <Button size="lg" block onClick={submit} disabled={closed}>
-            {closed ? "Preorders closed" : editLine ? "Update cart" : added ? "Added ✓" : `Add to cart · ${inr(product.price_inr * qty)}`}
+            {closed ? "Preorders closed" : editLine ? "Update cart" : added ? "Added ✓" : `Add to cart · ${inr(unit * qty)}`}
           </Button>
           <p className="label normal-case leading-relaxed tracking-normal">Made to order. Double-check name spelling: we print exactly what you type.</p>
         </div>

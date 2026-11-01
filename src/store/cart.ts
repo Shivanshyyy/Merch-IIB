@@ -16,6 +16,7 @@ export type CartLine = {
   name: string;
   qty: number;
   unitPriceInr: number;
+  productType?: "hoodie" | "tee"; // missing on lines saved before tees existed
 };
 
 type CartState = {
