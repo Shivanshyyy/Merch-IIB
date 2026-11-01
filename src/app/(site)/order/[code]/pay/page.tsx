@@ -147,14 +147,18 @@ async function Pay({ params }: Props) {
                 </Button>
               </div>
             </li>
-            <li className="grid gap-3 bg-bg p-6">
-              <p className="label text-accent-2">03 — Check your status</p>
-              <p>
-                We verify payments by hand. Follow your order in My orders; its status updates as soon as {s.contactName} verifies it.
-              </p>
+            <li className="grid gap-4 bg-bg p-6">
+              <p className="label text-accent-2">03 — Confirm your order</p>
+              {order.payment_status === "verified" ? (
+                <p>Your payment is verified. Follow your order in My orders.</p>
+              ) : (
+                <p>
+                  <span className="font-semibold">If you have completed the payment, tap Confirm order.</span> It takes you to My orders, where the status updates as soon as {s.contactName} verifies your payment.
+                </p>
+              )}
               <div>
-                <Button href="/orders" variant="ghost">
-                  My orders
+                <Button href="/orders" size="lg" className="w-full sm:w-auto sm:min-w-[18rem]">
+                  {order.payment_status === "verified" ? "My orders →" : "Confirm order →"}
                 </Button>
               </div>
             </li>
