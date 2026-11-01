@@ -4,6 +4,7 @@
 // SQL seed, the demo store and the UI share one source.
 import defaults from "./settings.defaults.json";
 
+export type SizeChartKey = "hoodie" | "oversized" | "regular";
 export type SizeChart = { unit: string; columns: string[]; rows: Record<string, string[]> };
 export type FabricSpec = { label: string; value: string };
 export type Offers = { comboPercent: number; bulkAbove: number; bulkPercent: number };
@@ -23,7 +24,7 @@ export type Settings = {
   nameMaxLength: number;
   nameUppercase: boolean;
   maxPendingOrdersPerEmail: number;
-  sizeCharts: { hoodie: SizeChart; tee: SizeChart }; // the popup picks one by product type
+  sizeCharts: Record<SizeChartKey, SizeChart>; // the popup picks one per product, see sizeChartFor
   fabricSpecs: FabricSpec[];
   promo: Promo;
   offers: Offers;

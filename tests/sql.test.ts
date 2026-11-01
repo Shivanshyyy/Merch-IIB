@@ -45,7 +45,7 @@ test("migrations and seed re-run cleanly (idempotent)", async () => {
   await db.exec(read("seed.sql"));
   assert.deepEqual((await db.query("select count(*)::int n from products")).rows[0], { n: 6 });
   assert.deepEqual((await db.query("select count(*)::int n from settings")).rows[0], { n: 1 });
-  assert.deepEqual((await db.query("select value->>'brand' b from settings")).rows[0], { b: "MERCH—IITB" });
+  assert.deepEqual((await db.query("select value->>'brand' b from settings")).rows[0], { b: "IITB-Merch" });
 });
 
 test("profiles: users read, insert and update only their own row", async () => {

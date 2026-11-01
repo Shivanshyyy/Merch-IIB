@@ -42,11 +42,11 @@ test("the admin panel and API never get the wipe", () => {
 });
 
 test("the wipe is labelled with the page being opened", () => {
-  assert.equal(wipeLabel("/shop/ash", "MERCH—IITB"), "Shop");
-  assert.equal(wipeLabel("/orders", "MERCH—IITB"), "My orders");
-  assert.equal(wipeLabel("/order/HD-7K4Q/pay", "MERCH—IITB"), "Payment");
-  assert.equal(wipeLabel("/", "MERCH—IITB"), "MERCH—IITB");
-  assert.equal(wipeLabel("/something-new", "MERCH—IITB"), "MERCH—IITB");
+  assert.equal(wipeLabel("/shop/ash", "IITB-Merch"), "Shop");
+  assert.equal(wipeLabel("/orders", "IITB-Merch"), "My orders");
+  assert.equal(wipeLabel("/order/HD-7K4Q/pay", "IITB-Merch"), "Payment");
+  assert.equal(wipeLabel("/", "IITB-Merch"), "IITB-Merch");
+  assert.equal(wipeLabel("/something-new", "IITB-Merch"), "IITB-Merch");
 });
 
 test("the strip reads like the spec, and says so when preorders are closed", () => {

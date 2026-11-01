@@ -34,7 +34,9 @@ export function Nav({ account, strip }: { account: ReactNode; strip: ReactNode }
   const bumps = useCart((s) => s.bumps);
   const openDrawer = useCart((s) => s.openDrawer);
   const badge = useRef<HTMLSpanElement>(null);
-  const [left, right] = brand.split("—");
+  // The first dash in the brand (e.g. IITB-Merch) is drawn in the accent colour.
+  const dash = brand.match(/[—–-]/);
+  const [left, right] = dash ? [brand.slice(0, dash.index), brand.slice(dash.index! + 1)] : [brand, undefined];
 
   // Restart the CSS keyframe on every add so the badge bumps even for identical counts.
   useEffect(() => {
@@ -56,7 +58,7 @@ export function Nav({ account, strip }: { account: ReactNode; strip: ReactNode }
           {right !== undefined ? (
             <>
               {left}
-              <span className="text-accent">—</span>
+              <span className="text-accent">{dash?.[0]}</span>
               {right}
             </>
           ) : (

@@ -1,4 +1,4 @@
-# MERCH—IITB
+# IITB-Merch
 
 Preorder storefront for personalised campus hoodies. Students pick a colour and size, type the name for the back, and pay by UPI. We collect orders in batches, send one sheet to the vendor, and everyone picks up at Hostel 4. Nothing is printed by us.
 

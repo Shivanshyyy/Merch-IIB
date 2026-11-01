@@ -1,6 +1,6 @@
 // Validation + merging for runtime settings. Client-safe (no server imports).
 import { z } from "zod";
-import { defaultSettings, type Settings } from "@/config/site";
+import { defaultSettings, type Settings, type SizeChartKey } from "@/config/site";
 
 const UPI_RE = /^[a-zA-Z0-9.\-_]{2,64}@[a-zA-Z][a-zA-Z0-9]{1,31}$/;
 const phoneDigits = z.string().trim().regex(/^\d{10,15}$/, "Digits only, country code first (e.g. 919876543210)");
@@ -25,7 +25,7 @@ export const settingsSchema = z.object({
   nameMaxLength: z.number().int("Whole number").min(1, "At least 1").max(30, "At most 30"),
   nameUppercase: z.boolean(),
   maxPendingOrdersPerEmail: z.number().int("Whole number").min(1, "At least 1").max(20, "At most 20"),
-  sizeCharts: z.object({ hoodie: chartSchema, tee: chartSchema }),
+  sizeCharts: z.object({ hoodie: chartSchema, oversized: chartSchema, regular: chartSchema }),
   offers: z.object({
     comboPercent: z.number().int("Whole number").min(0, "0 or more").max(50, "At most 50"),
     bulkAbove: z.number().int("Whole rupees").min(0, "0 or more").max(100000, "Too high"),
@@ -66,6 +66,10 @@ export function setupChecklist(s: Settings): ChecklistItem[] {
     { key: "phone", label: "Phone & WhatsApp", done: s.phone !== defaultSettings.phone && s.whatsapp !== defaultSettings.whatsapp, hint: "Where customers send payment screenshots." },
     { key: "pickup", label: "Pickup room & hours", done: !blank(s.pickupRoom) && !blank(s.pickupHours), hint: "Shown on the pay page and policies." },
     { key: "sizes", label: "Hoodie size chart", done: Object.values(s.sizeCharts.hoodie.rows).some((r) => r.some((c) => !blank(c))), hint: "Measurements for the size-chart popup." },
-    { key: "tee-sizes", label: "T-shirt size chart", done: Object.values(s.sizeCharts.tee.rows).some((r) => r.some((c) => !blank(c))), hint: "Measurements for the T-shirt size-chart popup." },
+    { key: "tee-sizes", label: "Regular T-shirt size chart", done: Object.values(s.sizeCharts.regular.rows).some((r) => r.some((c) => !blank(c))), hint: "Measurements for the regular T-shirt size-chart popup." },
   ];
 }
+
+// Hoodies use the hoodie chart; T-shirts with "oversized" in the name use the oversized one, other T-shirts the regular one.
+export const sizeChartFor = (p: { type: "hoodie" | "tee"; name: string; slug: string }): SizeChartKey =>
+  p.type === "hoodie" ? "hoodie" : /oversized/i.test(`${p.name} ${p.slug}`) ? "oversized" : "regular";

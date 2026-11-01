@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { defaultSettings } from "@/config/site";
 import { safeNext } from "@/lib/auth/next";
 import { changePasswordSchema, logInSchema, makeCheckoutSchema, makeNameSchema, normalizeOrderCode, orderCodeSchema, phoneSchema, profileSchema, signUpSchema, utrSchema } from "@/lib/schemas";
-import { mergeSettings, setupChecklist, settingsSchema } from "@/lib/settings-schema";
+import { mergeSettings, setupChecklist, settingsSchema, sizeChartFor } from "@/lib/settings-schema";
 
 const rules = { nameMaxLength: 12, nameUppercase: true };
 
@@ -78,7 +78,15 @@ test("setup checklist flags placeholders until real values are saved", () => {
   const todo = setupChecklist(defaultSettings).filter((i) => !i.done).map((i) => i.key);
   assert.deepEqual(todo, ["upi", "payee", "phone", "pickup", "tee-sizes"], "the hoodie chart ships filled in");
   const done = setupChecklist(
-    mergeSettings({ upiId: "aryan@oksbi", payeeName: "Aryan K", phone: "919876543210", whatsapp: "919876543210", pickupRoom: "Room 12", pickupHours: "6-9pm", sizeCharts: { hoodie: { unit: "cm", columns: ["Chest"], rows: { M: ["54"] } }, tee: { unit: "cm", columns: ["Chest"], rows: { M: ["50"] } } } }),
+    mergeSettings({ upiId: "aryan@oksbi", payeeName: "Aryan K", phone: "919876543210", whatsapp: "919876543210", pickupRoom: "Room 12", pickupHours: "6-9pm", sizeCharts: { hoodie: { unit: "cm", columns: ["Chest"], rows: { M: ["54"] } }, oversized: { unit: "cm", columns: ["Chest"], rows: { M: ["52"] } }, regular: { unit: "cm", columns: ["Chest"], rows: { M: ["50"] } } } }),
   );
   assert.ok(done.every((i) => i.done), JSON.stringify(done.filter((i) => !i.done)));
+});
+
+test("each product gets the right size chart", () => {
+  assert.equal(sizeChartFor({ type: "hoodie", name: "IIT Bombay Zip Hoodie", slug: "iit-bombay-zip-hoodie" }), "hoodie");
+  assert.equal(sizeChartFor({ type: "tee", name: "Oversized T-shirt", slug: "oversized-tee" }), "oversized");
+  assert.equal(sizeChartFor({ type: "tee", name: "Campus Oversized T-shirt", slug: "campus-oversized-tee" }), "oversized");
+  assert.equal(sizeChartFor({ type: "tee", name: "Regular T-shirt", slug: "regular-tee" }), "regular");
+  assert.deepEqual(defaultSettings.sizeCharts.oversized.rows.XXL, ["48"]);
 });
