@@ -44,8 +44,8 @@ test("preorder → pay → admin verifies → the customer sees it verified", as
   await page.waitForURL(/\/order\/HD-[A-Z0-9]{4}\/pay/);
   const code = page.url().match(/HD-[A-Z0-9]{4}/)![0];
   await expect(page.getByRole("heading", { name: code })).toBeVisible();
-  // ₹999 hoodie + ₹99 name print
-  await expect(page.getByAltText(/UPI QR code for ₹1,098/)).toBeVisible();
+  // ₹799 hoodie + ₹99 name print
+  await expect(page.getByAltText(/UPI QR code for ₹898/)).toBeVisible();
   await expect(page.getByText(/Scan the QR with any UPI app/)).toBeVisible(); // desktop: the upi:// button is for phones
   await page.getByLabel(/UTR/i).fill("412345678901");
   await page.getByRole("button", { name: "Save UTR" }).click();

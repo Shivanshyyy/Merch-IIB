@@ -6,14 +6,14 @@ import { db } from "@/lib/db";
 export async function getProducts() {
   "use cache";
   cacheTag("products");
-  cacheLife("hours");
+  cacheLife("minutes"); // admin edits refresh at once; direct database edits within minutes
   return db().listActiveProducts();
 }
 
 export async function getProduct(slug: string) {
   "use cache";
   cacheTag("products");
-  cacheLife("hours");
+  cacheLife("minutes"); // admin edits refresh at once; direct database edits within minutes
   return db().getProductBySlug(slug);
 }
 
