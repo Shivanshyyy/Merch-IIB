@@ -80,3 +80,10 @@ Short log, one entry per phase: what's done, what's left, open TODOs.
   - `vercel.json` pins the functions to Mumbai (`bom1`); `SITE_URL` added to `.env.example`; Node `>=20.9` declared.
 - **Left (needs you):** create the Supabase project and Vercel project, add the environment variables, connect the domain, fill in Admin → Settings, then run `node scripts/smoke-supabase.mjs` and place one real test order.
 - **Open TODOs:** the Supabase code paths have only ever run against the in-memory demo store and the PGlite SQL tests, never a live project, so the smoke test above is the first real check. Pickup room and hours, the UPI ID, WhatsApp number, size chart and fabric weight/fit are still placeholders (Admin → Settings).
+
+## Catalogue swap, sale prices, freebies offer (Nov 2026) ✅
+- **Done:** the three placeholder hoodies are replaced by the **IIT Bombay Hoodie** (₹999, S–XXL, black) with real photos; the back still has the sample name removed and the typed name is drawn there in varsity outline lettering (Graduate). Fabric defaults: cotton fleece, 360 GSM.
+- **Sale prices:** optional "Original price" per product (`compare_at_inr`, migration `0004`); shop, product page and admin show it crossed out with the % off. Customers always pay `price_inr`, re-priced on the server.
+- **Freebies offer** (Admin → Settings): on/off, number of spots, headline, items, small print. Verifying a payment claims a spot (`orders.freebie`), rejecting/resetting gives it back. Site shows a banner on home, a strip on shop and product pages, and the marquee; admin shows a dashboard counter and a ✦ Freebie tag on orders.
+- 73 unit tests, 4 e2e tests pass.
+- **Open TODOs:** run `0004_discounts_freebies.sql` on the live database.

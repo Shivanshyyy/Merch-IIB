@@ -122,6 +122,12 @@ export function createSupabaseDb(sb: ServiceClient): Db {
       if (error) fail("addEvent", error);
     },
 
+    async countFreebies() {
+      const { count, error } = await sb.from("orders").select("id", { count: "exact", head: true }).eq("freebie", true);
+      if (error) fail("countFreebies", error);
+      return count ?? 0;
+    },
+
     // ---- admin ----
     async listAllProducts() {
       const { data, error } = await sb.from("products").select("*").order("sort").order("created_at");

@@ -32,7 +32,7 @@ async function Dashboard({ searchParams }: Props) {
   const requested = typeof sp.batch === "string" ? sp.batch : undefined;
 
   const d = db();
-  const [batches, settings] = await Promise.all([d.listBatches(), getSettingsFresh()]);
+  const [batches, settings, freebies] = await Promise.all([d.listBatches(), getSettingsFresh(), d.countFreebies().catch(() => null)]);
   const active = batches.find((b) => b.status === "open") ?? null;
   // Default to the open batch; "all" shows everything.
   const scope = requested === "all" ? undefined : batches.find((b) => b.id === requested)?.id ?? active?.id;
@@ -90,6 +90,22 @@ async function Dashboard({ searchParams }: Props) {
         <StatTile label="Open refunds" value={stats.refundsOpen} sub={stats.refunded ? `${stats.refunded} refunded (${inr(stats.refundedAmount)})` : "none refunded"} href={`/admin/orders?refund=open${q}`} />
         <StatTile label="Items to make" value={stats.items} sub="paid, not cancelled" />
       </section>
+
+      {settings.promo.enabled && freebies !== null && (
+        <section aria-label="Freebies offer" className="admin-card flex flex-wrap items-center gap-x-5 gap-y-2 p-4">
+          <span className="text-accent-2">✦</span>
+          <p className="text-[0.95rem]">
+            <span className="font-semibold">Freebies:</span> <span className="mono">{freebies}</span> of <span className="mono">{settings.promo.limit}</span> claimed
+            <span className="text-muted"> · {Math.max(0, settings.promo.limit - freebies)} left</span>
+          </p>
+          <div className="h-1 min-w-32 flex-1 bg-line">
+            <div className="h-full bg-accent-2" style={{ width: `${Math.min(100, (freebies / settings.promo.limit) * 100)}%` }} />
+          </div>
+          <Link href="/admin/settings" className="admin-label underline underline-offset-4 hover:text-fg">
+            Edit offer
+          </Link>
+        </section>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section aria-labelledby="sizes-h" className="admin-card p-5">

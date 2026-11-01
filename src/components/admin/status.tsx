@@ -101,3 +101,9 @@ function Chip({ label, tone, icon }: { label: string; tone: Tone; icon: IconKind
 export const PaymentChip = ({ status }: { status: PaymentStatus }) => <Chip {...PAYMENT[status]} />;
 export const OrderChip = ({ status }: { status: OrderStatus }) => <Chip {...ORDER[status]} />;
 export const RefundChip = ({ status }: { status: RefundStatus }) => <Chip {...REFUND[status]} />;
+export const FreebieChip = () => (
+  <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-[0.8rem]">
+    <span aria-hidden className="text-accent-2">✦</span>
+    Freebie
+  </span>
+);

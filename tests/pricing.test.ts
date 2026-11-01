@@ -13,6 +13,7 @@ const product = (over: Partial<Product> = {}): Product => ({
   type: "hoodie",
   description: "",
   price_inr: 1000,
+  compare_at_inr: null,
   colorways: [{ name: "Midnight", body: "#000", stitch: "#f00" }],
   sizes: ["S", "M"],
   personalizable: true,

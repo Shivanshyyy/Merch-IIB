@@ -2,14 +2,12 @@
 -- All prices, sizes, names and dates are PLACEHOLDERS (TODO).
 
 insert into products (slug, name, type, description, price_inr, colorways, sizes, sort) values
-  ('midnight-flame', 'Midnight Flame Hoodie', 'hoodie', 'Made to order, with your name on the back.', 999, '[{"name":"Midnight","body":"#0E0E10","stitch":"#E01E0A"},{"name":"Ember","body":"#3A0D0A","stitch":"#FFB547"}]'::jsonb, array['S', 'M', 'L', 'XL', 'XXL'], 1),
-  ('ash', 'Ash Hoodie', 'hoodie', 'Made to order, with your name on the back.', 999, '[{"name":"Ash","body":"#8E8C88","stitch":"#0E0E10"},{"name":"Slate","body":"#3B3F46","stitch":"#FF3B1F"}]'::jsonb, array['S', 'M', 'L', 'XL', 'XXL'], 2),
-  ('bone', 'Bone Hoodie', 'hoodie', 'Made to order, with your name on the back.', 999, '[{"name":"Bone","body":"#E4DFD3","stitch":"#0E0E10"},{"name":"Lake","body":"#1F3A4D","stitch":"#FFB547"}]'::jsonb, array['S', 'M', 'L', 'XL', 'XXL'], 3)
+  ('iit-bombay-hoodie', 'IIT Bombay Hoodie', 'hoodie', 'Black cotton-fleece hoodie, 360 GSM. Institute emblem on the chest, the IIT Bombay arch on the back, and your name printed underneath.', 999, '[{"name":"Black","body":"#0E0E10","stitch":"#FFFFFF"}]'::jsonb, array['S', 'M', 'L', 'XL', 'XXL'], 1)
 on conflict (slug) do nothing;
 
 insert into batches (name, closes_at, est_delivery, status)
 select 'Batch 01', now() + interval '14 days', 'To be announced', 'open'
 where not exists (select 1 from batches);
 
-insert into settings (id, value) values (1, '{"brand":"MERCH—IITB","upiId":"setup-required@upi","payeeName":"Merch IITB","contactName":"Aryan","phone":"910000000000","whatsapp":"910000000000","pickupLocation":"Hostel 4","pickupRoom":"TBA","pickupHours":"TBA","refundWindowDays":5,"nameMaxLength":12,"nameUppercase":true,"maxPendingOrdersPerEmail":3,"sizeChart":{"unit":"cm","columns":["Chest","Length","Sleeve"],"rows":{"S":["—","—","—"],"M":["—","—","—"],"L":["—","—","—"],"XL":["—","—","—"],"XXL":["—","—","—"]}},"fabricSpecs":[{"label":"Fabric","value":"Brushed fleece"},{"label":"Weight","value":"—"},{"label":"Fit","value":"—"}]}'::jsonb)
+insert into settings (id, value) values (1, '{"brand":"MERCH—IITB","upiId":"setup-required@upi","payeeName":"Merch IITB","contactName":"Aryan","phone":"910000000000","whatsapp":"910000000000","pickupLocation":"Hostel 4","pickupRoom":"TBA","pickupHours":"TBA","refundWindowDays":5,"nameMaxLength":12,"nameUppercase":true,"maxPendingOrdersPerEmail":3,"sizeChart":{"unit":"cm","columns":["Chest","Length","Sleeve"],"rows":{"S":["—","—","—"],"M":["—","—","—"],"L":["—","—","—"],"XL":["—","—","—"],"XXL":["—","—","—"]}},"fabricSpecs":[{"label":"Fabric","value":"Cotton fleece"},{"label":"Weight","value":"360 GSM"},{"label":"Fit","value":"—"}],"promo":{"enabled":true,"limit":200,"title":"First 200 customers get freebies","items":["IIT Bombay keychain","IITB cultural stickers"],"note":"Handed over with your hoodie at pickup."}}'::jsonb)
 on conflict (id) do nothing;

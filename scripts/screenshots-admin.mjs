@@ -74,11 +74,11 @@ async function adminLogin(page, label) {
 try {
   // ===================== customers place orders =====================
   const custCtx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
-  const A = await placeOrder(custCtx, { name: "Aryan Kumar", product: "midnight-flame", size: "M", nameOnBack: "aryan", tag: "a" });
+  const A = await placeOrder(custCtx, { name: "Aryan Kumar", product: "iit-bombay-hoodie", size: "M", nameOnBack: "aryan", tag: "a" });
   const custCtxB = await browser.newContext({ viewport: { width: 1280, height: 900 } });
-  const B = await placeOrder(custCtxB, { name: "Sam Lee", product: "ash", size: "L", nameOnBack: "sam", qty: 2, tag: "b" });
+  const B = await placeOrder(custCtxB, { name: "Sam Lee", product: "iit-bombay-hoodie", size: "L", nameOnBack: "sam", qty: 2, tag: "b" });
   const custCtxC = await browser.newContext({ viewport: { width: 1280, height: 900 } });
-  const C = await placeOrder(custCtxC, { name: "Priya Nair", product: "bone", size: "S", nameOnBack: "priya", tag: "c" });
+  const C = await placeOrder(custCtxC, { name: "Priya Nair", product: "iit-bombay-hoodie", size: "S", nameOnBack: "priya", tag: "c" });
   await A.page.getByLabel(/UTR/i).fill("412345678901");
   await A.page.getByRole("button", { name: "Save UTR" }).click();
   await A.page.getByText(/Got it/).waitFor();
@@ -188,12 +188,12 @@ try {
   // ---- vendor sheet + CSV ----
   await admin.goto(`${BASE}/admin/vendor`);
   await admin.getByRole("heading", { name: "Vendor sheet" }).waitFor();
-  assert.match(await admin.getByRole("region", { name: /Units by product/ }).innerText(), /Midnight Flame Hoodie/);
+  assert.match(await admin.getByRole("region", { name: /Units by product/ }).innerText(), /IIT Bombay Hoodie/);
   await shot(admin, L, "08-vendor");
   const [download] = await Promise.all([admin.waitForEvent("download"), admin.getByRole("link", { name: "Download CSV" }).click()]);
   const csv = await (await import("node:fs/promises")).readFile(await download.path(), "utf8");
   assert.match(csv, /^﻿product,colour,size,name,quantity,order_code/);
-  assert.match(csv, new RegExp(`Midnight Flame Hoodie,Midnight,L,ARYAN K\\.,1,${A.code}`));
+  assert.match(csv, new RegExp(`IIT Bombay Hoodie,Black,L,ARYAN K\\.,1,${A.code}`));
   assert.ok(!csv.includes(B.code), "a refunded order is not made");
   for (const secret of [A.email, B.email, "Aryan Kumar", "412345678901", "Hostel 4"]) assert.ok(!csv.includes(secret), `vendor CSV must not contain ${secret}`);
 
@@ -252,7 +252,7 @@ try {
   await shop2.goto(`${BASE}/shop/lake-hoodie`);
   await shop2.getByRole("heading", { name: "Gone." }).waitFor(); // the not-found page, not the product
   await shop2.goto(`${BASE}/shop`);
-  await shop2.getByText("Midnight Flame Hoodie").first().waitFor();
+  await shop2.getByText("IIT Bombay Hoodie").first().waitFor();
   assert.equal(await shop2.getByText("Lake Hoodie").count(), 0, "a hidden product leaves the shop grid");
   await admin.getByRole("button", { name: "Show Lake Hoodie" }).click().catch(() => admin.getByRole("button", { name: "Make live" }).first().click());
   await shop2.close();

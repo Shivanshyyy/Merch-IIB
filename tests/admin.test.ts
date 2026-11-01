@@ -34,10 +34,11 @@ const order = (over: Partial<Order> = {}): Order => ({
   refund_status: "none",
   admin_note: null,
   verified_at: null,
+  freebie: false,
   created_at: "2026-10-30T08:00:00Z",
   ...over,
 });
-const product = (over: Partial<Product> = {}): Product => ({ id: "p1", slug: "flame", name: "Flame Hoodie", type: "hoodie", description: "", price_inr: 1000, colorways: [{ name: "Midnight", body: "#000000", stitch: "#ff0000" }], sizes: ["S", "M", "L"], personalizable: true, active: true, sort: 1, photos: [], ...over });
+const product = (over: Partial<Product> = {}): Product => ({ id: "p1", slug: "flame", name: "Flame Hoodie", type: "hoodie", description: "", price_inr: 1000, compare_at_inr: null, colorways: [{ name: "Midnight", body: "#000000", stitch: "#ff0000" }], sizes: ["S", "M", "L"], personalizable: true, active: true, sort: 1, photos: [], ...over });
 const plan = (o: Order, a: OrderAction, products = [product()]) => planOrderAction(o, a, { now, products, rules });
 const paid = (over: Partial<Order> = {}) => order({ payment_status: "verified", verified_at: now.toISOString(), ...over });
 
@@ -277,7 +278,7 @@ beforeEach(async () => {
 
 test("products: create, slug uniqueness, update, hide from the shop, delete", async () => {
   const d = db();
-  const input = { slug: "test-tee", name: "Test Tee", type: "tee" as const, description: "", price_inr: 499, colorways: [{ name: "Bone", body: "#e4dfd3", stitch: "#111111" }], sizes: ["M", "L"], personalizable: true, active: true, sort: 9 };
+  const input = { slug: "test-tee", name: "Test Tee", type: "tee" as const, description: "", price_inr: 499, compare_at_inr: null, colorways: [{ name: "Bone", body: "#e4dfd3", stitch: "#111111" }], sizes: ["M", "L"], personalizable: true, active: true, sort: 9 };
   const created = await d.createProduct(input);
   await assert.rejects(d.createProduct(input), SlugTakenError);
   assert.ok((await d.listActiveProducts()).some((p) => p.slug === "test-tee"));
@@ -286,7 +287,7 @@ test("products: create, slug uniqueness, update, hide from the shop, delete", as
   assert.equal((await d.getProductById(created.id))?.price_inr, 599);
   assert.ok(!(await d.listActiveProducts()).some((p) => p.slug === "test-tee"), "inactive products leave the shop");
   assert.ok((await d.listAllProducts()).some((p) => p.slug === "test-tee"), "but stay in admin");
-  await assert.rejects(d.updateProduct(created.id, { ...input, slug: "midnight-flame" }), SlugTakenError);
+  await assert.rejects(d.updateProduct(created.id, { ...input, slug: "iit-bombay-hoodie" }), SlugTakenError);
   await assert.rejects(d.updateProduct("00000000-0000-4000-8000-0000000000ff", input), NotFoundError);
 
   await d.deleteProduct(created.id);

@@ -20,7 +20,7 @@ const refresh = () => {
 export async function saveProduct(_prev: FormState, formData: FormData): Promise<FormState> {
   return adminAction(async () => {
     const id = text(formData, "id");
-    const values = Object.fromEntries(["name", "slug", "type", "description", "price_inr", "sizes", "sort", "colorways"].map((k) => [k, text(formData, k)]));
+    const values = Object.fromEntries(["name", "slug", "type", "description", "price_inr", "compare_at_inr", "sizes", "sort", "colorways"].map((k) => [k, text(formData, k)]));
 
     let colorways: unknown = [];
     try {
@@ -34,6 +34,7 @@ export async function saveProduct(_prev: FormState, formData: FormData): Promise
       type: values.type,
       description: values.description,
       price_inr: values.price_inr === "" ? NaN : Number(values.price_inr),
+      compare_at_inr: values.compare_at_inr.trim() === "" ? null : Number(values.compare_at_inr),
       sizes: parseSizes(values.sizes),
       colorways,
       personalizable: formData.get("personalizable") === "on",
@@ -41,6 +42,8 @@ export async function saveProduct(_prev: FormState, formData: FormData): Promise
       sort: values.sort === "" ? 0 : Number(values.sort),
     });
     if (!parsed.success) return { ok: false, fieldErrors: firstErrors(parsed.error), message: "Please fix the highlighted fields.", values };
+    if (parsed.data.compare_at_inr !== null && parsed.data.compare_at_inr <= parsed.data.price_inr)
+      return { ok: false, fieldErrors: { compare_at_inr: "Must be higher than the selling price (or leave it empty)" }, message: "Please fix the highlighted fields.", values };
 
     try {
       if (id) {

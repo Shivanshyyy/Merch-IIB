@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ProductConfigurator } from "@/components/shop/ProductConfigurator";
-import { getOpenBatch, getProduct, getProducts } from "@/lib/catalog";
+import { getFreebiesTaken, getOpenBatch, getProduct, getProducts } from "@/lib/catalog";
+import { promoView } from "@/lib/promo";
 import { ogImageFor } from "@/lib/og";
 import { getSettings } from "@/lib/settings";
 import { siteUrl } from "@/lib/site-url";
@@ -40,7 +41,7 @@ export default function ProductPage({ params }: Props) {
 
 async function Product({ params }: Props) {
   const { slug } = await params;
-  const [product, batch, settings] = await Promise.all([getProduct(slug), getOpenBatch(), getSettings()]);
+  const [product, batch, settings, taken] = await Promise.all([getProduct(slug), getOpenBatch(), getSettings(), getFreebiesTaken()]);
   if (!product) notFound();
 
   // Search engines and share cards: what this is, what it costs, and that it is a preorder.
@@ -64,7 +65,7 @@ async function Product({ params }: Props) {
   return (
     <Suspense fallback={<ProductSkeleton />}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
-      <ProductConfigurator product={product} batch={batch ? { name: batch.name, closesAt: batch.closes_at, estDelivery: batch.est_delivery } : null} />
+      <ProductConfigurator product={product} promo={promoView(settings.promo, taken)} batch={batch ? { name: batch.name, closesAt: batch.closes_at, estDelivery: batch.est_delivery } : null} />
     </Suspense>
   );
 }

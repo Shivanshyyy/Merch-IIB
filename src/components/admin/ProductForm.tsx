@@ -71,7 +71,7 @@ export function ProductForm({ product }: { product?: Product }) {
         />
       </div>
 
-      <div className="grid gap-x-5 sm:grid-cols-3">
+      <div className="grid gap-x-5 sm:grid-cols-4">
         <div className="field">
           <label htmlFor="type" className="label">
             <span>Type</span>
@@ -82,7 +82,8 @@ export function ProductForm({ product }: { product?: Product }) {
           </select>
           <div className="mt-2 min-h-[1.5rem]" />
         </div>
-        <TextField label="Price (₹)" name="price_inr" type="number" inputMode="numeric" min={0} step={1} defaultValue={v("price_inr", String(product?.price_inr ?? 999))} error={f.error("price_inr")} help="Whole rupees" required />
+        <TextField label="Selling price (₹)" name="price_inr" type="number" inputMode="numeric" min={0} step={1} defaultValue={v("price_inr", String(product?.price_inr ?? 999))} error={f.error("price_inr")} help="What customers pay" required />
+        <TextField label="Original price (₹)" name="compare_at_inr" type="number" inputMode="numeric" min={1} step={1} defaultValue={v("compare_at_inr", product?.compare_at_inr ? String(product.compare_at_inr) : "")} error={f.error("compare_at_inr")} help="Optional. Set it higher to show a discount" />
         <TextField label="Sort order" name="sort" type="number" inputMode="numeric" min={0} defaultValue={v("sort", String(product?.sort ?? 0))} error={f.error("sort")} help="Lower comes first" />
       </div>
 

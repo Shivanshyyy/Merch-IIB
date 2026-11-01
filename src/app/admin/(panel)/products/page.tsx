@@ -1,3 +1,4 @@
+import { isOnSale } from "@/lib/discount";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -51,6 +52,7 @@ async function Products() {
                 </p>
                 <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
                   <span className="mono text-[1.05rem]">{inr(p.price_inr)}</span>
+                  {isOnSale(p) && <span className="admin-label line-through">{inr(p.compare_at_inr)}</span>}
                   <ul className="flex flex-wrap items-center gap-3" aria-label="Colourways">
                     {p.colorways.map((c) => (
                       <li key={c.name} className="admin-label flex items-center gap-2">

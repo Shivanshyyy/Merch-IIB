@@ -19,10 +19,13 @@ const json = (v: string): unknown => {
   }
 };
 
+const PROMO_LABEL: Record<string, string> = { title: "Headline", limit: "Number of spots", items: "Freebies", note: "Small print" };
+
 export async function saveSettings(_prev: FormState, formData: FormData): Promise<FormState> {
   return adminAction(async () => {
-    const values = Object.fromEntries(["brand", "upiId", "payeeName", "contactName", "phone", "whatsapp", "pickupLocation", "pickupRoom", "pickupHours", "refundWindowDays", "nameMaxLength", "maxPendingOrdersPerEmail"].map((k) => [k, text(formData, k)]));
+    const values = Object.fromEntries(["brand", "upiId", "payeeName", "contactName", "phone", "whatsapp", "pickupLocation", "pickupRoom", "pickupHours", "refundWindowDays", "nameMaxLength", "maxPendingOrdersPerEmail", "promoTitle", "promoLimit", "promoItems", "promoNote"].map((k) => [k, text(formData, k)]));
 
+    values.promoEnabled = formData.get("promoEnabled") === "on" ? "on" : "";
     const sizeChart = json(text(formData, "sizeChart"));
     const fabricSpecs = json(text(formData, "fabricSpecs"));
     if (sizeChart === undefined || fabricSpecs === undefined) return { ok: false, message: "The size chart or fabric specs couldn't be read. Reload and try again.", values };
@@ -37,8 +40,21 @@ export async function saveSettings(_prev: FormState, formData: FormData): Promis
       nameUppercase: formData.get("nameUppercase") === "on",
       sizeChart,
       fabricSpecs,
+      promo: {
+        enabled: values.promoEnabled === "on",
+        limit: num(values.promoLimit),
+        title: values.promoTitle,
+        items: values.promoItems.split("\n").map((s) => s.trim()).filter(Boolean),
+        note: values.promoNote,
+      },
     });
-    if (!parsed.success) return { ok: false, fieldErrors: firstErrors(parsed.error), message: "Please fix the highlighted fields.", values };
+    if (!parsed.success) {
+      const fieldErrors = firstErrors(parsed.error);
+      // Offer errors all show under the headline field, so say which part is wrong.
+      const promoIssue = parsed.error.issues.find((i) => i.path[0] === "promo");
+      if (promoIssue) fieldErrors.promo = `${PROMO_LABEL[String(promoIssue.path[1])] ?? "Offer"}: ${promoIssue.message}`;
+      return { ok: false, fieldErrors, message: "Please fix the highlighted fields.", values };
+    }
 
     try {
       await db().saveSettings(parsed.data as Settings);
@@ -47,6 +63,7 @@ export async function saveSettings(_prev: FormState, formData: FormData): Promis
       return { ok: false, message: "Couldn't save the settings.", values };
     }
     updateTag("settings"); // takes effect on the live site immediately
+    updateTag("promo");
     revalidatePath("/admin", "layout");
     return { ok: true, message: "Settings saved. They're live on the site now.", values };
   });

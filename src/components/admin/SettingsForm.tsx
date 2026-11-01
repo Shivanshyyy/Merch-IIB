@@ -27,6 +27,7 @@ export function SettingsForm({ settings }: { settings: Settings }) {
   const { toast } = useToast();
   const shape = settingsSchema.shape;
   const v = (k: keyof Settings) => state.values?.[k] ?? String(settings[k]);
+  const pv = (k: string, fallback: string) => state.values?.[k] ?? fallback;
 
   // Size chart: unit + column names + one row per size.
   const [unit, setUnit] = useState(settings.sizeChart.unit);
@@ -168,7 +169,26 @@ export function SettingsForm({ settings }: { settings: Settings }) {
         </div>
       </Section>
 
-      <Section title="Fabric specs" hint="Shown on the home page next to the 3D hoodie. Use numbers only once the vendor has confirmed them.">
+      <Section title="Freebies offer" hint="E.g. the first 200 paid orders get a keychain and stickers. A spot is claimed when you verify an order's payment, and given back if you reject or reset it.">
+        <label className="mb-5 flex items-center gap-3">
+          <input type="checkbox" name="promoEnabled" defaultChecked={state.values ? state.values.promoEnabled === "on" : settings.promo.enabled} className="size-5 accent-[var(--accent)]" />
+          <span className="text-[0.9rem]">Offer is on (shows on the site and tags verified orders)</span>
+        </label>
+        <div className="grid gap-x-5 sm:grid-cols-[2fr_1fr]">
+          <TextField label="Headline" name="promoTitle" defaultValue={pv("promoTitle", settings.promo.title)} error={f.error("promo")} help="e.g. First 200 customers get freebies" maxLength={80} required />
+          <TextField label="Number of spots" name="promoLimit" type="number" inputMode="numeric" min={1} max={10000} defaultValue={pv("promoLimit", String(settings.promo.limit))} help="First N paid orders" required />
+        </div>
+        <div className="field">
+          <label htmlFor="promoItems" className="label">
+            <span>Freebies, one per line</span>
+          </label>
+          <textarea id="promoItems" name="promoItems" defaultValue={pv("promoItems", settings.promo.items.join("\n"))} className="input min-h-24" placeholder={"IIT Bombay keychain\nIITB cultural stickers"} />
+          <div className="mt-2 min-h-[1.5rem]" />
+        </div>
+        <TextField label="Small print" name="promoNote" defaultValue={pv("promoNote", settings.promo.note)} help="Optional, e.g. Handed over with your hoodie at pickup." maxLength={140} />
+      </Section>
+
+      <Section title="Fabric specs" hint="Shown on the home page. Use numbers only once the vendor has confirmed them.">
         <ul className="grid gap-2">
           {specs.map((s, i) => (
             <li key={i} className="grid grid-cols-[1fr_1fr_auto] items-center gap-2">

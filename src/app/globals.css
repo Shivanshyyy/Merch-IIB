@@ -763,3 +763,13 @@ html.booted .preloader,
 .preloader[data-done="true"] .preloader-count {
   color: var(--accent);
 }
+
+/* Collegiate outline lettering for the name preview on the back still */
+.varsity {
+  font-family: var(--font-varsity), var(--font-display);
+  color: #0e0e10;
+  -webkit-text-stroke: 0.1em #fff;
+  paint-order: stroke fill;
+  letter-spacing: 0.03em;
+  line-height: 1;
+}

@@ -13,17 +13,21 @@ import { useToast } from "@/components/ui/Toast";
 import { useSettings } from "@/components/SettingsProvider";
 import { ColorwayImage } from "@/components/shop/ColorwayImage";
 import { PhotoGallery } from "@/components/shop/PhotoGallery";
+import { BackName } from "@/components/shop/BackName";
+import { Price } from "@/components/shop/Price";
 import { fmtDate, inr } from "@/lib/format";
 import { buzz } from "@/lib/haptics";
 import { normalizeName } from "@/lib/schemas";
+import type { PromoView } from "@/lib/promo";
 import type { Product } from "@/lib/types";
+import { FreebiesBanner } from "@/components/promo/FreebiesBanner";
 import { useBatchClosed } from "@/lib/useBatchClosed";
 import { useCart } from "@/store/cart";
 import { flyToCart } from "@/store/fly";
 
 type BatchInfo = { name: string; closesAt: string; estDelivery: string } | null;
 
-export function ProductConfigurator({ product, batch }: { product: Product; batch: BatchInfo }) {
+export function ProductConfigurator({ product, batch, promo }: { product: Product; batch: BatchInfo; promo: PromoView | null }) {
   const router = useRouter();
   const editId = useSearchParams().get("edit");
   const { toast } = useToast();
@@ -120,24 +124,15 @@ export function ProductConfigurator({ product, batch }: { product: Product; batc
             <PhotoGallery photos={product.photos} alt={product.name} />
           ) : (
             <>
-              <div aria-hidden className="absolute inset-0 bg-[radial-gradient(55%_50%_at_50%_55%,rgba(255,59,31,0.32),transparent_72%)]" />
               <AnimatePresence initial={false}>
                 <motion.div key={`${colorway.name}-${view}`} className="absolute inset-0" initial={{ opacity: 0, scale: 1.02 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}>
-                  <ColorwayImage slug={product.slug} colorway={colorway.name} body={colorway.body} stitch={colorway.stitch} view={view} alt={`${product.name} in ${colorway.name}, ${view} view`} priority sizes="(min-width: 1024px) 55vw, 100vw" className="object-contain p-4" />
+                  <ColorwayImage slug={product.slug} colorway={colorway.name} body={colorway.body} stitch={colorway.stitch} view={view} alt={`${product.name} in ${colorway.name}, ${view} view`} priority sizes="(min-width: 1024px) 55vw, 100vw" className={view === "front" ? "object-cover object-top" : "object-cover"} />
                 </motion.div>
               </AnimatePresence>
 
-              {view === "back" && printed && (
-                <p
-                  aria-hidden
-                  className="t-display pointer-events-none absolute left-1/2 top-[35.5%] -translate-x-1/2 -translate-y-1/2 whitespace-nowrap"
-                  style={{ color: colorway.stitch, fontSize: `min(4.6cqw, calc(30cqw / ${Math.max(printed.length * 0.9, 6)}))`, letterSpacing: "0.06em", textShadow: "0 1px 0 rgba(0,0,0,.35)" }}
-                >
-                  {printed}
-                </p>
-              )}
+              {view === "back" && product.personalizable && <BackName name={printed} />}
 
-              <div role="group" aria-label="View" className="absolute bottom-3 left-3 flex border border-line bg-bg/80 backdrop-blur-sm">
+              <div role="group" aria-label="View" className="absolute left-3 top-3 flex border border-line bg-bg/80 backdrop-blur-sm">
                 {(["front", "back"] as const).map((v) => (
                   <button key={v} type="button" aria-pressed={view === v} onClick={() => setView(v)} className="label flex min-h-11 items-center px-4 transition-colors aria-pressed:bg-fg aria-pressed:text-bg">
                     {v}
@@ -158,10 +153,15 @@ export function ProductConfigurator({ product, batch }: { product: Product; batc
             {product.name}
           </Reveal>
           <div className="mt-5 flex items-baseline gap-4">
-            <p className="mono text-3xl">{inr(product.price_inr)}</p>
+            <Price product={product} className="text-3xl" />
             {batch && <p className="label">{batch.name} · preorder</p>}
           </div>
           <p className="mt-4 max-w-md text-muted">{product.description}</p>
+          {promo && (
+            <div className="mt-5">
+              <FreebiesBanner promo={promo} compact />
+            </div>
+          )}
         </header>
 
         <ChipGroup

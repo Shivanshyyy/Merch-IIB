@@ -2,12 +2,15 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { BackName } from "@/components/shop/BackName";
 import { ColorwayImage } from "@/components/shop/ColorwayImage";
 import { useSettings } from "@/components/SettingsProvider";
 import { Button } from "@/components/ui/Button";
 import { Reveal } from "@/components/ui/Reveal";
 import { fmtDay } from "@/lib/format";
 import { normalizeName } from "@/lib/schemas";
+import { FreebiesBanner } from "@/components/promo/FreebiesBanner";
+import type { PromoView } from "@/lib/promo";
 import { Countdown } from "./Countdown";
 import { useHome, type HomeColorway } from "./store";
 
@@ -23,20 +26,14 @@ function Panel({ id, children, className = "" }: { id?: string; children: React.
   );
 }
 
-// Studio still of the picked colourway; flips to the back with the name once one is typed.
+// The back print of the picked colourway, with the typed name (or a faint placeholder) where it gets printed.
 function Preview({ printed }: { printed: string }) {
   const colorway = useHome((s) => s.colorway);
   if (!colorway) return null;
-  const view = printed ? "back" : "front";
   return (
     <div className="relative aspect-square w-full overflow-hidden bg-bg-2 [container-type:inline-size]">
-      <div aria-hidden className="absolute inset-0 bg-[radial-gradient(55%_50%_at_50%_55%,rgba(255,59,31,0.32),transparent_72%)]" />
-      <ColorwayImage slug={colorway.slug} colorway={colorway.name} body={colorway.body} stitch={colorway.stitch} view={view} alt={`${colorway.name} hoodie, ${view} view`} sizes="(min-width: 768px) 45vw, 100vw" className="object-contain p-4" />
-      {printed && (
-        <p aria-hidden className="t-display absolute left-1/2 top-[35.5%] -translate-x-1/2 -translate-y-1/2 whitespace-nowrap" style={{ color: colorway.stitch, fontSize: `min(4.6cqw, calc(30cqw / ${Math.max(printed.length * 0.9, 6)}))`, letterSpacing: "0.06em" }}>
-          {printed}
-        </p>
-      )}
+      <ColorwayImage slug={colorway.slug} colorway={colorway.name} body={colorway.body} stitch={colorway.stitch} view="back" alt={`${colorway.name} hoodie, back print`} sizes="(min-width: 768px) 45vw, 100vw" className="object-cover" />
+      <BackName name={printed} />
     </div>
   );
 }
@@ -44,7 +41,7 @@ function Preview({ printed }: { printed: string }) {
 const Label = ({ children }: { children: React.ReactNode }) => <p className="label mb-4 text-fg">{children}</p>;
 const Copy = ({ children }: { children: React.ReactNode }) => <p className="max-w-sm text-[1.02rem] leading-relaxed text-[color-mix(in_srgb,var(--fg)_82%,transparent)]">{children}</p>;
 
-export function Sections({ colorways, batch, hero }: { colorways: HomeColorway[]; batch: HomeBatch; hero: HomePhoto }) {
+export function Sections({ colorways, batch, hero, promo }: { colorways: HomeColorway[]; batch: HomeBatch; hero: HomePhoto; promo: PromoView | null }) {
   const s = useSettings();
   const { colorway, setColorway, name, setName } = useHome();
   const printed = normalizeName(name, s);
@@ -70,11 +67,13 @@ export function Sections({ colorways, batch, hero }: { colorways: HomeColorway[]
             {hero ? (
               <Image src={hero.src} alt={hero.alt} fill priority sizes="(min-width: 768px) 45vw, 100vw" className="object-cover" />
             ) : colorway ? (
-              <ColorwayImage slug={colorway.slug} colorway={colorway.name} body={colorway.body} stitch={colorway.stitch} alt={`${colorway.name} hoodie`} priority sizes="(min-width: 768px) 45vw, 100vw" className="object-contain p-4" />
+              <ColorwayImage slug={colorway.slug} colorway={colorway.name} body={colorway.body} stitch={colorway.stitch} alt={`${colorway.name} hoodie`} priority sizes="(min-width: 768px) 45vw, 100vw" className="object-cover object-top" />
             ) : null}
           </Link>
         </div>
       </section>
+
+      {promo && <FreebiesBanner promo={promo} />}
 
       {/* 02 The fabric */}
       <Panel id="fabric-h">
@@ -85,7 +84,7 @@ export function Sections({ colorways, batch, hero }: { colorways: HomeColorway[]
               Made to be worn in
             </Reveal>
             <div className="mt-5">
-              <Copy>Every hoodie is made to order. Here is what the vendor tells us about the cloth.</Copy>
+              <Copy>Heavyweight cotton fleece, soft on the inside and made to order. Here is what goes into every hoodie.</Copy>
             </div>
             <dl className="mono mt-6 grid gap-px border border-line bg-line text-[0.8rem]">
               {s.fabricSpecs.map((f) => (

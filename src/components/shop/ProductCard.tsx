@@ -1,7 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ColorwayImage } from "@/components/shop/ColorwayImage";
-import { inr } from "@/lib/format";
+import { Price } from "@/components/shop/Price";
+import { discountPercent } from "@/lib/discount";
 import { photoUrl } from "@/lib/photos";
 import type { Product } from "@/lib/types";
 
@@ -21,9 +22,8 @@ export function ProductCard({ product, index, badge, priority = false }: { produ
             {second && <Image src={photoUrl(second)} alt="" fill sizes={SIZES} className={`object-cover opacity-0 ${FADE} group-hover:opacity-100`} />}
           </>
         ) : (
-          // No uploads yet: the studio pictures (front, and back on hover), or a tinted hoodie glyph.
+          // No uploads yet: the studio photos (front, and the back print on hover), or a tinted hoodie glyph.
           <>
-            <div aria-hidden className="absolute inset-0 bg-[radial-gradient(55%_45%_at_50%_58%,rgba(255,59,31,0.3),transparent_70%)] transition-opacity duration-700 group-hover:opacity-100" />
             <ColorwayImage
               slug={product.slug}
               colorway={first.name}
@@ -33,12 +33,13 @@ export function ProductCard({ product, index, badge, priority = false }: { produ
               alt={`${product.name} in ${first.name}, front`}
               priority={priority}
               sizes={SIZES}
-              className={`object-contain p-4 ${FADE} group-hover:opacity-0`}
+              className={`object-cover object-top ${FADE} group-hover:opacity-0`}
             />
-            <ColorwayImage slug={product.slug} colorway={first.name} body={first.body} stitch={first.stitch} view="back" alt="" sizes={SIZES} className={`object-contain p-4 opacity-0 ${FADE} group-hover:opacity-100`} />
+            <ColorwayImage slug={product.slug} colorway={first.name} body={first.body} stitch={first.stitch} view="back" alt="" sizes={SIZES} className={`object-cover opacity-0 ${FADE} group-hover:opacity-100`} />
           </>
         )}
         <span className="label absolute left-4 top-4 border border-line bg-bg/70 px-2 py-1.5 backdrop-blur-sm">{badge ?? "Preorder"}</span>
+        {discountPercent(product) > 0 && <span className="label absolute bottom-4 left-4 bg-accent px-2 py-1.5 text-bg">Sale · {discountPercent(product)}% off</span>}
         <span className="mono absolute right-4 top-4 border border-line bg-bg/70 px-2 py-1.5 text-[0.7rem] leading-none text-fg backdrop-blur-sm">[{String(index + 1).padStart(2, "0")}]</span>
       </div>
       <div className="flex items-end justify-between gap-4 p-4 sm:p-5">
@@ -48,10 +49,10 @@ export function ProductCard({ product, index, badge, priority = false }: { produ
             {product.colorways.map((c) => (
               <span key={c.name} title={c.name} className="size-3.5 rounded-full border border-line" style={{ background: c.body }} />
             ))}
-            <span className="label ml-1">{product.colorways.length} colourways</span>
+            <span className="label ml-1">{product.colorways.length} {product.colorways.length === 1 ? "colourway" : "colourways"}</span>
           </div>
         </div>
-        <p className="mono text-lg">{inr(product.price_inr)}</p>
+        <Price product={product} badge={false} />
       </div>
     </Link>
   );
