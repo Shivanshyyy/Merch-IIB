@@ -46,12 +46,13 @@ export async function saveProduct(_prev: FormState, formData: FormData): Promise
     if (parsed.data.compare_at_inr !== null && parsed.data.compare_at_inr <= parsed.data.price_inr)
       return { ok: false, fieldErrors: { compare_at_inr: "Must be higher than the selling price (or leave it empty)" }, message: "Please fix the highlighted fields.", values };
 
+    let createdId: string | undefined;
     try {
       if (id) {
         if (!z.uuid().safeParse(id).success) return { ok: false, message: "Product not found.", values };
         await db().updateProduct(id, parsed.data);
       } else {
-        await db().createProduct(parsed.data);
+        createdId = (await db().createProduct(parsed.data)).id;
       }
     } catch (e) {
       if (e instanceof SlugTakenError) return { ok: false, fieldErrors: { slug: "Another product already uses this slug." }, values };
@@ -59,7 +60,7 @@ export async function saveProduct(_prev: FormState, formData: FormData): Promise
       return { ok: false, message: "Couldn't save the product.", values };
     }
     refresh();
-    return { ok: true, message: id ? "Product saved." : "Product created.", values };
+    return { ok: true, id: createdId, message: id ? "Product saved." : "Product created.", values };
   });
 }
 

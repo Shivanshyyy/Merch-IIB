@@ -6,14 +6,14 @@ import { discountPercent } from "@/lib/discount";
 import { photoUrl } from "@/lib/photos";
 import type { Product } from "@/lib/types";
 
-const SIZES = "(min-width: 1280px) 25vw, (min-width: 640px) 50vw, 100vw";
+const SIZES = "(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw";
 const FADE = "transition-all duration-700 ease-[var(--ease)] group-hover:scale-[1.04]";
 
 export function ProductCard({ product, index, badge, priority = false }: { product: Product; index: number; badge: string | null; priority?: boolean }) {
   const first = product.colorways[0];
   const [cover, second] = product.photos;
   return (
-    <Link href={`/shop/${product.slug}`} data-cursor="view" className="group relative block border-b border-line sm:border-r sm:[&:nth-child(2n)]:border-r-0 xl:[&:nth-child(2n)]:border-r xl:[&:nth-child(4n)]:border-r-0">
+    <Link href={`/shop/${product.slug}`} data-cursor="view" className="group relative block border-b border-line sm:border-r sm:[&:nth-child(2n)]:border-r-0 lg:[&:nth-child(2n)]:border-r lg:[&:nth-child(3n)]:border-r-0">
       <div className="relative aspect-[4/5] overflow-hidden bg-bg-2">
         {cover ? (
           // Photos the admin uploaded: the cover, and the second one fades in on hover.

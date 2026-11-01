@@ -48,7 +48,7 @@ export function ProductPhotos({ productId, photos }: { productId: string; photos
           Photos
         </h2>
         <p className="admin-label mt-2">
-          Shown on the shop cards instead of the 3D model. The first photo is the cover, and the second appears when someone hovers the card. With no photos, the card shows the studio picture.
+          Shown on the shop card and the product page. The first photo is the cover, and the second appears when someone hovers the card. With no photos, the studio pictures are used.
         </p>
       </div>
 

@@ -14,6 +14,7 @@ export type UtrState = { ok: boolean; message?: string; error?: string };
 // Shared by login, sign-up, profile and password forms.
 export type FormState = {
   ok?: boolean;
+  id?: string; // set when a form created a record
   message?: string;
   fieldErrors?: Record<string, string>;
   values?: Record<string, string>;
