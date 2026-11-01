@@ -10,8 +10,7 @@ import { useFieldErrors } from "@/components/ui/useFieldErrors";
 import type { FabricSpec, Settings } from "@/config/site";
 import type { FormState } from "@/lib/form-state";
 import { settingsSchema } from "@/lib/settings-schema";
-
-type ChartRow = { size: string; cells: string[] };
+import { SizeChartEditor } from "./SizeChartEditor";
 
 const Section = ({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) => (
   <section className="admin-card p-5" aria-label={title}>
@@ -29,11 +28,6 @@ export function SettingsForm({ settings }: { settings: Settings }) {
   const v = (k: keyof Settings) => state.values?.[k] ?? String(settings[k]);
   const pv = (k: string, fallback: string) => state.values?.[k] ?? fallback;
 
-  // Size chart: unit + column names + one row per size.
-  const [unit, setUnit] = useState(settings.sizeChart.unit);
-  const [columns, setColumns] = useState(settings.sizeChart.columns);
-  const [rows, setRows] = useState<ChartRow[]>(Object.entries(settings.sizeChart.rows).map(([size, cells]) => ({ size, cells: columns.map((_, i) => cells[i] ?? "") })));
-  const chart = { unit, columns, rows: Object.fromEntries(rows.filter((r) => r.size.trim()).map((r) => [r.size.trim().toUpperCase(), r.cells])) };
   const [specs, setSpecs] = useState<FabricSpec[]>(settings.fabricSpecs);
 
   useEffect(() => {
@@ -44,7 +38,6 @@ export function SettingsForm({ settings }: { settings: Settings }) {
 
   return (
     <form action={action} noValidate className="grid gap-6">
-      <input type="hidden" name="sizeChart" value={JSON.stringify(chart)} />
       <input type="hidden" name="fabricSpecs" value={JSON.stringify(specs.filter((s) => s.label.trim() || s.value.trim()))} />
 
       <Section title="Brand & contact" hint="Shown across the site and in WhatsApp messages.">
@@ -83,90 +76,12 @@ export function SettingsForm({ settings }: { settings: Settings }) {
         </div>
       </Section>
 
-      <Section title="Size chart" hint="The measurements customers see in the size-chart popup. Add a row per size you sell.">
-        <div className="grid gap-4">
-          <label className="grid max-w-32 gap-1">
-            <span className="admin-label">Unit</span>
-            <input className={cell} value={unit} onChange={(e) => setUnit(e.target.value)} maxLength={8} />
-          </label>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[26rem] border-separate border-spacing-1">
-              <thead>
-                <tr>
-                  <th className="admin-label w-24 text-left font-normal">Size</th>
-                  {columns.map((c, i) => (
-                    <th key={i} className="font-normal">
-                      <input
-                        className={cell}
-                        aria-label={`Column ${i + 1} name`}
-                        value={c}
-                        onChange={(e) => setColumns((cols) => cols.map((x, j) => (j === i ? e.target.value : x)))}
-                      />
-                    </th>
-                  ))}
-                  <th className="relative w-10"><span className="sr-only">Remove</span></th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r, ri) => (
-                  <tr key={ri}>
-                    <td>
-                      <input className={`${cell} mono`} aria-label={`Row ${ri + 1} size`} value={r.size} onChange={(e) => setRows((rs) => rs.map((x, j) => (j === ri ? { ...x, size: e.target.value } : x)))} maxLength={8} />
-                    </td>
-                    {columns.map((_, ci) => (
-                      <td key={ci}>
-                        <input
-                          className={cell}
-                          aria-label={`${r.size || `Row ${ri + 1}`} ${columns[ci]}`}
-                          value={r.cells[ci] ?? ""}
-                          onChange={(e) => setRows((rs) => rs.map((x, j) => (j === ri ? { ...x, cells: x.cells.map((c, k) => (k === ci ? e.target.value : c)) } : x)))}
-                          maxLength={12}
-                        />
-                      </td>
-                    ))}
-                    <td>
-                      <button type="button" className="admin-label min-h-10 px-1 hover:text-fg" aria-label={`Remove size ${r.size || ri + 1}`} onClick={() => setRows((rs) => rs.filter((_, j) => j !== ri))}>
-                        ✕
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button variant="quiet" className="btn-sm" onClick={() => setRows((rs) => [...rs, { size: "", cells: columns.map(() => "") }])}>
-              Add size
-            </Button>
-            <Button
-              variant="quiet"
-              className="btn-sm"
-              disabled={columns.length >= 6}
-              onClick={() => {
-                setColumns((c) => [...c, ""]);
-                setRows((rs) => rs.map((r) => ({ ...r, cells: [...r.cells, ""] })));
-              }}
-            >
-              Add column
-            </Button>
-            <Button
-              variant="ghost"
-              className="btn-sm"
-              disabled={columns.length <= 1}
-              onClick={() => {
-                setColumns((c) => c.slice(0, -1));
-                setRows((rs) => rs.map((r) => ({ ...r, cells: r.cells.slice(0, -1) })));
-              }}
-            >
-              Remove last column
-            </Button>
-          </div>
-          {f.error("sizeChart") && (
-            <p role="alert" className="field-error">
-              The size chart has a blank column name or a value that is too long.
-            </p>
-          )}
-        </div>
+      <Section title="Size chart: hoodies" hint="What customers see in the size-chart popup on hoodie pages. Add a row per size you sell.">
+        <SizeChartEditor name="sizeChartHoodie" initial={settings.sizeCharts.hoodie} error={f.error("sizeCharts")} />
+      </Section>
+
+      <Section title="Size chart: T-shirts" hint="Shown on T-shirt pages. Leave a cell as — until the vendor confirms it.">
+        <SizeChartEditor name="sizeChartTee" initial={settings.sizeCharts.tee} error={f.error("sizeCharts")} />
       </Section>
 
       <Section title="Cart discounts" hint="Applied automatically at checkout. If an order qualifies for both, only the bigger one applies. Set a % to 0 to switch it off.">

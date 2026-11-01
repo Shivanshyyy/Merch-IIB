@@ -23,7 +23,7 @@ export type Settings = {
   nameMaxLength: number;
   nameUppercase: boolean;
   maxPendingOrdersPerEmail: number;
-  sizeChart: SizeChart;
+  sizeCharts: { hoodie: SizeChart; tee: SizeChart }; // the popup picks one by product type
   fabricSpecs: FabricSpec[];
   promo: Promo;
   offers: Offers;

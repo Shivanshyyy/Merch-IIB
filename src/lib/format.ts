@@ -16,4 +16,4 @@ export const slugify = (s: string) =>
 export type StillView = "front" | "back";
 
 export const colorwayImage = (productSlug: string, colorwayName: string, view: StillView = "front") =>
-  `/products/${productSlug}-${slugify(colorwayName)}-${view}.webp`;
+  `/products/${productSlug}-${slugify(colorwayName)}-${view}.webp?v=${process.env.NEXT_PUBLIC_STILLS_VERSION ?? "dev"}`;

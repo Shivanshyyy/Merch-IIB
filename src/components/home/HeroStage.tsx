@@ -4,8 +4,10 @@ import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { preload } from "react-dom";
 import { useSettings } from "@/components/SettingsProvider";
 import { ColorwayImage } from "@/components/shop/ColorwayImage";
+import { HOODIE_URL } from "@/lib/model";
 import { normalizeName } from "@/lib/schemas";
 import { prefersReducedMotion, webglAvailable } from "@/lib/webgl";
 import type { HomePhoto } from "./Sections";
@@ -14,40 +16,51 @@ import { useHome } from "./store";
 // three.js is fetched only here, only in the browser, and only when 3D is allowed.
 const HeroScene = dynamic(() => import("./HeroScene"), { ssr: false });
 
-// The home page's 3D hoodie (drag it; scrolling turns it round to the back). The photo stays as the first paint and the fallback.
+type Mode = "deciding" | "3d" | "photo";
+
+// The home page's 3D hoodie (drag it; scrolling turns it round to the back). The photo is used only when 3D can't run.
 export function HeroStage({ hero }: { hero: HomePhoto }) {
+  preload(HOODIE_URL, { as: "fetch", crossOrigin: "anonymous" }); // model download starts with the page, not after the JS
   const s = useSettings();
   const colorway = useHome((st) => st.colorway);
   const name = useHome((st) => st.name);
-  const [use3d, setUse3d] = useState(false);
+  const [mode, setMode] = useState<Mode>("deciding");
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
     const query = matchMedia("(prefers-reduced-motion: reduce)");
-    const decide = () => setUse3d(!prefersReducedMotion() && webglAvailable());
+    const decide = () => setMode(!prefersReducedMotion() && webglAvailable() ? "3d" : "photo");
     decide();
     query.addEventListener("change", decide);
     return () => query.removeEventListener("change", decide);
   }, []);
 
   const href = hero ? `/shop/${hero.slug}` : colorway ? `/shop/${colorway.slug}` : "/shop";
+  const loading = mode === "deciding" || (mode === "3d" && !ready);
   return (
-    // No panel colour: once the 3D is up, the hoodie and its glow sit straight on the page with no box edge.
-    <div className={`relative aspect-[4/5] [container-type:inline-size] md:aspect-square ${use3d && ready ? "" : "overflow-hidden bg-bg-2"}`}>
+    // No panel colour: the hoodie and its glow sit straight on the page with no box edge.
+    <div className={`relative aspect-[4/5] [container-type:inline-size] md:aspect-square ${mode === "photo" ? "overflow-hidden bg-bg-2" : ""}`}>
       <div aria-hidden className="pointer-events-none absolute -inset-[10%] bg-[radial-gradient(closest-side,rgba(255,59,31,0.22),transparent)]" />
-      <div className={`absolute inset-0 transition-opacity duration-700 ${use3d && ready ? "pointer-events-none opacity-0" : "opacity-100"}`}>
-        {hero ? (
+
+      {mode === "photo" &&
+        (hero ? (
           <Image src={hero.src} alt={hero.alt} fill priority sizes="(min-width: 768px) 45vw, 100vw" className="object-cover" />
         ) : colorway ? (
           <ColorwayImage slug={colorway.slug} colorway={colorway.name} body={colorway.body} stitch={colorway.stitch} alt={`${colorway.name} hoodie`} priority sizes="(min-width: 768px) 45vw, 100vw" className="object-cover object-top" />
-        ) : null}
-      </div>
-      {use3d && colorway && (
+        ) : null)}
+
+      {mode === "3d" && colorway && (
         <div className={`absolute inset-0 transition-opacity duration-1000 ${ready ? "opacity-100" : "opacity-0"}`}>
           <HeroScene body={colorway.body} stitch={colorway.stitch} name={normalizeName(name, s)} onReady={() => setReady(true)} />
         </div>
       )}
-      {use3d && ready && (
+
+      {loading && (
+        <p role="status" className="label absolute inset-0 grid place-items-center">
+          <span className="animate-pulse">[ Loading the hoodie ]</span>
+        </p>
+      )}
+      {mode === "3d" && ready && (
         <p className="label pointer-events-none absolute bottom-3 left-3">
           Drag to turn<span className="hidden sm:inline"> · scroll to see the back</span>
         </p>

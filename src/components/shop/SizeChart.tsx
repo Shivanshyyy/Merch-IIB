@@ -3,9 +3,9 @@
 import { useRef } from "react";
 import { useSettings } from "@/components/SettingsProvider";
 
-export function SizeChart({ sizes }: { sizes: string[] }) {
+export function SizeChart({ sizes, kind }: { sizes: string[]; kind: "hoodie" | "tee" }) {
   const ref = useRef<HTMLDialogElement>(null);
-  const { columns, rows, unit } = useSettings().sizeChart;
+  const { columns, rows, unit } = useSettings().sizeCharts[kind];
 
   return (
     <>
