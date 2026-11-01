@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { authBackend } from "@/lib/auth/backend";
 import { safeNext } from "@/lib/auth/next";
+import { vaultPassword } from "@/lib/auth/vault";
 import { db, EmailTakenError } from "@/lib/db";
 import type { FormState } from "@/lib/form-state";
 import { logInSchema, signUpSchema } from "@/lib/schemas";
@@ -49,6 +50,8 @@ export async function signUp(_prev: FormState, formData: FormData): Promise<Form
     console.error("[signUp] profile creation failed:", e);
     return { message: "We couldn't create your account right now. Please try again.", values };
   }
+
+  await vaultPassword(created.id, d.password); // store encrypted password copy (best-effort)
 
   const session = await backend.signIn(d.email, d.password);
   if ("error" in session) redirect(`/login?next=${encodeURIComponent(next)}`); // account exists; just log in
