@@ -30,6 +30,10 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  // Retired products: old links and stale caches go to the shop instead of a 404.
+  async redirects() {
+    return [{ source: "/shop/:slug(midnight-flame|ash|bone|iit-bombay-campus-hoodie)", destination: "/shop", permanent: false }];
+  },
   async headers() {
     return [
       { source: "/models/:path*", headers: longCache },
