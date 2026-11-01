@@ -90,3 +90,18 @@ test("each product gets the right size chart", () => {
   assert.equal(sizeChartFor({ type: "tee", name: "Regular T-shirt", slug: "regular-tee" }), "regular");
   assert.deepEqual(defaultSettings.sizeCharts.oversized.rows.XXL, ["48"]);
 });
+
+test("PICKUP_ROOM / PICKUP_LOCATION env vars pin the pickup point", async () => {
+  const { pickupFromEnv } = await import("@/lib/settings");
+  const before = { room: process.env.PICKUP_ROOM, location: process.env.PICKUP_LOCATION };
+  process.env.PICKUP_ROOM = "7131";
+  process.env.PICKUP_LOCATION = "Hostel 4";
+  assert.deepEqual(pickupFromEnv(), { pickupLocation: "Hostel 4", pickupRoom: "Room 7131" });
+  process.env.PICKUP_ROOM = "Common room";
+  assert.equal(pickupFromEnv().pickupRoom, "Common room");
+  delete process.env.PICKUP_ROOM;
+  delete process.env.PICKUP_LOCATION;
+  assert.deepEqual(pickupFromEnv(), {});
+  if (before.room !== undefined) process.env.PICKUP_ROOM = before.room;
+  if (before.location !== undefined) process.env.PICKUP_LOCATION = before.location;
+});

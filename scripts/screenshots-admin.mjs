@@ -39,8 +39,8 @@ async function placeOrder(ctx, { name, product, size, nameOnBack, qty = 1, tag }
   await page.getByLabel("Phone").fill("98765 4" + String(stamp).slice(-4));
   await page.getByRole("button", { name: "Create account" }).click();
   await page.waitForURL(/\/checkout$/);
-  await page.getByLabel("Hostel").fill("Hostel 4");
-  await page.getByLabel("Room").fill("112");
+  await page.getByLabel("Your hostel").fill("Hostel 12");
+  await page.getByLabel("Your room number").fill("214");
   await page.locator("label", { hasText: "I confirmed the name spelling" }).click({ position: { x: 12, y: 12 } });
   await page.locator("label", { hasText: /read the/ }).click({ position: { x: 12, y: 12 } });
   await page.getByRole("button", { name: /Place order/i }).click();

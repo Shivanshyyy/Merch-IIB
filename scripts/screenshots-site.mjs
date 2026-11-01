@@ -68,8 +68,8 @@ try {
     await page.waitForURL(/\/checkout$/, { timeout: 15000 });
     await page.getByRole("button", { name: /Place order/i }).waitFor();
     if ((await page.getByLabel("Full name").inputValue()) !== "Aryan Kumar") problems.push(`[${label}] checkout did not prefill the name`);
-    await page.getByLabel("Hostel").fill("Hostel 4");
-    await page.getByLabel("Room").fill("112");
+    await page.getByLabel("Your hostel").fill("Hostel 12");
+    await page.getByLabel("Your room number").fill("214");
     await page.locator("label", { hasText: "I confirmed the name spelling" }).click({ position: { x: 12, y: 12 } });
     await page.locator("label", { hasText: /read the/ }).click({ position: { x: 12, y: 12 } });
     await shot("06-checkout-prefilled");

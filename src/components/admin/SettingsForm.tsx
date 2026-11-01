@@ -20,7 +20,7 @@ const Section = ({ title, hint, children }: { title: string; hint?: string; chil
   </section>
 );
 
-export function SettingsForm({ settings }: { settings: Settings }) {
+export function SettingsForm({ settings, pinned = [] }: { settings: Settings; pinned?: string[] }) {
   const [state, action] = useActionState<FormState, FormData>(saveSettings, {});
   const f = useFieldErrors(state, state.fieldErrors);
   const { toast } = useToast();
@@ -58,8 +58,8 @@ export function SettingsForm({ settings }: { settings: Settings }) {
 
       <Section title="Pickup & refunds" hint="Shown on the pay page, policies and checkout.">
         <div className="grid gap-x-5 sm:grid-cols-3">
-          <TextField label="Pickup location" name="pickupLocation" defaultValue={v("pickupLocation")} error={f.error("pickupLocation")} required />
-          <TextField label="Room" name="pickupRoom" defaultValue={v("pickupRoom")} error={f.error("pickupRoom")} help="e.g. Room 112" required />
+          <TextField label="Pickup location" name="pickupLocation" defaultValue={v("pickupLocation")} error={f.error("pickupLocation")} readOnly={pinned.includes("pickupLocation")} help={pinned.includes("pickupLocation") ? "Set by PICKUP_LOCATION on Vercel" : undefined} required />
+          <TextField label="Room" name="pickupRoom" defaultValue={v("pickupRoom")} error={f.error("pickupRoom")} readOnly={pinned.includes("pickupRoom")} help={pinned.includes("pickupRoom") ? "Set by PICKUP_ROOM on Vercel" : "e.g. Room 7131"} required />
           <TextField label="Hours" name="pickupHours" defaultValue={v("pickupHours")} error={f.error("pickupHours")} help="e.g. 6–9 pm, weekdays" required />
           <TextField label="Refund window (days)" name="refundWindowDays" type="number" inputMode="numeric" min={0} max={90} defaultValue={v("refundWindowDays")} error={f.error("refundWindowDays")} help="Days after pickup" required />
         </div>
