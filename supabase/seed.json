@@ -113,7 +113,7 @@
       "slug": "regular-tee",
       "name": "Regular T-shirt",
       "type": "tee",
-      "description": "100% cotton, 210 GSM. Regular fit. Emblem on the chest; on the back, the IIT Bombay arch over line art of the main building by the lake, with the campus coordinates. Add your name for ₹99.",
+      "description": "100% cotton, 210 GSM. Regular fit, emblem on the chest and the IIT Bombay arch on the back. Add your name on the back for ₹99.",
       "price_inr": 349,
       "compare_at_inr": null,
       "name_fee_inr": 99,
@@ -134,7 +134,7 @@
         {
           "name": "White",
           "body": "#F4F4F2",
-          "stitch": "#5A1A22"
+          "stitch": "#111111"
         },
         {
           "name": "Navy Blue",
