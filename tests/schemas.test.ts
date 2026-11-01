@@ -76,9 +76,9 @@ test("settings: defaults are valid, bad stored values fall back per field", () =
 
 test("setup checklist flags placeholders until real values are saved", () => {
   const todo = setupChecklist(defaultSettings).filter((i) => !i.done).map((i) => i.key);
-  assert.deepEqual(todo, ["upi", "payee", "phone", "pickup", "sizes"]);
+  assert.deepEqual(todo, ["upi", "payee", "phone", "pickup", "tee-sizes"], "the hoodie chart ships filled in");
   const done = setupChecklist(
-    mergeSettings({ upiId: "aryan@oksbi", payeeName: "Aryan K", phone: "919876543210", whatsapp: "919876543210", pickupRoom: "Room 12", pickupHours: "6-9pm", sizeChart: { unit: "cm", columns: ["Chest"], rows: { M: ["54"] } } }),
+    mergeSettings({ upiId: "aryan@oksbi", payeeName: "Aryan K", phone: "919876543210", whatsapp: "919876543210", pickupRoom: "Room 12", pickupHours: "6-9pm", sizeCharts: { hoodie: { unit: "cm", columns: ["Chest"], rows: { M: ["54"] } }, tee: { unit: "cm", columns: ["Chest"], rows: { M: ["50"] } } } }),
   );
   assert.ok(done.every((i) => i.done), JSON.stringify(done.filter((i) => !i.done)));
 });

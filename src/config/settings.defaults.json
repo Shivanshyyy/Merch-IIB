@@ -12,39 +12,52 @@
   "nameMaxLength": 12,
   "nameUppercase": true,
   "maxPendingOrdersPerEmail": 3,
-  "sizeChart": {
-    "unit": "cm",
-    "columns": [
-      "Chest",
-      "Length",
-      "Sleeve"
-    ],
-    "rows": {
-      "S": [
-        "—",
-        "—",
-        "—"
+  "sizeCharts": {
+    "hoodie": {
+      "unit": "inches",
+      "columns": [
+        "Chest"
       ],
-      "M": [
-        "—",
-        "—",
-        "—"
+      "rows": {
+        "S": [
+          "38"
+        ],
+        "M": [
+          "40"
+        ],
+        "L": [
+          "42"
+        ],
+        "XL": [
+          "44"
+        ],
+        "XXL": [
+          "46"
+        ]
+      }
+    },
+    "tee": {
+      "unit": "inches",
+      "columns": [
+        "Chest"
       ],
-      "L": [
-        "—",
-        "—",
-        "—"
-      ],
-      "XL": [
-        "—",
-        "—",
-        "—"
-      ],
-      "XXL": [
-        "—",
-        "—",
-        "—"
-      ]
+      "rows": {
+        "S": [
+          "—"
+        ],
+        "M": [
+          "—"
+        ],
+        "L": [
+          "—"
+        ],
+        "XL": [
+          "—"
+        ],
+        "XXL": [
+          "—"
+        ]
+      }
     }
   },
   "fabricSpecs": [
@@ -61,6 +74,11 @@
       "value": "—"
     }
   ],
+  "offers": {
+    "comboPercent": 5,
+    "bulkAbove": 1499,
+    "bulkPercent": 10
+  },
   "promo": {
     "enabled": true,
     "limit": 200,
@@ -70,10 +88,5 @@
       "IITB cultural stickers"
     ],
     "note": "Handed over with your order at pickup."
-  },
-  "offers": {
-    "comboPercent": 5,
-    "bulkAbove": 1499,
-    "bulkPercent": 10
   }
 }

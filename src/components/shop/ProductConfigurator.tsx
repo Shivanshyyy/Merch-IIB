@@ -180,7 +180,7 @@ export function ProductConfigurator({ product, batch, promo }: { product: Produc
 
         <ChipGroup
           legend="Size"
-          hint={<SizeChart sizes={product.sizes} />}
+          hint={<SizeChart sizes={product.sizes} kind={product.type} />}
           options={product.sizes.map((s) => ({ value: s, label: s }))}
           value={size}
           onChange={(v) => {

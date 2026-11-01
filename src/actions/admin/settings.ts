@@ -27,9 +27,9 @@ export async function saveSettings(_prev: FormState, formData: FormData): Promis
     const values = Object.fromEntries(["brand", "upiId", "payeeName", "contactName", "phone", "whatsapp", "pickupLocation", "pickupRoom", "pickupHours", "refundWindowDays", "nameMaxLength", "maxPendingOrdersPerEmail", "promoTitle", "promoLimit", "promoItems", "promoNote", "offerCombo", "offerBulkAbove", "offerBulkPercent"].map((k) => [k, text(formData, k)]));
 
     values.promoEnabled = formData.get("promoEnabled") === "on" ? "on" : "";
-    const sizeChart = json(text(formData, "sizeChart"));
+    const sizeCharts = { hoodie: json(text(formData, "sizeChartHoodie")), tee: json(text(formData, "sizeChartTee")) };
     const fabricSpecs = json(text(formData, "fabricSpecs"));
-    if (sizeChart === undefined || fabricSpecs === undefined) return { ok: false, message: "The size chart or fabric specs couldn't be read. Reload and try again.", values };
+    if (sizeCharts.hoodie === undefined || sizeCharts.tee === undefined || fabricSpecs === undefined) return { ok: false, message: "The size chart or fabric specs couldn't be read. Reload and try again.", values };
 
     const parsed = settingsSchema.safeParse({
       ...values,
@@ -39,7 +39,7 @@ export async function saveSettings(_prev: FormState, formData: FormData): Promis
       nameMaxLength: num(values.nameMaxLength),
       maxPendingOrdersPerEmail: num(values.maxPendingOrdersPerEmail),
       nameUppercase: formData.get("nameUppercase") === "on",
-      sizeChart,
+      sizeCharts,
       fabricSpecs,
       offers: { comboPercent: num(values.offerCombo), bulkAbove: num(values.offerBulkAbove), bulkPercent: num(values.offerBulkPercent) },
       promo: {
