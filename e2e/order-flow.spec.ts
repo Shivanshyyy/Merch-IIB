@@ -9,8 +9,9 @@ const email = `e2e.${stamp}@example.com`;
 const password = "correct horse battery";
 
 async function checkout(page: Page) {
-  await page.getByLabel("Hostel").fill("Hostel 4");
-  await page.getByLabel("Room").fill("112");
+  await page.getByLabel("Your hostel").fill("Hostel 12");
+  await page.getByLabel("Your room number").fill("214");
+  await expect(page.getByRole("note").filter({ hasText: /Pickup is from Hostel 4, Room 7131/ })).toBeVisible();
   await page.locator("label", { hasText: "I confirmed the name spelling" }).click({ position: { x: 12, y: 12 } });
   await page.locator("label", { hasText: /read the/ }).click({ position: { x: 12, y: 12 } });
   await page.getByRole("button", { name: /Place order/i }).click();

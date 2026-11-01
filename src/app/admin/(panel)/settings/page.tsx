@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { SettingsForm } from "@/components/admin/SettingsForm";
 import { FreshOnVisit } from "@/components/ui/FreshOnVisit";
 import { requireAdmin } from "@/lib/admin/guard";
-import { getSettingsFresh } from "@/lib/settings";
+import { getSettingsFresh, pickupFromEnv } from "@/lib/settings";
 import { setupChecklist } from "@/lib/settings-schema";
 
 export const metadata: Metadata = { title: "Settings" };
@@ -50,7 +50,7 @@ async function Settings() {
         </ul>
       </section>
       <FreshOnVisit>
-        <SettingsForm settings={settings} />
+        <SettingsForm settings={settings} pinned={Object.keys(pickupFromEnv())} />
       </FreshOnVisit>
       <p className="admin-label">
         The admin password and session secret aren&apos;t editable here: they&apos;re the ADMIN_PASSWORD and ADMIN_SESSION_SECRET environment variables on your host.

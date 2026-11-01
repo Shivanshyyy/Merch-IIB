@@ -105,12 +105,18 @@ export function CheckoutForm({ catalog, batch, email, defaults }: Props) {
         </fieldset>
 
         <fieldset className="grid gap-x-5 gap-y-2 sm:grid-cols-2">
-          <legend className="label mb-5">[ 02 ] — Pickup details</legend>
-          <TextField label="Hostel" autoComplete="off" placeholder="e.g. Hostel 4" {...field("hostel")} />
-          <TextField label="Room" autoComplete="off" {...field("room")} />
-          <p className="label normal-case tracking-normal sm:col-span-2">
-            You&apos;ll collect from {settings.pickupLocation}, {settings.pickupRoom}.
-          </p>
+          <legend className="label mb-5">[ 02 ] — Where you live</legend>
+          <TextField label="Your hostel" autoComplete="off" placeholder="e.g. Hostel 12" {...field("hostel")} />
+          <TextField label="Your room number" autoComplete="off" placeholder="e.g. 214" {...field("room")} />
+          <div role="note" className="flex gap-3 border border-accent-2/40 bg-accent-2/[0.06] p-4 sm:col-span-2">
+            <span aria-hidden className="text-accent-2">✦</span>
+            <p className="text-[0.92rem] leading-relaxed">
+              <span className="font-semibold">Pickup is from {settings.pickupLocation}, {settings.pickupRoom}.</span>{" "}
+              <span className="text-muted">
+                We&apos;ll message you when your order is ready to collect{/^(tba|—)?$/i.test(settings.pickupHours.trim()) ? "" : ` (${settings.pickupHours})`}.
+              </span>
+            </p>
+          </div>
         </fieldset>
 
         <fieldset className="grid gap-1">
