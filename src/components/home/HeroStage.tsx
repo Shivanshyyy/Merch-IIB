@@ -32,8 +32,9 @@ export function HeroStage({ hero }: { hero: HomePhoto }) {
 
   const href = hero ? `/shop/${hero.slug}` : colorway ? `/shop/${colorway.slug}` : "/shop";
   return (
-    <div className="relative aspect-[4/5] overflow-hidden bg-bg-2 [container-type:inline-size] md:aspect-square">
-      <div aria-hidden className="absolute inset-0 bg-[radial-gradient(55%_50%_at_50%_58%,rgba(255,59,31,0.28),transparent_72%)]" />
+    // No panel colour: once the 3D is up, the hoodie and its glow sit straight on the page with no box edge.
+    <div className={`relative aspect-[4/5] [container-type:inline-size] md:aspect-square ${use3d && ready ? "" : "overflow-hidden bg-bg-2"}`}>
+      <div aria-hidden className="pointer-events-none absolute -inset-[10%] bg-[radial-gradient(closest-side,rgba(255,59,31,0.22),transparent)]" />
       <div className={`absolute inset-0 transition-opacity duration-700 ${use3d && ready ? "pointer-events-none opacity-0" : "opacity-100"}`}>
         {hero ? (
           <Image src={hero.src} alt={hero.alt} fill priority sizes="(min-width: 768px) 45vw, 100vw" className="object-cover" />
@@ -46,7 +47,11 @@ export function HeroStage({ hero }: { hero: HomePhoto }) {
           <HeroScene body={colorway.body} stitch={colorway.stitch} name={normalizeName(name, s)} onReady={() => setReady(true)} />
         </div>
       )}
-      {use3d && ready && <p className="label pointer-events-none absolute bottom-3 left-3">Drag to turn · scroll to see the back</p>}
+      {use3d && ready && (
+        <p className="label pointer-events-none absolute bottom-3 left-3">
+          Drag to turn<span className="hidden sm:inline"> · scroll to see the back</span>
+        </p>
+      )}
       <Link href={href} className="label absolute bottom-3 right-3 border border-line bg-bg/70 px-2.5 py-1.5 backdrop-blur-sm hover:text-fg">
         Shop it →
       </Link>
