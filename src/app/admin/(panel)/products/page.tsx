@@ -48,7 +48,7 @@ async function Products() {
                   <span className={`admin-label rounded-full border px-2.5 py-0.5 ${p.active ? "border-[#0ca30c]/60 text-fg" : "border-line"}`}>{p.active ? "Live" : "Hidden"}</span>
                 </div>
                 <p className="admin-label mt-1.5">
-                  <span className="mono">/shop/{p.slug}</span> · {p.type} · sizes {p.sizes.join(", ")}
+                  <span className="mono">/shop/{p.slug}</span> · {p.type} · sizes {p.sizes.join(", ")} · {p.photos.length ? `${p.photos.length} photo${p.photos.length === 1 ? "" : "s"}` : "studio pictures"}
                 </p>
                 <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
                   <span className="mono text-[1.05rem]">{inr(p.price_inr)}</span>
@@ -68,7 +68,7 @@ async function Products() {
               <div className="flex flex-wrap items-center gap-2">
                 <Link href={`/admin/products/${p.id}`} className="btn btn-ghost btn-sm">
                   <span className="btn-fill" aria-hidden />
-                  <span>Edit</span>
+                  <span>Edit & photos</span>
                 </Link>
                 <ProductActions id={p.id} active={p.active} name={p.name} />
               </div>

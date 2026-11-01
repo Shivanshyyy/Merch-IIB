@@ -2,13 +2,15 @@
 
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState } from "react";
-import { saveProduct } from "@/actions/admin/products";
+import { addProductPhoto, saveProduct } from "@/actions/admin/products";
 import { Button } from "@/components/ui/Button";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { TextField } from "@/components/ui/TextField";
 import { useToast } from "@/components/ui/Toast";
 import { useFieldErrors } from "@/components/ui/useFieldErrors";
 import { productSchema } from "@/lib/admin/schemas";
+import { shrinkImage } from "@/lib/admin/shrink-image";
+import { MAX_PHOTOS_PER_PRODUCT } from "@/lib/photos";
 import { slugify } from "@/lib/format";
 import type { FormState } from "@/lib/form-state";
 import type { Colorway, Product } from "@/lib/types";
@@ -28,11 +30,34 @@ export function ProductForm({ product }: { product?: Product }) {
   const set = (i: number, patch: Partial<Colorway>) => setColorways((c) => c.map((x, j) => (j === i ? { ...x, ...patch } : x)));
   const v = (k: string, fallback: string) => state.values?.[k] ?? fallback;
 
+  // New product: photos picked here are uploaded right after it's created, then the editor opens.
+  const [picked, setPicked] = useState<{ file: File; url: string }[]>([]);
+  const [uploading, setUploading] = useState("");
+  const pickInput = useRef<HTMLInputElement>(null);
+  const handled = useRef<FormState | null>(null);
+  useEffect(() => () => picked.forEach((p) => URL.revokeObjectURL(p.url)), [picked]);
+
   useEffect(() => {
-    if (!state.message) return;
-    toast({ message: state.message });
-    if (state.ok && !product) router.replace("/admin/products");
-  }, [state, product, router, toast]);
+    if (!state.message || handled.current === state) return;
+    handled.current = state;
+    if (!(state.ok && !product && state.id)) {
+      toast({ message: state.message });
+      return;
+    }
+    const id = state.id;
+    void (async () => {
+      let failed = 0;
+      for (const [i, p] of picked.entries()) {
+        setUploading(`Uploading photo ${i + 1} of ${picked.length}…`);
+        const body = new FormData();
+        body.set("photo", await shrinkImage(p.file));
+        if (!(await addProductPhoto(id, body)).ok) failed++;
+      }
+      setUploading("");
+      toast({ message: failed ? `Product created, but ${failed} photo${failed === 1 ? "" : "s"} didn't upload. Add them again below.` : picked.length ? `Product created with ${picked.length} photo${picked.length === 1 ? "" : "s"}.` : "Product created. Add photos below." });
+      router.replace(`/admin/products/${id}`);
+    })();
+  }, [state, product, router, toast, picked]);
 
   const shape = productSchema.shape;
   const box = "input !min-h-11";
@@ -139,7 +164,7 @@ export function ProductForm({ product }: { product?: Product }) {
             Add colourway
           </Button>
         </div>
-        <p className="admin-label mt-3">New colourways have no studio photo yet; the shop shows a placeholder until one is rendered.</p>
+        <p className="admin-label mt-3">Colourways without a photo show a tinted placeholder, so add photos below.</p>
       </fieldset>
 
       <div className="mt-4 flex flex-wrap gap-x-8 gap-y-3">
@@ -153,13 +178,61 @@ export function ProductForm({ product }: { product?: Product }) {
         </label>
       </div>
 
+      {!product && (
+        <fieldset className="mt-4 grid gap-3">
+          <legend className="label mb-3">Photos</legend>
+          <p className="admin-label -mt-1">Optional. The first is the cover on the shop card; the second shows on hover. They also replace the studio pictures on the product page. JPG, PNG or WebP.</p>
+          {picked.length > 0 && (
+            <ul className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+              {picked.map((p, i) => (
+                <li key={p.url} className="grid gap-1.5">
+                  <div className="relative aspect-[4/5] overflow-hidden border border-line bg-bg-2">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- local preview of a file not uploaded yet */}
+                    <img src={p.url} alt={`Photo ${i + 1}`} className="size-full object-cover" />
+                    {i === 0 && <span className="label absolute left-1.5 top-1.5 border border-line bg-bg/80 px-1.5 py-1">Cover</span>}
+                  </div>
+                  <button type="button" className="admin-label text-left hover:text-fg" onClick={() => setPicked((all) => all.filter((x) => x !== p))}>
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <div>
+            <input
+              ref={pickInput}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              multiple
+              hidden
+              onChange={(e) => {
+                const files = [...(e.target.files ?? [])];
+                e.target.value = "";
+                setPicked((all) => [...all, ...files.map((file) => ({ file, url: URL.createObjectURL(file) }))].slice(0, MAX_PHOTOS_PER_PRODUCT));
+              }}
+            />
+            <Button variant="quiet" className="btn-sm" disabled={picked.length >= MAX_PHOTOS_PER_PRODUCT} onClick={() => pickInput.current?.click()}>
+              {picked.length ? "Add more photos" : "Add photos"}
+            </Button>
+            <span className="admin-label ml-3">
+              {picked.length} of {MAX_PHOTOS_PER_PRODUCT}
+            </span>
+          </div>
+        </fieldset>
+      )}
+
       {state.message && !state.ok && (
         <p role="alert" className="mt-2 border border-accent p-3 text-[0.9rem] text-[#ff7a63]">
           {state.message}
         </p>
       )}
       <div className="mt-4">
-        <SubmitButton>{product ? "Save product" : "Create product"}</SubmitButton>
+        <SubmitButton disabled={!!uploading}>{product ? "Save product" : "Create product"}</SubmitButton>
+        {uploading && (
+          <p role="status" className="admin-label mt-2">
+            {uploading}
+          </p>
+        )}
       </div>
     </form>
   );

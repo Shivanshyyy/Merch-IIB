@@ -94,3 +94,8 @@ Short log, one entry per phase: what's done, what's left, open TODOs.
 - **Cart offers** (Admin → Settings → Cart discounts): hoodie + tee 5%, orders above ₹1499 10%, only the bigger applies; stored on the order (`discount_inr`, `discount_label`).
 - **Home hero:** the GLB hoodie is back in the hero only, turned by drag and by page scroll; photo stays as first paint and as the reduced-motion / no-WebGL fallback.
 - 78 unit tests, 4 e2e tests pass.
+
+## Admin photos on new products, campus tees (Nov 2026) ✅
+- New-product form has a photo picker: photos upload right after the product is created, then the editor opens. The product list shows each product's photo count.
+- Campus Regular T-shirt (₹449, 210 GSM) and Campus Oversized T-shirt (₹549, 240 GSM): 4 colours, shared photos, no name option.
+- Retired product links (/shop/ash etc.) redirect to /shop; catalogue cache refreshes within minutes.

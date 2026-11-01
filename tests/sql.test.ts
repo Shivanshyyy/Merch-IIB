@@ -43,7 +43,7 @@ before(async () => {
 test("migrations and seed re-run cleanly (idempotent)", async () => {
   for (const m of migrations) await db.exec(read(`migrations/${m}`));
   await db.exec(read("seed.sql"));
-  assert.deepEqual((await db.query("select count(*)::int n from products")).rows[0], { n: 4 });
+  assert.deepEqual((await db.query("select count(*)::int n from products")).rows[0], { n: 6 });
   assert.deepEqual((await db.query("select count(*)::int n from settings")).rows[0], { n: 1 });
   assert.deepEqual((await db.query("select value->>'brand' b from settings")).rows[0], { b: "MERCH—IITB" });
 });

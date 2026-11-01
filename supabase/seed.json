@@ -147,6 +147,86 @@
           "stitch": "#F3E9E6"
         }
       ]
+    },
+    {
+      "slug": "campus-regular-tee",
+      "name": "Campus Regular T-shirt",
+      "type": "tee",
+      "description": "100% cotton, 210 GSM. Regular fit. Emblem on the chest; on the back, the IIT Bombay arch over line art of the main building by the lake, with the campus coordinates. Sold as shown, without a name.",
+      "price_inr": 449,
+      "compare_at_inr": null,
+      "name_fee_inr": 0,
+      "personalizable": false,
+      "sizes": [
+        "S",
+        "M",
+        "L",
+        "XL",
+        "XXL"
+      ],
+      "sort": 5,
+      "colorways": [
+        {
+          "name": "Black",
+          "body": "#0E0E10",
+          "stitch": "#FFFFFF"
+        },
+        {
+          "name": "Navy Blue",
+          "body": "#1B2A4E",
+          "stitch": "#FFFFFF"
+        },
+        {
+          "name": "Maroon",
+          "body": "#5A1A22",
+          "stitch": "#F3E9E6"
+        },
+        {
+          "name": "White",
+          "body": "#F4F4F2",
+          "stitch": "#111111"
+        }
+      ]
+    },
+    {
+      "slug": "campus-oversized-tee",
+      "name": "Campus Oversized T-shirt",
+      "type": "tee",
+      "description": "100% cotton, 240 GSM. Oversized fit with drop shoulders. Emblem on the chest; on the back, the IIT Bombay arch over line art of the main building by the lake, with the campus coordinates. Sold as shown, without a name.",
+      "price_inr": 549,
+      "compare_at_inr": null,
+      "name_fee_inr": 0,
+      "personalizable": false,
+      "sizes": [
+        "S",
+        "M",
+        "L",
+        "XL",
+        "XXL"
+      ],
+      "sort": 6,
+      "colorways": [
+        {
+          "name": "Black",
+          "body": "#0E0E10",
+          "stitch": "#FFFFFF"
+        },
+        {
+          "name": "Navy Blue",
+          "body": "#1B2A4E",
+          "stitch": "#FFFFFF"
+        },
+        {
+          "name": "Maroon",
+          "body": "#5A1A22",
+          "stitch": "#F3E9E6"
+        },
+        {
+          "name": "White",
+          "body": "#F4F4F2",
+          "stitch": "#111111"
+        }
+      ]
     }
   ],
   "batch": {

@@ -50,7 +50,7 @@ async function Catalog() {
       {products.length === 0 ? (
         <p className="mt-16 border border-line p-10 text-center text-muted">No products are live yet. Check back soon.</p>
       ) : (
-        <div className="mt-12 grid border-t border-line sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-12 grid border-t border-line sm:grid-cols-2 lg:grid-cols-3">
           {products.map((p, i) => (
             <ProductCard key={p.id} product={p} index={i} badge={badge} priority={i === 0} />
           ))}
@@ -62,8 +62,8 @@ async function Catalog() {
 
 function GridSkeleton() {
   return (
-    <div className="mt-[4.6rem] grid border-t border-line sm:grid-cols-2 xl:grid-cols-4" aria-hidden>
-      {[0, 1, 2, 3].map((i) => (
+    <div className="mt-[4.6rem] grid border-t border-line sm:grid-cols-2 lg:grid-cols-3" aria-hidden>
+      {[0, 1, 2, 3, 4, 5].map((i) => (
         <div key={i} className="border-b border-line md:border-r md:last:border-r-0">
           <div className="skeleton aspect-[4/5]" />
           <div className="h-[84px]" />
