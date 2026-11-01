@@ -24,6 +24,13 @@ export const settingsSchema = z.object({
     columns: z.array(z.string().trim().min(1).max(20)).min(1).max(6),
     rows: z.record(z.string().max(8), z.array(z.string().trim().max(12)).max(6)),
   }),
+  promo: z.object({
+    enabled: z.boolean(),
+    limit: z.number().int("Whole number").min(1, "At least 1").max(10000, "At most 10000"),
+    title: z.string().trim().min(1, "Required").max(80, "Too long"),
+    items: z.array(z.string().trim().min(1).max(40)).max(6, "At most 6 items"),
+    note: z.string().trim().max(140, "Too long"),
+  }),
   fabricSpecs: z.array(z.object({ label: z.string().trim().min(1).max(30), value: z.string().trim().min(1).max(40) })).max(8),
 });
 

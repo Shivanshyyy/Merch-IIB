@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { JetBrains_Mono, Manrope, Unbounded } from "next/font/google";
+import { Graduate, JetBrains_Mono, Manrope, Unbounded } from "next/font/google";
 import { ToastProvider } from "@/components/ui/Toast";
 import { getSettings } from "@/lib/settings";
 import { siteUrl } from "@/lib/site-url";
@@ -13,6 +13,8 @@ const display = Unbounded({ subsets: ["latin"], variable: "--font-unbounded", di
 const sans = Manrope({ subsets: ["latin"], variable: "--font-manrope", display: "swap", adjustFontFallback: false, fallback: ["Body Fallback", "ui-sans-serif", "system-ui", "sans-serif"] });
 // Nearly every mono label is UPPERCASE with tracking, and the automatic Arial-based fallback is sized for mixed-case text, so the
 // swap to JetBrains Mono shifted the layout. Every monospace face is 0.6em wide, so a monospace fallback matches exactly.
+// Only the name preview uses it, so it is not preloaded on every page.
+const varsity = Graduate({ weight: "400", subsets: ["latin"], variable: "--font-varsity", display: "swap", preload: false });
 const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains", display: "swap", adjustFontFallback: false, fallback: ["Mono Fallback", "ui-monospace", "Menlo", "Consolas", "monospace"] });
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -41,7 +43,7 @@ const BOOT_SCRIPT = "(function(){var d=document.documentElement;d.classList.add(
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${display.variable} ${sans.variable} ${mono.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${display.variable} ${sans.variable} ${mono.variable} ${varsity.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: BOOT_SCRIPT }} />
         <noscript>

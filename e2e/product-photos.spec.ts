@@ -14,7 +14,7 @@ test("admin photos fill the shop cards instead of the 3D model, and removing the
   await page.getByRole("button", { name: "Log in" }).click();
   await page.waitForURL(/\/admin$/);
   await page.goto("/admin/products");
-  await page.getByRole("link", { name: "Midnight Flame Hoodie" }).first().click();
+  await page.getByRole("link", { name: "IIT Bombay Hoodie" }).first().click();
   await page.waitForURL(/\/admin\/products\/[0-9a-f-]{36}$/);
   const editUrl = page.url();
 
@@ -26,7 +26,7 @@ test("admin photos fill the shop cards instead of the 3D model, and removing the
 
   // 2. The shop card shows it, and nothing 3D loads when the card is hovered.
   await page.goto("/shop");
-  const card = page.locator('a[href="/shop/midnight-flame"]');
+  const card = page.locator('a[href="/shop/iit-bombay-hoodie"]');
   await expect(card.locator("img").first()).toHaveAttribute("src", /photos/);
   await card.hover();
   await page.waitForTimeout(800);

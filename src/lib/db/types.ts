@@ -50,6 +50,9 @@ export interface Db {
   setUtr(code: string, utr: string): Promise<boolean>;
   addEvent(orderId: string, type: string, note?: string): Promise<void>;
 
+  // Orders holding one of the freebies-offer spots.
+  countFreebies(): Promise<number>;
+
   // ---- admin ----
   listAllProducts(): Promise<Product[]>;
   getProductById(id: string): Promise<Product | null>;

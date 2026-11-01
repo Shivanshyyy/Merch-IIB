@@ -28,6 +28,7 @@ function init(): Store {
       type: p.type as Product["type"],
       description: p.description,
       price_inr: p.price_inr,
+      compare_at_inr: p.compare_at_inr ?? null,
       colorways: p.colorways,
       sizes: p.sizes,
       personalizable: true,
@@ -58,7 +59,11 @@ export const memoryStore = (): Store => {
   const store = (g.__merchMemoryStore ??= init());
   // A store left over from before photos existed (dev HMR keeps globalThis alive) gets the new fields.
   store.photoData ??= {};
-  for (const p of store.products) p.photos ??= [];
+  for (const p of store.products) {
+    p.photos ??= [];
+    p.compare_at_inr ??= null;
+  }
+  for (const o of store.orders) o.freebie ??= false;
   return store;
 };
 
@@ -116,6 +121,7 @@ export function createMemoryDb(): Db {
         refund_status: "none",
         admin_note: null,
         verified_at: null,
+        freebie: false,
         created_at: new Date().toISOString(),
       };
       s.orders.push(row);
@@ -135,6 +141,10 @@ export function createMemoryDb(): Db {
     },
     async addEvent(orderId, type, note) {
       s.events.push({ id: ++s.eventSeq, order_id: orderId, type, note: note ?? null, created_at: new Date().toISOString() });
+    },
+
+    async countFreebies() {
+      return s.orders.filter((o) => o.freebie).length;
     },
 
     // ---- admin ----

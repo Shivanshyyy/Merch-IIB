@@ -19,8 +19,8 @@ async function checkout(page: Page) {
 test("preorder → pay → admin verifies → the customer sees it verified", async ({ page, browser }) => {
   // 1. A guest builds a cart.
   await page.goto("/shop");
-  await page.getByRole("link", { name: /Midnight Flame Hoodie/ }).first().click();
-  await expect(page).toHaveURL(/\/shop\/midnight-flame/);
+  await page.getByRole("link", { name: /IIT Bombay Hoodie/ }).first().click();
+  await expect(page).toHaveURL(/\/shop\/iit-bombay-hoodie/);
   await page.locator("label.chip", { hasText: /^M$/ }).click();
   await page.getByLabel(/Name on the back/i).fill("zed tester");
   await page.getByRole("button", { name: /Add to cart/ }).click();

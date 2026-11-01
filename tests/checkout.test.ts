@@ -12,7 +12,7 @@ const other = { id: "00000000-0000-4000-8000-0000000000a2", email: "other@exampl
 
 const input = (over: Omit<Partial<PlaceOrderInput>, "values"> & { values?: Partial<PlaceOrderInput["values"]> } = {}): PlaceOrderInput => ({
   values: { fullName: "Aryan Kumar", phone: "98765 43210", hostel: "Hostel 4", room: "112", ...over.values },
-  items: over.items ?? [{ slug: "midnight-flame", colorway: "Midnight", size: "M", name: "aryan", qty: 2 }],
+  items: over.items ?? [{ slug: "iit-bombay-hoodie", colorway: "Black", size: "M", name: "aryan", qty: 2 }],
   confirmSpelling: over.confirmSpelling ?? true,
   confirmPolicy: over.confirmPolicy ?? true,
 });
@@ -89,7 +89,7 @@ test("enforces the pending-order limit per account, as set in settings", async (
 });
 
 test("name rules come from runtime settings", async () => {
-  const long = [{ slug: "midnight-flame", colorway: "Midnight", size: "M", name: "Aryan Kumar Singh", qty: 1 }];
+  const long = [{ slug: "iit-bombay-hoodie", colorway: "Black", size: "M", name: "Aryan Kumar Singh", qty: 1 }];
   assert.equal((await placeOrderFor(user, input({ items: long }))).ok, false, "17 chars exceeds the default 12");
   s().settings = { ...defaultSettings, nameMaxLength: 20, nameUppercase: false };
   const ok = await placeOrderFor(user, input({ items: long }));

@@ -7,6 +7,8 @@ export type Product = {
   type: "hoodie" | "tee";
   description: string;
   price_inr: number;
+  /** Original price shown crossed out when it is higher than price_inr; null means no discount. */
+  compare_at_inr: number | null;
   colorways: Colorway[];
   sizes: string[];
   personalizable: boolean;
@@ -65,6 +67,8 @@ export type Order = {
   refund_status: RefundStatus;
   admin_note: string | null;
   verified_at: string | null;
+  /** One of the first N paid orders in the freebies offer. */
+  freebie: boolean;
   created_at: string;
 };
 
@@ -84,7 +88,7 @@ export type Profile = {
 export type ProfileInput = Pick<Profile, "full_name" | "phone" | "roll_no" | "default_size">;
 
 // Columns an admin action may change on an order (applied atomically with its audit row).
-export type OrderPatch = Partial<Pick<Order, "payment_status" | "order_status" | "refund_status" | "admin_note" | "utr" | "verified_at" | "items">>;
+export type OrderPatch = Partial<Pick<Order, "payment_status" | "order_status" | "refund_status" | "admin_note" | "utr" | "verified_at" | "items" | "freebie">>;
 
 export type OrderFilter = {
   q?: string;

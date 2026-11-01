@@ -23,3 +23,16 @@ export async function getOpenBatch() {
   cacheLife("minutes");
   return db().getOpenBatch();
 }
+
+// How many freebie spots are taken. Cached; verifying or rejecting a payment invalidates "promo".
+export async function getFreebiesTaken(): Promise<number | null> {
+  "use cache";
+  cacheTag("promo");
+  cacheLife("minutes");
+  try {
+    return await db().countFreebies();
+  } catch (e) {
+    console.error("[promo] couldn't count freebies:", e);
+    return null;
+  }
+}

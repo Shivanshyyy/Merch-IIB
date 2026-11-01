@@ -14,18 +14,61 @@
   "maxPendingOrdersPerEmail": 3,
   "sizeChart": {
     "unit": "cm",
-    "columns": ["Chest", "Length", "Sleeve"],
+    "columns": [
+      "Chest",
+      "Length",
+      "Sleeve"
+    ],
     "rows": {
-      "S": ["—", "—", "—"],
-      "M": ["—", "—", "—"],
-      "L": ["—", "—", "—"],
-      "XL": ["—", "—", "—"],
-      "XXL": ["—", "—", "—"]
+      "S": [
+        "—",
+        "—",
+        "—"
+      ],
+      "M": [
+        "—",
+        "—",
+        "—"
+      ],
+      "L": [
+        "—",
+        "—",
+        "—"
+      ],
+      "XL": [
+        "—",
+        "—",
+        "—"
+      ],
+      "XXL": [
+        "—",
+        "—",
+        "—"
+      ]
     }
   },
   "fabricSpecs": [
-    { "label": "Fabric", "value": "Brushed fleece" },
-    { "label": "Weight", "value": "—" },
-    { "label": "Fit", "value": "—" }
-  ]
+    {
+      "label": "Fabric",
+      "value": "Cotton fleece"
+    },
+    {
+      "label": "Weight",
+      "value": "360 GSM"
+    },
+    {
+      "label": "Fit",
+      "value": "—"
+    }
+  ],
+  "promo": {
+    "enabled": true,
+    "limit": 200,
+    "title": "First 200 customers get freebies",
+    "items": [
+      "IIT Bombay keychain",
+      "IITB cultural stickers"
+    ],
+    "note": "Handed over with your hoodie at pickup."
+  }
 }

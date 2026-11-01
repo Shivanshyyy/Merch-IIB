@@ -123,6 +123,12 @@ export function OrderDrawer({ order, events, batchName, closeHref, templates, de
                   <dd>{fmtDate(order.verified_at)}</dd>
                 </>
               )}
+              {order.freebie && (
+                <>
+                  <dt className="text-muted">Freebie</dt>
+                  <dd className="text-accent-2">✦ Yes: hand over the freebies at pickup</dd>
+                </>
+              )}
             </dl>
             <div className="mt-4 flex flex-wrap gap-2">
               {order.payment_status !== "verified" && (

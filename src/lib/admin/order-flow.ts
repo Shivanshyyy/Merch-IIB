@@ -20,21 +20,32 @@ export const REFUND_LABEL: Record<RefundStatus, string> = { none: "No refund", r
 export const canFulfil = (o: Pick<Order, "payment_status">) => o.payment_status === "verified";
 export const canRefund = (o: Pick<Order, "payment_status" | "verified_at">) => o.payment_status === "verified" || !!o.verified_at;
 
-export function planOrderAction(order: Order, action: OrderAction, ctx: { now: Date; products: Product[]; rules: NameRules }): Plan {
+// Freebies offer: `taken` is how many orders already hold a spot.
+// An unpaid order gives its freebie spot back.
+const release = (o: Order): OrderPatch => (o.freebie ? { freebie: false } : {});
+
+export type PromoCtx = { enabled: boolean; limit: number; taken: number };
+
+export function planOrderAction(order: Order, action: OrderAction, ctx: { now: Date; products: Product[]; rules: NameRules; promo?: PromoCtx }): Plan {
   const fail = (error: string): Plan => ({ ok: false, error });
 
   switch (action.type) {
     case "verify":
       if (order.payment_status === "verified") return fail("Payment is already verified.");
+      if (!order.freebie && ctx.promo?.enabled && ctx.promo.taken < ctx.promo.limit) {
+        const spot = ctx.promo.taken + 1;
+        const note = [order.utr ? `UTR ${order.utr}` : "", `Freebie ${spot}/${ctx.promo.limit}`].filter(Boolean).join(" · ");
+        return { ok: true, patch: { payment_status: "verified", verified_at: ctx.now.toISOString(), freebie: true }, event: { type: "payment_verified", note }, message: `Payment verified · freebie ${spot}/${ctx.promo.limit}` };
+      }
       return { ok: true, patch: { payment_status: "verified", verified_at: ctx.now.toISOString() }, event: { type: "payment_verified", note: order.utr ? `UTR ${order.utr}` : undefined }, message: "Payment verified" };
 
     case "reject":
       if (order.payment_status === "rejected") return fail("Payment is already rejected.");
-      return { ok: true, patch: { payment_status: "rejected", verified_at: null }, event: { type: "payment_rejected", note: action.reason?.trim() || undefined }, message: "Payment rejected" };
+      return { ok: true, patch: { payment_status: "rejected", verified_at: null, ...release(order) }, event: { type: "payment_rejected", note: action.reason?.trim() || undefined }, message: "Payment rejected" };
 
     case "reset_payment":
       if (order.payment_status === "pending") return fail("Payment is already pending.");
-      return { ok: true, patch: { payment_status: "pending", verified_at: null }, event: { type: "payment_reset" }, message: "Payment set back to pending" };
+      return { ok: true, patch: { payment_status: "pending", verified_at: null, ...release(order) }, event: { type: "payment_reset" }, message: "Payment set back to pending" };
 
     case "status": {
       if (order.order_status === action.status) return fail(`Order is already ${STATUS_LABEL[action.status].toLowerCase()}.`);

@@ -6,6 +6,7 @@ import defaults from "./settings.defaults.json";
 
 export type SizeChart = { unit: string; columns: string[]; rows: Record<string, string[]> };
 export type FabricSpec = { label: string; value: string };
+export type Promo = { enabled: boolean; limit: number; title: string; items: string[]; note: string };
 
 export type Settings = {
   brand: string;
@@ -23,6 +24,7 @@ export type Settings = {
   maxPendingOrdersPerEmail: number;
   sizeChart: SizeChart;
   fabricSpecs: FabricSpec[];
+  promo: Promo;
 };
 
 export const defaultSettings: Settings = defaults;

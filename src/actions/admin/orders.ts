@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { z } from "zod";
 import { adminAction } from "@/lib/admin/guard";
 import { planOrderAction, type OrderAction } from "@/lib/admin/order-flow";
@@ -24,11 +24,12 @@ export async function applyOrderAction(orderId: string, action: OrderAction) {
     if (!parsed.success || !z.uuid().safeParse(orderId).success) return { ok: false as const, message: "That action isn't valid." };
     try {
       const d = db();
-      const [order, products, settings] = await Promise.all([d.getOrderById(orderId), d.listAllProducts(), getSettingsFresh()]);
+      const [order, products, settings, taken] = await Promise.all([d.getOrderById(orderId), d.listAllProducts(), getSettingsFresh(), d.countFreebies()]);
       if (!order) return { ok: false as const, message: "Order not found." };
-      const plan = planOrderAction(order, parsed.data, { now: new Date(), products, rules: settings });
+      const plan = planOrderAction(order, parsed.data, { now: new Date(), products, rules: settings, promo: { enabled: settings.promo.enabled, limit: settings.promo.limit, taken } });
       if (!plan.ok) return { ok: false as const, message: plan.error };
       await d.patchOrder(order.id, plan.patch, plan.event);
+      if ("freebie" in plan.patch) updateTag("promo"); // spots-left counter on the site
       revalidatePath("/admin", "layout");
       return { ok: true as const, message: plan.message };
     } catch (e) {

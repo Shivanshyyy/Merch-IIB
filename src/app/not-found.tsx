@@ -8,7 +8,7 @@ export default function NotFound() {
     <SiteChrome>
     <div className="page ember relative min-h-[100svh] overflow-hidden">
       <div aria-hidden className="pointer-events-none absolute inset-x-0 top-[var(--nav-h)] mx-auto aspect-square w-[min(80vw,520px)] origin-top [animation:fall_2.6s_cubic-bezier(.55,0,.9,.4)_0.4s_forwards]">
-        <Image src="/products/midnight-flame-midnight-front.webp" alt="" fill sizes="520px" className="object-contain" priority />
+        <Image src="/products/iit-bombay-hoodie-black-back.webp" alt="" fill sizes="520px" className="object-cover" priority />
       </div>
       <div className="shell relative flex min-h-[70svh] flex-col justify-end">
         <p className="label">[ 404 ] — Off the rail</p>

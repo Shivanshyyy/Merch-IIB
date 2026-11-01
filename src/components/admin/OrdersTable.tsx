@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { OrderChip, PaymentChip, RefundChip, rowTone } from "@/components/admin/status";
+import { FreebieChip, OrderChip, PaymentChip, RefundChip, rowTone } from "@/components/admin/status";
 import { fmtShort } from "@/lib/admin/dates";
 import { inr } from "@/lib/format";
 import type { Order } from "@/lib/types";
@@ -52,7 +52,10 @@ export function OrdersTable({ orders, hrefs, activeCode }: { orders: Order[]; hr
                 <td className="max-w-56 truncate text-muted">{itemsSummary(o)}</td>
                 <td className="num mono">{inr(o.total_inr)}</td>
                 <td>
-                  <PaymentChip status={o.payment_status} />
+                  <div className="grid gap-1">
+                    <PaymentChip status={o.payment_status} />
+                    {o.freebie && <FreebieChip />}
+                  </div>
                 </td>
                 <td>
                   <div className="grid gap-1">
@@ -82,6 +85,7 @@ export function OrdersTable({ orders, hrefs, activeCode }: { orders: Order[]; hr
               </p>
               <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
                 <PaymentChip status={o.payment_status} />
+                {o.freebie && <FreebieChip />}
                 <OrderChip status={o.order_status} />
                 {o.refund_status !== "none" && <RefundChip status={o.refund_status} />}
               </div>

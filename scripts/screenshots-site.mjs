@@ -35,7 +35,7 @@ try {
     await overflow("home");
 
     // browse + build a cart while logged out
-    await page.goto(`${BASE}/shop/midnight-flame`);
+    await page.goto(`${BASE}/shop/iit-bombay-hoodie`);
     await page.locator("label.chip", { hasText: /^M$/ }).click();
     await page.getByLabel(/Name on the back/i).fill("aryan k.");
     await page.getByRole("button", { name: /Add to cart/i }).click();

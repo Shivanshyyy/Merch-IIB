@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { ProductCard } from "@/components/shop/ProductCard";
-import { getOpenBatch, getProducts } from "@/lib/catalog";
+import { FreebiesBanner } from "@/components/promo/FreebiesBanner";
+import { getFreebiesTaken, getOpenBatch, getProducts } from "@/lib/catalog";
+import { promoView } from "@/lib/promo";
+import { getSettings } from "@/lib/settings";
 import { fmtDate } from "@/lib/format";
 import { Reveal } from "@/components/ui/Reveal";
 
@@ -24,7 +27,8 @@ export default function ShopPage() {
 }
 
 async function Catalog() {
-  const [products, batch] = await Promise.all([getProducts(), getOpenBatch()]);
+  const [products, batch, settings, taken] = await Promise.all([getProducts(), getOpenBatch(), getSettings(), getFreebiesTaken()]);
+  const promo = promoView(settings.promo, taken);
   const badge = batch ? `${batch.name} · preorder` : null;
 
   return (
@@ -38,6 +42,11 @@ async function Catalog() {
           "Preorders are closed right now. Browse the range and check back when the next batch opens."
         )}
       </p>
+      {promo && (
+        <div className="mt-8 max-w-2xl">
+          <FreebiesBanner promo={promo} compact />
+        </div>
+      )}
       {products.length === 0 ? (
         <p className="mt-16 border border-line p-10 text-center text-muted">No products are live yet. Check back soon.</p>
       ) : (
