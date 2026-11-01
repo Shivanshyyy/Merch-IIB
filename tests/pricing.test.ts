@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { priceOrder as price } from "@/lib/pricing";
 import type { Product } from "@/lib/types";
 
-const rules = { nameMaxLength: 12, nameUppercase: true };
+const rules = { nameMaxLength: 12, nameUppercase: true, offers: { comboPercent: 0, bulkAbove: 0, bulkPercent: 0 } };
 const priceOrder = (lines: Parameters<typeof price>[0], products: Product[], r = rules) => price(lines, products, r);
 
 const product = (over: Partial<Product> = {}): Product => ({
@@ -14,6 +14,7 @@ const product = (over: Partial<Product> = {}): Product => ({
   description: "",
   price_inr: 1000,
   compare_at_inr: null,
+  name_fee_inr: 0,
   colorways: [{ name: "Midnight", body: "#000", stitch: "#f00" }],
   sizes: ["S", "M"],
   personalizable: true,
@@ -45,10 +46,10 @@ test("names are normalised (spacing, capitals) before they are stored", () => {
 });
 
 test("name rules follow the runtime settings (length and capitals)", () => {
-  const long = priceOrder([line({ name: "Aryan Kumar Singh" })], [product()], { nameMaxLength: 20, nameUppercase: false });
+  const long = priceOrder([line({ name: "Aryan Kumar Singh" })], [product()], { ...rules, nameMaxLength: 20, nameUppercase: false });
   assert.ok(long.ok);
   assert.equal(long.items[0].name, "Aryan Kumar Singh");
-  assert.throws(() => priceOrder([line({ name: "Aryan Kumar Singh" })], [product()], { nameMaxLength: 8, nameUppercase: false }));
+  assert.throws(() => priceOrder([line({ name: "Aryan Kumar Singh" })], [product()], { ...rules, nameMaxLength: 8, nameUppercase: false }));
 });
 
 test("rejects unknown product, colourway and size", () => {

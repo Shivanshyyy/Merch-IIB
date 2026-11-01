@@ -76,6 +76,11 @@ async function Pay({ params }: Props) {
             Amount to pay · {itemCount} {itemCount === 1 ? "item" : "items"}
           </p>
           <p className="mono mt-3 text-[clamp(2.2rem,7vw,4.5rem)] leading-none">{inr(order.total_inr)}</p>
+          {order.discount_inr > 0 && (
+            <p className="label mt-3 normal-case tracking-normal text-accent-2">
+              Includes {order.discount_label ?? "a discount"}: −{inr(order.discount_inr)}
+            </p>
+          )}
         </div>
       </header>
 

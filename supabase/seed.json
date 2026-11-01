@@ -5,9 +5,10 @@
       "slug": "iit-bombay-hoodie",
       "name": "IIT Bombay Hoodie",
       "type": "hoodie",
-      "description": "Black cotton-fleece hoodie, 360 GSM. Institute emblem on the chest, the IIT Bombay arch on the back, and your name printed underneath.",
+      "description": "Cotton fleece, 360 GSM. Institute emblem on the chest and the IIT Bombay arch on the back. Add your name underneath for ₹99.",
       "price_inr": 999,
       "compare_at_inr": null,
+      "name_fee_inr": 99,
       "sizes": [
         "S",
         "M",
@@ -21,6 +22,129 @@
           "name": "Black",
           "body": "#0E0E10",
           "stitch": "#FFFFFF"
+        },
+        {
+          "name": "Navy Blue",
+          "body": "#1B2A4E",
+          "stitch": "#FFFFFF"
+        },
+        {
+          "name": "Maroon",
+          "body": "#5A1A22",
+          "stitch": "#F3E9E6"
+        }
+      ]
+    },
+    {
+      "slug": "iit-bombay-zip-hoodie",
+      "name": "IIT Bombay Zip Hoodie",
+      "type": "hoodie",
+      "description": "Full-zip, cotton fleece, 360 GSM. Institute emblem on the chest; on the back, line art of the main building by the lake with the campus coordinates. Sold as shown, without a name.",
+      "price_inr": 999,
+      "compare_at_inr": null,
+      "name_fee_inr": 0,
+      "sizes": [
+        "S",
+        "M",
+        "L",
+        "XL",
+        "XXL"
+      ],
+      "sort": 2,
+      "colorways": [
+        {
+          "name": "Black",
+          "body": "#0E0E10",
+          "stitch": "#FFFFFF"
+        },
+        {
+          "name": "Navy Blue",
+          "body": "#1B2A4E",
+          "stitch": "#FFFFFF"
+        },
+        {
+          "name": "Maroon",
+          "body": "#5A1A22",
+          "stitch": "#F3E9E6"
+        }
+      ],
+      "personalizable": false
+    },
+    {
+      "slug": "oversized-tee",
+      "name": "Oversized T-shirt",
+      "type": "tee",
+      "description": "100% cotton, 240 GSM. Oversized fit with drop shoulders, emblem on the chest and the IIT Bombay arch on the back. Add your name on the back for ₹99.",
+      "price_inr": 499,
+      "compare_at_inr": null,
+      "name_fee_inr": 99,
+      "sizes": [
+        "S",
+        "M",
+        "L",
+        "XL",
+        "XXL"
+      ],
+      "sort": 3,
+      "colorways": [
+        {
+          "name": "Black",
+          "body": "#0E0E10",
+          "stitch": "#FFFFFF"
+        },
+        {
+          "name": "White",
+          "body": "#F4F4F2",
+          "stitch": "#5A1A22"
+        },
+        {
+          "name": "Navy Blue",
+          "body": "#1B2A4E",
+          "stitch": "#FFFFFF"
+        },
+        {
+          "name": "Maroon",
+          "body": "#5A1A22",
+          "stitch": "#F3E9E6"
+        }
+      ]
+    },
+    {
+      "slug": "regular-tee",
+      "name": "Regular T-shirt",
+      "type": "tee",
+      "description": "100% cotton, 210 GSM. Regular fit, emblem on the chest and the IIT Bombay arch on the back. Add your name on the back for ₹99.",
+      "price_inr": 349,
+      "compare_at_inr": null,
+      "name_fee_inr": 99,
+      "sizes": [
+        "S",
+        "M",
+        "L",
+        "XL",
+        "XXL"
+      ],
+      "sort": 4,
+      "colorways": [
+        {
+          "name": "Black",
+          "body": "#0E0E10",
+          "stitch": "#FFFFFF"
+        },
+        {
+          "name": "White",
+          "body": "#F4F4F2",
+          "stitch": "#5A1A22"
+        },
+        {
+          "name": "Navy Blue",
+          "body": "#1B2A4E",
+          "stitch": "#FFFFFF"
+        },
+        {
+          "name": "Maroon",
+          "body": "#5A1A22",
+          "stitch": "#F3E9E6"
         }
       ]
     }

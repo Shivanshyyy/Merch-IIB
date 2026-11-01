@@ -5,7 +5,7 @@ We do not print anything ourselves. We collect orders and payments, send one bat
 
 **The bar:** this should feel like an Awwwards Site of the Day, not a template store. It should look cinematic and tactile and be fast on a ₹12k Android phone over hostel Wi‑Fi. Every interaction should have a small moment of delight. If something looks "default", it isn't done.
 
-> **Update (Oct 2026):** the 3D model and scroll choreography were removed at the team's request. Home and product pages use photos (admin uploads, falling back to studio stills) and plain native scrolling, with no Lenis and no pinned sections. Sections 4 and 6 below describe the old 3D design; don't bring it back.
+> **Update (Nov 2026):** the 3D hoodie (`public/models/hoodie.glb`) is back **on the home page hero only**: drag to turn, and plain page scroll turns it from front to back. No pinned sections, no Lenis, no full-page canvas. The shop and product pages use photos only (studio stills in `public/products`, admin uploads on top). Sections 4 and 6 below describe the old full 3D design; don't bring the rest of it back.
 
 ---
 

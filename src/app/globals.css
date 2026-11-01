@@ -768,7 +768,7 @@ html.booted .preloader,
 .varsity {
   font-family: var(--font-varsity), var(--font-display);
   color: #0e0e10;
-  -webkit-text-stroke: 0.1em #fff;
+  -webkit-text-stroke: 0.1em var(--ink, #fff);
   paint-order: stroke fill;
   letter-spacing: 0.03em;
   line-height: 1;

@@ -20,4 +20,4 @@ export type FormState = {
 };
 
 // What customers see of their orders: no phone, UTR or admin notes.
-export type OrderView = Pick<Order, "code" | "items" | "total_inr" | "payment_status" | "order_status" | "refund_status" | "verified_at" | "created_at">;
+export type OrderView = Pick<Order, "code" | "items" | "total_inr" | "discount_inr" | "discount_label" | "payment_status" | "order_status" | "refund_status" | "verified_at" | "created_at">;

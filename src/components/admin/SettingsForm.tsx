@@ -169,6 +169,14 @@ export function SettingsForm({ settings }: { settings: Settings }) {
         </div>
       </Section>
 
+      <Section title="Cart discounts" hint="Applied automatically at checkout. If an order qualifies for both, only the bigger one applies. Set a % to 0 to switch it off.">
+        <div className="grid gap-x-5 sm:grid-cols-3">
+          <TextField label="Hoodie + T-shirt combo (% off)" name="offerCombo" type="number" inputMode="numeric" min={0} max={50} defaultValue={pv("offerCombo", String(settings.offers.comboPercent))} error={f.error("offers")} help="Cart has at least one of each" required />
+          <TextField label="Big order: above (₹)" name="offerBulkAbove" type="number" inputMode="numeric" min={0} defaultValue={pv("offerBulkAbove", String(settings.offers.bulkAbove))} help="Item total must be more than this" required />
+          <TextField label="Big order (% off)" name="offerBulkPercent" type="number" inputMode="numeric" min={0} max={50} defaultValue={pv("offerBulkPercent", String(settings.offers.bulkPercent))} required />
+        </div>
+      </Section>
+
       <Section title="Freebies offer" hint="E.g. the first 200 paid orders get a keychain and stickers. A spot is claimed when you verify an order's payment, and given back if you reject or reset it.">
         <label className="mb-5 flex items-center gap-3">
           <input type="checkbox" name="promoEnabled" defaultChecked={state.values ? state.values.promoEnabled === "on" : settings.promo.enabled} className="size-5 accent-[var(--accent)]" />

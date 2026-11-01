@@ -1,8 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { BackName } from "@/components/shop/BackName";
+import { nameSpot } from "@/lib/name-spots";
 import { ColorwayImage } from "@/components/shop/ColorwayImage";
 import { useSettings } from "@/components/SettingsProvider";
 import { Button } from "@/components/ui/Button";
@@ -12,6 +12,7 @@ import { normalizeName } from "@/lib/schemas";
 import { FreebiesBanner } from "@/components/promo/FreebiesBanner";
 import type { PromoView } from "@/lib/promo";
 import { Countdown } from "./Countdown";
+import { HeroStage } from "./HeroStage";
 import { useHome, type HomeColorway } from "./store";
 
 export type HomeBatch = { name: string; closesAt: string } | null;
@@ -29,11 +30,12 @@ function Panel({ id, children, className = "" }: { id?: string; children: React.
 // The back print of the picked colourway, with the typed name (or a faint placeholder) where it gets printed.
 function Preview({ printed }: { printed: string }) {
   const colorway = useHome((s) => s.colorway);
+  const spot = colorway ? nameSpot(colorway.slug) : null;
   if (!colorway) return null;
   return (
     <div className="relative aspect-square w-full overflow-hidden bg-bg-2 [container-type:inline-size]">
       <ColorwayImage slug={colorway.slug} colorway={colorway.name} body={colorway.body} stitch={colorway.stitch} view="back" alt={`${colorway.name} hoodie, back print`} sizes="(min-width: 768px) 45vw, 100vw" className="object-cover" />
-      <BackName name={printed} />
+      {spot && <BackName name={printed} spot={spot} body={colorway.body} ink={colorway.stitch} />}
     </div>
   );
 }
@@ -56,20 +58,14 @@ export function Sections({ colorways, batch, hero, promo }: { colorways: HomeCol
             <Reveal as="h1" id="hero-h" trigger="load" className="t-display text-[clamp(3.1rem,15vw,6rem)] md:text-[clamp(3rem,6.8vw,7rem)] leading-[0.84]">
               {"Wear\nthe\ncampus."}
             </Reveal>
-            <p className="mt-8 max-w-sm text-[1.05rem] text-muted">Hoodies made for {s.pickupLocation} and everywhere else on campus, with your name on the back.</p>
+            <p className="mt-8 max-w-sm text-[1.05rem] text-muted">Hoodies and tees made for {s.pickupLocation} and everywhere else on campus, with your name on the back.</p>
             <div className="mt-8">
               <Button href="/shop" size="lg">
                 Preorder now
               </Button>
             </div>
           </div>
-          <Link href={hero ? `/shop/${hero.slug}` : "/shop"} className="relative block aspect-[4/5] overflow-hidden bg-bg-2 md:aspect-square">
-            {hero ? (
-              <Image src={hero.src} alt={hero.alt} fill priority sizes="(min-width: 768px) 45vw, 100vw" className="object-cover" />
-            ) : colorway ? (
-              <ColorwayImage slug={colorway.slug} colorway={colorway.name} body={colorway.body} stitch={colorway.stitch} alt={`${colorway.name} hoodie`} priority sizes="(min-width: 768px) 45vw, 100vw" className="object-cover object-top" />
-            ) : null}
-          </Link>
+          <HeroStage hero={hero} />
         </div>
       </section>
 
@@ -84,7 +80,7 @@ export function Sections({ colorways, batch, hero, promo }: { colorways: HomeCol
               Made to be worn in
             </Reveal>
             <div className="mt-5">
-              <Copy>Heavyweight cotton fleece, soft on the inside and made to order. Here is what goes into every hoodie.</Copy>
+              <Copy>Our hoodies are heavyweight cotton fleece, soft on the inside. Tees are 100% cotton: 240 GSM oversized, 210 GSM regular.</Copy>
             </div>
             <dl className="mono mt-6 grid gap-px border border-line bg-line text-[0.8rem]">
               {s.fabricSpecs.map((f) => (
@@ -225,7 +221,7 @@ export function Sections({ colorways, batch, hero, promo }: { colorways: HomeCol
           </h2>
           <div className="mt-8">
             <Button href="/shop" size="lg" className="w-full sm:w-auto sm:min-w-[22rem]">
-              {batch ? "Preorder now" : "See the hoodies"}
+              {batch ? "Preorder now" : "See the drop"}
             </Button>
           </div>
         </div>

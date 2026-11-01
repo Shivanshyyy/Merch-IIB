@@ -69,6 +69,11 @@
       "IIT Bombay keychain",
       "IITB cultural stickers"
     ],
-    "note": "Handed over with your hoodie at pickup."
+    "note": "Handed over with your order at pickup."
+  },
+  "offers": {
+    "comboPercent": 5,
+    "bulkAbove": 1499,
+    "bulkPercent": 10
   }
 }

@@ -16,7 +16,7 @@ export default function ShopPage() {
       <div className="shell">
         <p className="label">[ 01 ] — The drop</p>
         <Reveal as="h1" trigger="load" className="t-display t-h1 mt-4">
-          {"Pick your\nhoodie"}
+          {"Pick your\nfit"}
         </Reveal>
         <Suspense fallback={<GridSkeleton />}>
           <Catalog />
@@ -36,7 +36,7 @@ async function Catalog() {
       <p className="mt-6 max-w-xl text-muted">
         {batch ? (
           <>
-            Preorders for {batch.name} close <span className="mono text-fg">{fmtDate(batch.closes_at)}</span>. Every hoodie is made to order with your name on the back.
+            Preorders for {batch.name} close <span className="mono text-fg">{fmtDate(batch.closes_at)}</span>. Hoodies and tees, all made to order. Add your name on the back if you like.
           </>
         ) : (
           "Preorders are closed right now. Browse the range and check back when the next batch opens."
@@ -50,7 +50,7 @@ async function Catalog() {
       {products.length === 0 ? (
         <p className="mt-16 border border-line p-10 text-center text-muted">No products are live yet. Check back soon.</p>
       ) : (
-        <div className="mt-12 grid border-t border-line md:grid-cols-3">
+        <div className="mt-12 grid border-t border-line sm:grid-cols-2 xl:grid-cols-4">
           {products.map((p, i) => (
             <ProductCard key={p.id} product={p} index={i} badge={badge} priority={i === 0} />
           ))}
@@ -62,8 +62,8 @@ async function Catalog() {
 
 function GridSkeleton() {
   return (
-    <div className="mt-[4.6rem] grid border-t border-line md:grid-cols-3" aria-hidden>
-      {[0, 1, 2].map((i) => (
+    <div className="mt-[4.6rem] grid border-t border-line sm:grid-cols-2 xl:grid-cols-4" aria-hidden>
+      {[0, 1, 2, 3].map((i) => (
         <div key={i} className="border-b border-line md:border-r md:last:border-r-0">
           <div className="skeleton aspect-[4/5]" />
           <div className="h-[84px]" />

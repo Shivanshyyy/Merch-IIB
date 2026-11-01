@@ -9,6 +9,8 @@ export type Product = {
   price_inr: number;
   /** Original price shown crossed out when it is higher than price_inr; null means no discount. */
   compare_at_inr: number | null;
+  /** Added to the unit price when a name is printed (e.g. ₹99 on tees); 0 means free. */
+  name_fee_inr: number;
   colorways: Colorway[];
   sizes: string[];
   personalizable: boolean;
@@ -42,7 +44,9 @@ export type OrderItem = {
   size: string;
   name: string;
   qty: number;
+  /** Includes the name-print fee, if any. */
   unitPriceInr: number;
+  nameFeeInr?: number;
 };
 
 export type PaymentStatus = "pending" | "verified" | "rejected";
@@ -61,6 +65,9 @@ export type Order = {
   room: string;
   items: OrderItem[];
   total_inr: number;
+  /** Cart offer taken off the item subtotal (total_inr is after it). */
+  discount_inr: number;
+  discount_label: string | null;
   utr: string | null;
   payment_status: PaymentStatus;
   order_status: OrderStatus;
@@ -72,7 +79,7 @@ export type Order = {
   created_at: string;
 };
 
-export type NewOrder = Pick<Order, "code" | "batch_id" | "user_id" | "email" | "full_name" | "phone" | "hostel" | "room" | "items" | "total_inr">;
+export type NewOrder = Pick<Order, "code" | "batch_id" | "user_id" | "email" | "full_name" | "phone" | "hostel" | "room" | "items" | "total_inr" | "discount_inr" | "discount_label">;
 
 export type OrderEvent = { id: number; order_id: string; type: string; note: string | null; created_at: string };
 

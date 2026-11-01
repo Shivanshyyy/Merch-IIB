@@ -19,11 +19,12 @@ const json = (v: string): unknown => {
   }
 };
 
+const OFFER_LABEL: Record<string, string> = { comboPercent: "Combo %", bulkAbove: "Big order amount", bulkPercent: "Big order %" };
 const PROMO_LABEL: Record<string, string> = { title: "Headline", limit: "Number of spots", items: "Freebies", note: "Small print" };
 
 export async function saveSettings(_prev: FormState, formData: FormData): Promise<FormState> {
   return adminAction(async () => {
-    const values = Object.fromEntries(["brand", "upiId", "payeeName", "contactName", "phone", "whatsapp", "pickupLocation", "pickupRoom", "pickupHours", "refundWindowDays", "nameMaxLength", "maxPendingOrdersPerEmail", "promoTitle", "promoLimit", "promoItems", "promoNote"].map((k) => [k, text(formData, k)]));
+    const values = Object.fromEntries(["brand", "upiId", "payeeName", "contactName", "phone", "whatsapp", "pickupLocation", "pickupRoom", "pickupHours", "refundWindowDays", "nameMaxLength", "maxPendingOrdersPerEmail", "promoTitle", "promoLimit", "promoItems", "promoNote", "offerCombo", "offerBulkAbove", "offerBulkPercent"].map((k) => [k, text(formData, k)]));
 
     values.promoEnabled = formData.get("promoEnabled") === "on" ? "on" : "";
     const sizeChart = json(text(formData, "sizeChart"));
@@ -40,6 +41,7 @@ export async function saveSettings(_prev: FormState, formData: FormData): Promis
       nameUppercase: formData.get("nameUppercase") === "on",
       sizeChart,
       fabricSpecs,
+      offers: { comboPercent: num(values.offerCombo), bulkAbove: num(values.offerBulkAbove), bulkPercent: num(values.offerBulkPercent) },
       promo: {
         enabled: values.promoEnabled === "on",
         limit: num(values.promoLimit),
@@ -52,6 +54,8 @@ export async function saveSettings(_prev: FormState, formData: FormData): Promis
       const fieldErrors = firstErrors(parsed.error);
       // Offer errors all show under the headline field, so say which part is wrong.
       const promoIssue = parsed.error.issues.find((i) => i.path[0] === "promo");
+      const offerIssue = parsed.error.issues.find((i) => i.path[0] === "offers");
+      if (offerIssue) fieldErrors.offers = `${OFFER_LABEL[String(offerIssue.path[1])] ?? "Discount"}: ${offerIssue.message}`;
       if (promoIssue) fieldErrors.promo = `${PROMO_LABEL[String(promoIssue.path[1])] ?? "Offer"}: ${promoIssue.message}`;
       return { ok: false, fieldErrors, message: "Please fix the highlighted fields.", values };
     }

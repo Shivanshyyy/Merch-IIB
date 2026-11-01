@@ -44,6 +44,12 @@ export function OrderCard({ order, contactName }: { order: OrderView; contactNam
               <p className="mono text-[0.9rem]">{inr(i.unitPriceInr * i.qty)}</p>
             </li>
           ))}
+          {order.discount_inr > 0 && (
+            <li className="mono flex justify-between gap-4 text-[0.85rem] text-accent-2">
+              <span>{order.discount_label ?? "Discount"}</span>
+              <span>−{inr(order.discount_inr)}</span>
+            </li>
+          )}
         </ul>
 
         <div>

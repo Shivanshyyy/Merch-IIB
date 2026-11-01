@@ -5,8 +5,8 @@ import { useRef } from "react";
 import { CartLineRow } from "@/components/cart/CartLineRow";
 import { Button } from "@/components/ui/Button";
 import { useFocusTrap } from "@/components/ui/useFocusTrap";
-import { inr } from "@/lib/format";
-import { cartSubtotal, useCart } from "@/store/cart";
+import { CartOffer } from "@/components/cart/CartOffer";
+import { useCart } from "@/store/cart";
 
 export function CartDrawer() {
   const open = useCart((s) => s.drawerOpen);
@@ -58,9 +58,8 @@ export function CartDrawer() {
                 </ul>
                 <div className="shrink-0 border-t border-line bg-bg-2 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
                   <p className="label mb-4 normal-case tracking-normal">Made to order. Double-check name spelling.</p>
-                  <div className="mb-5 flex items-baseline justify-between">
-                    <span className="label">Subtotal</span>
-                    <span className="mono text-2xl">{inr(cartSubtotal(lines))}</span>
+                  <div className="mb-5">
+                    <CartOffer lines={lines} />
                   </div>
                   <div className="grid gap-3">
                     <Button href="/checkout" block size="lg" onClick={close}>

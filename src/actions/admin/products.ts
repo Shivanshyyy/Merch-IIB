@@ -20,7 +20,7 @@ const refresh = () => {
 export async function saveProduct(_prev: FormState, formData: FormData): Promise<FormState> {
   return adminAction(async () => {
     const id = text(formData, "id");
-    const values = Object.fromEntries(["name", "slug", "type", "description", "price_inr", "compare_at_inr", "sizes", "sort", "colorways"].map((k) => [k, text(formData, k)]));
+    const values = Object.fromEntries(["name", "slug", "type", "description", "price_inr", "compare_at_inr", "name_fee_inr", "sizes", "sort", "colorways"].map((k) => [k, text(formData, k)]));
 
     let colorways: unknown = [];
     try {
@@ -35,6 +35,7 @@ export async function saveProduct(_prev: FormState, formData: FormData): Promise
       description: values.description,
       price_inr: values.price_inr === "" ? NaN : Number(values.price_inr),
       compare_at_inr: values.compare_at_inr.trim() === "" ? null : Number(values.compare_at_inr),
+      name_fee_inr: values.name_fee_inr.trim() === "" ? 0 : Number(values.name_fee_inr),
       sizes: parseSizes(values.sizes),
       colorways,
       personalizable: formData.get("personalizable") === "on",

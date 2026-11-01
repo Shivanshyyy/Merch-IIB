@@ -13,6 +13,7 @@ import { useFieldErrors } from "@/components/ui/useFieldErrors";
 import { ColorwayImage } from "@/components/shop/ColorwayImage";
 import { fmtDate, inr } from "@/lib/format";
 import type { CheckoutState } from "@/lib/form-state";
+import { bestDiscount, offerHint, unitPrice, type ProductKind } from "@/lib/offers";
 import { makeCheckoutSchema } from "@/lib/schemas";
 import { useBatchClosed } from "@/lib/useBatchClosed";
 import { cartCount, useCart } from "@/store/cart";
@@ -21,13 +22,13 @@ type Defaults = { fullName: string; phone: string; hostel: string; room: string 
 type FieldKey = keyof Defaults;
 
 type Props = {
-  prices: Record<string, number>;
+  catalog: Record<string, { price_inr: number; name_fee_inr: number; type: ProductKind }>;
   batch: { name: string; closesAt: string } | null;
   email: string;
   defaults: Defaults;
 };
 
-export function CheckoutForm({ prices, batch, email, defaults }: Props) {
+export function CheckoutForm({ catalog, batch, email, defaults }: Props) {
   const router = useRouter();
   const settings = useSettings();
   const schema = useMemo(() => makeCheckoutSchema(settings), [settings]);
@@ -39,10 +40,16 @@ export function CheckoutForm({ prices, batch, email, defaults }: Props) {
   const closed = useBatchClosed(batch?.closesAt) || !batch;
 
   // Show server-side prices, so a stale cart snapshot can't mislead.
-  const priced = lines.map((l) => ({ ...l, unit: prices[l.slug], gone: prices[l.slug] === undefined }));
+  const priced = lines.map((l) => {
+    const p = catalog[l.slug];
+    return { ...l, unit: p ? unitPrice(p, l.name) : 0, kind: p?.type, gone: !p };
+  });
   const hasGone = priced.some((l) => l.gone);
   const changed = priced.some((l) => !l.gone && l.unit !== l.unitPriceInr);
-  const total = priced.reduce((n, l) => n + (l.gone ? 0 : l.unit * l.qty), 0);
+  const subtotal = priced.reduce((n, l) => n + l.unit * l.qty, 0);
+  const discount = bestDiscount(priced.map((l) => ({ kind: l.kind, amount: l.unit * l.qty })), settings.offers);
+  const total = subtotal - (discount?.amount ?? 0);
+  const hint = offerHint(subtotal, discount, settings.offers);
 
   useEffect(() => {
     if (!state.ok || !state.code) return;
@@ -63,7 +70,7 @@ export function CheckoutForm({ prices, batch, email, defaults }: Props) {
     return (
       <div className="mt-12 border border-dashed border-line px-6 py-20 text-center">
         <p className="t-display text-2xl">Nothing to check out</p>
-        <p className="mx-auto mt-3 max-w-sm text-muted">Your cart is empty. Add a hoodie first.</p>
+        <p className="mx-auto mt-3 max-w-sm text-muted">Your cart is empty. Pick something from the drop first.</p>
         <Button href="/shop" size="lg" className="mt-8">
           Browse the drop
         </Button>
@@ -152,10 +159,30 @@ export function CheckoutForm({ prices, batch, email, defaults }: Props) {
         </ul>
         {changed && <p className="label mt-4 normal-case tracking-normal text-accent-2">Prices were updated since you added these items. The total below is current.</p>}
 
-        <div className="mt-6 flex items-baseline justify-between border-t border-line pt-5">
+        {discount && (
+          <dl className="mono mt-6 grid gap-2 border-t border-line pt-5 text-[0.9rem]">
+            <div className="flex justify-between">
+              <dt className="text-muted">Subtotal</dt>
+              <dd>{inr(subtotal)}</dd>
+            </div>
+            <div className="flex justify-between gap-4 text-accent-2">
+              <dt>{discount.label}</dt>
+              <dd className="shrink-0">−{inr(discount.amount)}</dd>
+            </div>
+          </dl>
+        )}
+        <div className={`flex items-baseline justify-between ${discount ? "mt-3" : "mt-6 border-t border-line pt-5"}`}>
           <span className="label">Total</span>
           <span className="mono text-3xl">{inr(total)}</span>
         </div>
+        {hint && (
+          <p className="label mt-3 normal-case tracking-normal text-accent-2">
+            ✦ {hint}.{" "}
+            <Link href="/shop" className="underline underline-offset-4">
+              Keep shopping
+            </Link>
+          </p>
+        )}
         {batch && (
           <p className="label mt-3 normal-case tracking-normal">
             {batch.name} closes {fmtDate(batch.closesAt)}

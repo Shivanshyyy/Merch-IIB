@@ -28,6 +28,8 @@ const order = (over: Partial<Order> = {}): Order => ({
   room: "12",
   items: [item()],
   total_inr: 1000,
+  discount_inr: 0,
+  discount_label: null,
   utr: null,
   payment_status: "pending",
   order_status: "placed",
@@ -38,7 +40,7 @@ const order = (over: Partial<Order> = {}): Order => ({
   created_at: "2026-10-30T08:00:00Z",
   ...over,
 });
-const product = (over: Partial<Product> = {}): Product => ({ id: "p1", slug: "flame", name: "Flame Hoodie", type: "hoodie", description: "", price_inr: 1000, compare_at_inr: null, colorways: [{ name: "Midnight", body: "#000000", stitch: "#ff0000" }], sizes: ["S", "M", "L"], personalizable: true, active: true, sort: 1, photos: [], ...over });
+const product = (over: Partial<Product> = {}): Product => ({ id: "p1", slug: "flame", name: "Flame Hoodie", type: "hoodie", description: "", price_inr: 1000, compare_at_inr: null, name_fee_inr: 0, colorways: [{ name: "Midnight", body: "#000000", stitch: "#ff0000" }], sizes: ["S", "M", "L"], personalizable: true, active: true, sort: 1, photos: [], ...over });
 const plan = (o: Order, a: OrderAction, products = [product()]) => planOrderAction(o, a, { now, products, rules });
 const paid = (over: Partial<Order> = {}) => order({ payment_status: "verified", verified_at: now.toISOString(), ...over });
 
@@ -278,7 +280,7 @@ beforeEach(async () => {
 
 test("products: create, slug uniqueness, update, hide from the shop, delete", async () => {
   const d = db();
-  const input = { slug: "test-tee", name: "Test Tee", type: "tee" as const, description: "", price_inr: 499, compare_at_inr: null, colorways: [{ name: "Bone", body: "#e4dfd3", stitch: "#111111" }], sizes: ["M", "L"], personalizable: true, active: true, sort: 9 };
+  const input = { slug: "test-tee", name: "Test Tee", type: "tee" as const, description: "", price_inr: 499, compare_at_inr: null, name_fee_inr: 0, colorways: [{ name: "Bone", body: "#e4dfd3", stitch: "#111111" }], sizes: ["M", "L"], personalizable: true, active: true, sort: 9 };
   const created = await d.createProduct(input);
   await assert.rejects(d.createProduct(input), SlugTakenError);
   assert.ok((await d.listActiveProducts()).some((p) => p.slug === "test-tee"));
@@ -307,7 +309,7 @@ test("batches: create, update, and the open batch is the newest open one", async
 test("orders: search by code/email/name/phone, filter, sort, paginate; patch writes an audit row", async () => {
   const d = db();
   const batch = (await d.getOpenBatch())!;
-  const mk = async (code: string, name: string, phone: string, email: string) => d.insertOrder({ code, batch_id: batch.id, user_id: "u1", email, full_name: name, phone, hostel: "H4", room: "1", items: [item()], total_inr: 1000 });
+  const mk = async (code: string, name: string, phone: string, email: string) => d.insertOrder({ code, batch_id: batch.id, user_id: "u1", email, full_name: name, phone, hostel: "H4", room: "1", items: [item()], total_inr: 1000, discount_inr: 0, discount_label: null });
   const a = await mk("HD-AAAA", "Aryan Kumar", "9876543210", "aryan@example.com");
   await new Promise((r) => setTimeout(r, 5));
   const b = await mk("HD-BBBB", "Sam Lee", "9123456780", "sam@example.com");
