@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { BackName } from "@/components/shop/BackName";
 import { nameSpot } from "@/lib/name-spots";
@@ -13,6 +12,7 @@ import { normalizeName } from "@/lib/schemas";
 import { FreebiesBanner } from "@/components/promo/FreebiesBanner";
 import type { PromoView } from "@/lib/promo";
 import { Countdown } from "./Countdown";
+import { HeroStage } from "./HeroStage";
 import { useHome, type HomeColorway } from "./store";
 
 export type HomeBatch = { name: string; closesAt: string } | null;
@@ -65,13 +65,7 @@ export function Sections({ colorways, batch, hero, promo }: { colorways: HomeCol
               </Button>
             </div>
           </div>
-          <Link href={hero ? `/shop/${hero.slug}` : "/shop"} className="relative block aspect-[4/5] overflow-hidden bg-bg-2 md:aspect-square">
-            {hero ? (
-              <Image src={hero.src} alt={hero.alt} fill priority sizes="(min-width: 768px) 45vw, 100vw" className="object-cover" />
-            ) : colorway ? (
-              <ColorwayImage slug={colorway.slug} colorway={colorway.name} body={colorway.body} stitch={colorway.stitch} alt={`${colorway.name} hoodie`} priority sizes="(min-width: 768px) 45vw, 100vw" className="object-cover object-top" />
-            ) : null}
-          </Link>
+          <HeroStage hero={hero} />
         </div>
       </section>
 

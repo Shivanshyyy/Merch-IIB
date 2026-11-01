@@ -86,4 +86,11 @@ Short log, one entry per phase: what's done, what's left, open TODOs.
 - **Sale prices:** optional "Original price" per product (`compare_at_inr`, migration `0004`); shop, product page and admin show it crossed out with the % off. Customers always pay `price_inr`, re-priced on the server.
 - **Freebies offer** (Admin → Settings): on/off, number of spots, headline, items, small print. Verifying a payment claims a spot (`orders.freebie`), rejecting/resetting gives it back. Site shows a banner on home, a strip on shop and product pages, and the marquee; admin shows a dashboard counter and a ✦ Freebie tag on orders.
 - 73 unit tests, 4 e2e tests pass.
-- **Open TODOs:** run `0004_discounts_freebies.sql` on the live database.
+- **Open TODOs:** run `0004_discounts_freebies.sql` and `0005_name_fee_cart_offers.sql` on the live database.
+
+## Full catalogue, name fee, cart offers, 3D hero (Nov 2026) ✅
+- **Catalogue:** IIT Bombay Hoodie (Black/Navy Blue/Maroon, ₹999), IIT Bombay Zip Hoodie (campus line-art print, no name, ₹999), Oversized T-shirt (240 GSM, ₹499) and Regular T-shirt (210 GSM, ₹349), both in Black/White/Navy Blue/Maroon and sharing photos. Stills built from the team's photos (sample names erased); tee sizes S–XXL are a placeholder until confirmed.
+- **Name print:** ₹99 per item (`products.name_fee_inr`, editable per product), charged server-side; live varsity preview positioned per product (`src/lib/name-spots.ts`).
+- **Cart offers** (Admin → Settings → Cart discounts): hoodie + tee 5%, orders above ₹1499 10%, only the bigger applies; stored on the order (`discount_inr`, `discount_label`).
+- **Home hero:** the GLB hoodie is back in the hero only, turned by drag and by page scroll; photo stays as first paint and as the reduced-motion / no-WebGL fallback.
+- 78 unit tests, 4 e2e tests pass.
