@@ -2,8 +2,9 @@
 
 import { useRef } from "react";
 import { useSettings } from "@/components/SettingsProvider";
+import type { SizeChartKey } from "@/config/site";
 
-export function SizeChart({ sizes, kind }: { sizes: string[]; kind: "hoodie" | "tee" }) {
+export function SizeChart({ sizes, kind }: { sizes: string[]; kind: SizeChartKey }) {
   const ref = useRef<HTMLDialogElement>(null);
   const { columns, rows, unit } = useSettings().sizeCharts[kind];
 

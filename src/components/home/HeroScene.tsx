@@ -30,7 +30,7 @@ export default function HeroScene({ body, stitch, name, onReady }: Props) {
   const box = useRef<HTMLDivElement>(null);
   const active = useActive(box);
   const [weak] = useState(() => matchMedia("(pointer: coarse)").matches || innerWidth < 768);
-  const [spin, setSpin] = useState(true);
+  const [spin, setSpin] = useState(false); // still at first, so it matches the poster it fades in over
 
   // Idle spin resumes a few seconds after a drag.
   const idle = useRef<number>(0);
@@ -64,7 +64,12 @@ export default function HeroScene({ body, stitch, name, onReady }: Props) {
             </Center>
           </ScrollTurn>
           <ContactShadows position={[0, -0.42, 0]} opacity={0.55} scale={2.2} blur={2.6} far={1} />
-          <ReadyAfterCompile onReady={onReady} />
+          <ReadyAfterCompile
+            onReady={() => {
+              onReady();
+              idle.current = window.setTimeout(() => setSpin(true), 1600);
+            }}
+          />
         </Suspense>
         <OrbitControls
           makeDefault

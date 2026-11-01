@@ -20,6 +20,7 @@ import { Price } from "@/components/shop/Price";
 import { fmtDate, inr } from "@/lib/format";
 import { buzz } from "@/lib/haptics";
 import { normalizeName } from "@/lib/schemas";
+import { sizeChartFor } from "@/lib/settings-schema";
 import type { PromoView } from "@/lib/promo";
 import type { Product } from "@/lib/types";
 import { FreebiesBanner } from "@/components/promo/FreebiesBanner";
@@ -180,7 +181,7 @@ export function ProductConfigurator({ product, batch, promo }: { product: Produc
 
         <ChipGroup
           legend="Size"
-          hint={<SizeChart sizes={product.sizes} kind={product.type} />}
+          hint={<SizeChart sizes={product.sizes} kind={sizeChartFor(product)} />}
           options={product.sizes.map((s) => ({ value: s, label: s }))}
           value={size}
           onChange={(v) => {

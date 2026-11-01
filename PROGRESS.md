@@ -99,3 +99,11 @@ Short log, one entry per phase: what's done, what's left, open TODOs.
 - New-product form has a photo picker: photos upload right after the product is created, then the editor opens. The product list shows each product's photo count.
 - Campus Regular T-shirt (₹449, 210 GSM) and Campus Oversized T-shirt (₹549, 240 GSM): 4 colours, shared photos, no name option.
 - Retired product links (/shop/ash etc.) redirect to /shop; catalogue cache refreshes within minutes.
+
+## Size charts, zip hoodie photos, 3D poster, brand (Nov 2026) ✅
+- Size charts per kind (Admin → Settings): hoodie (S 38 … XXL 46), oversized T-shirts (S 40 … XXL 48), regular T-shirts (to be confirmed). `sizeChartFor()` picks one per product.
+- Zip hoodie: real zip photos (varsity print), ₹99 name with the same preview spot as the pullover.
+- Regular T-shirt and Campus Oversized T-shirt: new on-model photos. Regular T-shirt keeps the ₹99 name but has no live preview spot on this print yet.
+- Home hero: loads on a render of the scene's first frame (`scripts/capture-hero-poster.mjs`), holds still 1.6 s, then spins, so there's no visible swap.
+- Black hoodie still shows YOUR NAME; still URLs are fingerprinted (`NEXT_PUBLIC_STILLS_VERSION`).
+- Brand: IITB-Merch.

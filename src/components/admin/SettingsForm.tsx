@@ -80,8 +80,12 @@ export function SettingsForm({ settings }: { settings: Settings }) {
         <SizeChartEditor name="sizeChartHoodie" initial={settings.sizeCharts.hoodie} error={f.error("sizeCharts")} />
       </Section>
 
-      <Section title="Size chart: T-shirts" hint="Shown on T-shirt pages. Leave a cell as — until the vendor confirms it.">
-        <SizeChartEditor name="sizeChartTee" initial={settings.sizeCharts.tee} error={f.error("sizeCharts")} />
+      <Section title="Size chart: oversized T-shirts" hint="Used by every T-shirt with &ldquo;Oversized&rdquo; in its name.">
+        <SizeChartEditor name="sizeChartOversized" initial={settings.sizeCharts.oversized} error={f.error("sizeCharts")} />
+      </Section>
+
+      <Section title="Size chart: regular T-shirts" hint="Used by all other T-shirts. Leave a cell as — until the vendor confirms it.">
+        <SizeChartEditor name="sizeChartRegular" initial={settings.sizeCharts.regular} error={f.error("sizeCharts")} />
       </Section>
 
       <Section title="Cart discounts" hint="Applied automatically at checkout. If an order qualifies for both, only the bigger one applies. Set a % to 0 to switch it off.">

@@ -1,5 +1,5 @@
 {
-  "brand": "MERCH—IITB",
+  "brand": "IITB-Merch",
   "upiId": "setup-required@upi",
   "payeeName": "Merch IITB",
   "contactName": "Aryan",
@@ -36,7 +36,30 @@
         ]
       }
     },
-    "tee": {
+    "oversized": {
+      "unit": "inches",
+      "columns": [
+        "Chest"
+      ],
+      "rows": {
+        "S": [
+          "40"
+        ],
+        "M": [
+          "42"
+        ],
+        "L": [
+          "44"
+        ],
+        "XL": [
+          "46"
+        ],
+        "XXL": [
+          "48"
+        ]
+      }
+    },
+    "regular": {
       "unit": "inches",
       "columns": [
         "Chest"

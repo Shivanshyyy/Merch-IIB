@@ -27,9 +27,9 @@ export async function saveSettings(_prev: FormState, formData: FormData): Promis
     const values = Object.fromEntries(["brand", "upiId", "payeeName", "contactName", "phone", "whatsapp", "pickupLocation", "pickupRoom", "pickupHours", "refundWindowDays", "nameMaxLength", "maxPendingOrdersPerEmail", "promoTitle", "promoLimit", "promoItems", "promoNote", "offerCombo", "offerBulkAbove", "offerBulkPercent"].map((k) => [k, text(formData, k)]));
 
     values.promoEnabled = formData.get("promoEnabled") === "on" ? "on" : "";
-    const sizeCharts = { hoodie: json(text(formData, "sizeChartHoodie")), tee: json(text(formData, "sizeChartTee")) };
+    const sizeCharts = { hoodie: json(text(formData, "sizeChartHoodie")), oversized: json(text(formData, "sizeChartOversized")), regular: json(text(formData, "sizeChartRegular")) };
     const fabricSpecs = json(text(formData, "fabricSpecs"));
-    if (sizeCharts.hoodie === undefined || sizeCharts.tee === undefined || fabricSpecs === undefined) return { ok: false, message: "The size chart or fabric specs couldn't be read. Reload and try again.", values };
+    if (Object.values(sizeCharts).includes(undefined) || fabricSpecs === undefined) return { ok: false, message: "The size chart or fabric specs couldn't be read. Reload and try again.", values };
 
     const parsed = settingsSchema.safeParse({
       ...values,
