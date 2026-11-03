@@ -20,6 +20,7 @@ import { Price } from "@/components/shop/Price";
 import { fmtDate, inr } from "@/lib/format";
 import { buzz } from "@/lib/haptics";
 import { normalizeName } from "@/lib/schemas";
+import { photoUrl } from "@/lib/photos";
 import { sizeChartFor } from "@/lib/settings-schema";
 import type { PromoView } from "@/lib/promo";
 import type { Product } from "@/lib/types";
@@ -101,6 +102,8 @@ export function ProductConfigurator({ product, batch, promo }: { product: Produc
       qty,
       unitPriceInr: unitPrice(product, normalizeName(name, settings)),
       productType: product.type,
+      // Snapshot the cover photo so the cart shows the same image as the shop, not just the studio still.
+      image: product.photos[0] ? photoUrl(product.photos[0]) : undefined,
     };
     if (editLine) {
       replace(editLine.id, payload);

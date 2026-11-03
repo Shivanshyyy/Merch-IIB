@@ -1,6 +1,8 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 import { Stepper } from "@/components/ui/Stepper";
 import { ColorwayImage } from "@/components/shop/ColorwayImage";
 import { inr } from "@/lib/format";
@@ -11,11 +13,17 @@ export function CartLineRow({ line, compact = false }: { line: CartLine; compact
   const remove = useCart((s) => s.remove);
   const closeDrawer = useCart((s) => s.closeDrawer);
   const thumb = compact ? 80 : 120;
+  // Prefer the uploaded cover photo; fall back to the studio still (and then the glyph) if it is missing or fails.
+  const [imgFailed, setImgFailed] = useState(false);
 
   return (
     <li className="flex gap-4 py-5 hair-b">
-      <div className="relative shrink-0 bg-bg-2" style={{ width: thumb, height: thumb }}>
-        <ColorwayImage slug={line.slug} colorway={line.colorway} body={line.colorwayBody} alt="" sizes={`${thumb}px`} />
+      <div className="relative shrink-0 overflow-hidden bg-bg-2" style={{ width: thumb, height: thumb }}>
+        {line.image && !imgFailed ? (
+          <Image src={line.image} alt="" fill sizes={`${thumb}px`} className="object-cover" onError={() => setImgFailed(true)} />
+        ) : (
+          <ColorwayImage slug={line.slug} colorway={line.colorway} body={line.colorwayBody} alt="" sizes={`${thumb}px`} className="object-cover" />
+        )}
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         <div className="flex items-start justify-between gap-3">
