@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { ColorwayImage } from "@/components/shop/ColorwayImage";
 import { Price } from "@/components/shop/Price";
 import { whatsappUrl } from "@/config/site";
@@ -19,11 +20,16 @@ export default async function Home() {
 
   return (
     <>
-      {/* Hero: the image only. A visually hidden heading keeps it meaningful for SEO and screen readers. */}
-      <section className="shell pt-[calc(var(--nav-h)+clamp(24px,6vw,72px))] pb-[clamp(40px,8vw,96px)]">
-        <h1 className="sr-only">{s.brand} — preorder campus hoodies and tees</h1>
-        <div className="relative mx-auto aspect-[1400/1531] w-full max-w-[min(560px,86vw)]">
-          <Image src="/hero/hoodie-back.webp" alt="IIT Bombay hoodie, back print" fill priority sizes="(min-width: 768px) 560px, 86vw" className="object-contain" />
+      {/* Hero: a short wordmark over the cut-out hoodie. The image and CTA both link to the shop. */}
+      <section className="shell pt-[calc(var(--nav-h)+clamp(20px,5vw,56px))] pb-[clamp(36px,7vw,80px)] text-center">
+        <h1 className="t-display text-[clamp(2.8rem,10vw,7rem)] leading-[0.9] tracking-[-0.045em]">The Drop</h1>
+        <Link href="/shop" aria-label="Shop the collection" className="relative mx-auto mt-[clamp(12px,2.5vw,28px)] block aspect-[1073/1226] w-full max-w-[min(480px,78vw)] transition-transform duration-500 ease-[var(--ease)] hover:scale-[1.015]">
+          <Image src="/hero/hoodie-back.png" alt="IIT Bombay hoodie, back print" fill priority sizes="(min-width: 768px) 480px, 78vw" className="object-contain" />
+        </Link>
+        <div className="mt-[clamp(8px,2vw,20px)]">
+          <Link href="/shop" className="btn btn-lg">
+            Preorder now <span aria-hidden>→</span>
+          </Link>
         </div>
       </section>
 
@@ -105,17 +111,17 @@ function Detail({ term, children }: { term: string; children: React.ReactNode })
   );
 }
 
-// A plain product tile: image, name, colour dots, price. No link, no cart — this section just shows the range.
+// A product tile linking to its page: image, name, colour dots, price.
 function ShowcaseCard({ product, index }: { product: Product; index: number }) {
   const first = product.colorways[0];
   const cover = product.photos[0];
   return (
-    <div className="relative border-b border-line sm:border-r sm:[&:nth-child(2n)]:border-r-0 lg:[&:nth-child(2n)]:border-r lg:[&:nth-child(3n)]:border-r-0">
+    <Link href={`/shop/${product.slug}`} className="group relative block border-b border-line sm:border-r sm:[&:nth-child(2n)]:border-r-0 lg:[&:nth-child(2n)]:border-r lg:[&:nth-child(3n)]:border-r-0">
       <div className="relative aspect-[4/5] overflow-hidden bg-bg-2">
         {cover ? (
-          <Image src={photoUrl(cover)} alt={product.name} fill sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" className="object-cover" />
+          <Image src={photoUrl(cover)} alt={product.name} fill sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" className="object-cover transition-transform duration-700 ease-[var(--ease)] group-hover:scale-[1.04]" />
         ) : (
-          <ColorwayImage slug={product.slug} colorway={first.name} body={first.body} stitch={first.stitch} view="front" alt={`${product.name} in ${first.name}`} sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" className="object-cover object-top" />
+          <ColorwayImage slug={product.slug} colorway={first.name} body={first.body} stitch={first.stitch} view="front" alt={`${product.name} in ${first.name}`} sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" className="object-cover object-top transition-transform duration-700 ease-[var(--ease)] group-hover:scale-[1.04]" />
         )}
         <span className="mono absolute right-4 top-4 text-[0.7rem] leading-none text-muted">[{String(index + 1).padStart(2, "0")}]</span>
       </div>
@@ -131,6 +137,6 @@ function ShowcaseCard({ product, index }: { product: Product; index: number }) {
         </div>
         <Price product={product} badge={false} />
       </div>
-    </div>
+    </Link>
   );
 }
