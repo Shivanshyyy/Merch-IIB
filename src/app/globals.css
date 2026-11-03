@@ -1,17 +1,18 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #0a0a0b;
-  --bg-2: #121214;
-  --fg: #edebe6;
-  --muted: #8a8780;
-  --accent: #ff3b1f;
-  --accent-2: #ffb547;
-  --line: rgba(237, 235, 230, 0.12);
+  /* Simple luxury: white paper, soft-black ink, hairline rules. Monochrome by design. */
+  --bg: #ffffff;
+  --bg-2: #f6f5f2;
+  --fg: #16140f;
+  --muted: #6c685f;
+  --accent: #16140f; /* near-black: buttons are ink-on-paper */
+  --accent-2: #6c685f; /* restrained grey used for secondary emphasis */
+  --line: rgba(22, 20, 15, 0.14);
 
   --gutter: clamp(16px, 4vw, 56px);
   --bar-h: 56px; /* the nav bar */
-  --strip-h: 30px; /* the preorder marquee above it */
+  --strip-h: 0px; /* marquee strip removed in the simple theme */
   --nav-h: calc(var(--bar-h) + var(--strip-h)); /* everything fixed at the top */
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 
@@ -21,7 +22,7 @@
   --step-h2: clamp(1.5rem, 3.6vw, 3rem);
   --step-body: clamp(0.95rem, 0.9rem + 0.25vw, 1.0625rem);
 
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 @theme inline {
@@ -153,7 +154,7 @@ body {
   }
 
   .ember {
-    background: radial-gradient(60% 45% at 50% 0%, rgba(255, 59, 31, 0.14), transparent 70%);
+    background: radial-gradient(60% 45% at 50% 0%, rgba(22, 20, 15, 0.04), transparent 70%);
   }
 
   /* Buttons: the fill grows from wherever the pointer entered (set by Button.tsx). */
@@ -269,7 +270,7 @@ body {
     color: color-mix(in srgb, var(--muted) 70%, transparent);
   }
   .input:hover {
-    border-color: rgba(237, 235, 230, 0.3);
+    border-color: rgba(22, 20, 15, 0.32);
   }
   .input:focus-visible {
     outline: 2px solid var(--accent-2);
@@ -282,7 +283,7 @@ body {
   .field-error {
     margin-top: 0.4rem;
     font-size: 0.85rem;
-    color: #ff7a63; /* lighter than --accent: 5.9:1 on --bg-2 */
+    color: #b3261e; /* readable red on white: ~5.9:1 */
   }
 
   /* Option chips (sizes, colourways) */
@@ -309,7 +310,7 @@ body {
       color 0.2s;
   }
   .chip:hover {
-    border-color: rgba(237, 235, 230, 0.4);
+    border-color: rgba(22, 20, 15, 0.38);
   }
   .chip:has(input:focus-visible) {
     outline: 2px solid var(--accent-2);
@@ -393,14 +394,14 @@ body {
   }
   .btn-danger {
     --btn-bg: transparent;
-    --btn-fg: #ff7a63;
+    --btn-fg: #b3261e;
     --btn-border: color-mix(in srgb, #d03b3b 60%, transparent);
     --btn-fill: #d03b3b;
     --btn-fill-fg: #fff;
   }
 
   .skeleton {
-    background: linear-gradient(100deg, var(--bg-2) 30%, #1b1b1e 50%, var(--bg-2) 70%);
+    background: linear-gradient(100deg, var(--bg-2) 30%, #ffffff 50%, var(--bg-2) 70%);
     background-size: 200% 100%;
     animation: shimmer 1.4s linear infinite;
   }
