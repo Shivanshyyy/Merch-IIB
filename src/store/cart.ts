@@ -17,6 +17,7 @@ export type CartLine = {
   qty: number;
   unitPriceInr: number;
   productType?: "hoodie" | "tee"; // missing on lines saved before tees existed
+  image?: string; // cover-photo URL snapshot; falls back to the studio still when absent
 };
 
 type CartState = {
