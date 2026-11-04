@@ -436,7 +436,8 @@ export function createSupabaseDb(sb: ServiceClient): Db {
     },
 
     async listOrdersWithDesigner(designerId) {
-      const { data, error } = await sb.from("orders").select("*").contains("items", [{ designer: { id: designerId } }]).order("created_at", { ascending: false });
+      // A JSON string, not an array: the client turns arrays into Postgres array syntax, which a jsonb column rejects.
+      const { data, error } = await sb.from("orders").select("*").contains("items", JSON.stringify([{ designer: { id: designerId } }])).order("created_at", { ascending: false });
       if (error) fail("listOrdersWithDesigner", error);
       return (data ?? []) as Order[];
     },
