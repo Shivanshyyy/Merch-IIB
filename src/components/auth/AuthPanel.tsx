@@ -60,7 +60,7 @@ function LoginForm({ next, forgotHref, contactName }: { next: string; forgotHref
         <a href={forgotHref} target="_blank" rel="noopener" className="underline underline-offset-4 hover:text-fg">
           Message {contactName} on WhatsApp
         </a>{" "}
-        and they&apos;ll set a new one for you.
+        and they&apos;ll help you get back in.
       </p>
     </form>
     </div>

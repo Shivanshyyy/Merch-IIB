@@ -65,7 +65,7 @@ async function Login({ searchParams }: Props) {
           </p>
         ) : (
           <FreshOnVisit>
-            <AuthPanel next={dest} initialMode={mode === "signup" ? "signup" : "login"} forgotHref={whatsappUrl(settings.whatsapp, "Hi, I forgot my password for my merch account. Can you set a new one?")} contactName={settings.contactName} />
+            <AuthPanel next={dest} initialMode={mode === "signup" ? "signup" : "login"} forgotHref={whatsappUrl(settings.whatsapp, "Hi, I forgot my password for my merch account. Can you help me log in?")} contactName={settings.contactName} />
           </FreshOnVisit>
         )}
       </div>
