@@ -1,5 +1,5 @@
 import "server-only";
-import type { Batch, Order, OrderEvent, PhotoBlob, Product, Profile } from "@/lib/types";
+import type { Batch, Design, Designer, DesignerWithProfile, Order, OrderEvent, Payout, PhotoBlob, Product, ProductTerms, Profile } from "@/lib/types";
 import { CodeTakenError, EmailTakenError, NotFoundError, SlugTakenError, type Db } from "./types";
 import type { ServiceClient } from "./supabase-client";
 
@@ -21,6 +21,17 @@ export function createSupabaseDb(sb: ServiceClient): Db {
     return rows.map((r) => ({ ...r, photos: byProduct.get(r.id) ?? [] }));
   };
   const withPhotosOne = async (row: Omit<Product, "photos"> | null): Promise<Product | null> => (row ? (await withPhotos([row]))[0] : null);
+
+  // The image ids of each design, oldest first; the image bytes are never selected here.
+  const withImages = async (rows: Omit<Design, "images">[]): Promise<Design[]> => {
+    if (rows.length === 0) return [];
+    const { data, error } = await sb.from("design_images").select("id,design_id").in("design_id", rows.map((r) => r.id)).order("created_at").order("id");
+    if (error) fail("design images", error);
+    const byDesign = new Map<string, string[]>();
+    for (const r of data ?? []) byDesign.set(r.design_id, [...(byDesign.get(r.design_id) ?? []), r.id]);
+    return rows.map((r) => ({ ...r, images: byDesign.get(r.id) ?? [] }));
+  };
+  const withImagesOne = async (row: Omit<Design, "images"> | null): Promise<Design | null> => (row ? (await withImages([row]))[0] : null);
 
   return {
     async listActiveProducts() {
@@ -161,6 +172,9 @@ export function createSupabaseDb(sb: ServiceClient): Db {
     },
 
     async deleteProduct(id) {
+      // A design whose product is going away is no longer live.
+      const retire = await sb.from("designs").update({ status: "retired", updated_at: new Date().toISOString() }).eq("product_id", id).eq("status", "live");
+      if (retire.error) fail("deleteProduct (retire design)", retire.error);
       const { error } = await sb.from("products").delete().eq("id", id); // its photos go with it (on delete cascade)
       if (error) fail("deleteProduct", error);
     },
@@ -254,6 +268,163 @@ export function createSupabaseDb(sb: ServiceClient): Db {
       const { data, error } = await q.order("created_at", { ascending: false }).limit(limit);
       if (error) fail("listProfiles", error);
       return (data ?? []) as Profile[];
+    },
+
+    // ---- designers ----
+    async getDesigner(userId) {
+      const { data, error } = await sb.from("designers").select("*").eq("id", userId).maybeSingle();
+      if (error) fail("getDesigner", error);
+      return (data as Designer | null) ?? null;
+    },
+
+    async createDesigner(userId, input) {
+      const { data, error } = await sb.from("designers").insert({ id: userId, ...input }).select("*").single();
+      if (error) {
+        if (error.code === "23503") throw new NotFoundError("profile");
+        fail("createDesigner", error);
+      }
+      return data as Designer;
+    },
+
+    async updateDesigner(userId, input) {
+      const { data, error } = await sb.from("designers").update(input).eq("id", userId).select("*").maybeSingle();
+      if (error) fail("updateDesigner", error);
+      if (!data) throw new NotFoundError("designer");
+      return data as Designer;
+    },
+
+    async decideDesigner(userId, decision) {
+      const { data, error } = await sb.from("designers").update({ ...decision, decided_at: new Date().toISOString() }).eq("id", userId).select("*").maybeSingle();
+      if (error) fail("decideDesigner", error);
+      if (!data) throw new NotFoundError("designer");
+      return data as Designer;
+    },
+
+    async listDesigners(status) {
+      let q = sb.from("designers").select("*");
+      if (status) q = q.eq("status", status);
+      const { data, error } = await q.order("created_at", { ascending: false });
+      if (error) fail("listDesigners", error);
+      const rows = (data ?? []) as Designer[];
+      if (rows.length === 0) return [];
+      const people = await sb.from("profiles").select("id,full_name,email,phone").in("id", rows.map((r) => r.id));
+      if (people.error) fail("listDesigners profiles", people.error);
+      const byId = new Map((people.data ?? []).map((p) => [p.id, p]));
+      return rows.flatMap((r): DesignerWithProfile[] => {
+        const p = byId.get(r.id);
+        return p ? [{ ...r, full_name: p.full_name, email: p.email, phone: p.phone }] : [];
+      });
+    },
+
+    async createDesign(designerId, input) {
+      const { data, error } = await sb.from("designs").insert({ designer_id: designerId, ...input }).select("*").single();
+      if (error) {
+        if (error.code === "23503") throw new NotFoundError("designer");
+        fail("createDesign", error);
+      }
+      return { ...(data as Omit<Design, "images">), images: [] };
+    },
+
+    async getDesign(id) {
+      const { data, error } = await sb.from("designs").select("*").eq("id", id).maybeSingle();
+      if (error) fail("getDesign", error);
+      return withImagesOne(data as Omit<Design, "images"> | null);
+    },
+
+    async listDesignsByDesigner(designerId) {
+      const { data, error } = await sb.from("designs").select("*").eq("designer_id", designerId).order("created_at", { ascending: false });
+      if (error) fail("listDesignsByDesigner", error);
+      return withImages((data ?? []) as Omit<Design, "images">[]);
+    },
+
+    async listDesigns(status) {
+      let q = sb.from("designs").select("*");
+      if (status) q = q.eq("status", status);
+      const { data, error } = await q.order("submitted_at", { ascending: false, nullsFirst: false }).order("created_at", { ascending: false });
+      if (error) fail("listDesigns", error);
+      return withImages((data ?? []) as Omit<Design, "images">[]);
+    },
+
+    async patchDesign(id, patch) {
+      const { data, error } = await sb.from("designs").update({ ...patch, updated_at: new Date().toISOString() }).eq("id", id).select("*").maybeSingle();
+      if (error) fail("patchDesign", error);
+      if (!data) throw new NotFoundError("design");
+      return (await withImagesOne(data as Omit<Design, "images">))!;
+    },
+
+    async deleteDesign(id) {
+      const { error } = await sb.from("designs").delete().eq("id", id); // images go with it (on delete cascade)
+      if (error) fail("deleteDesign", error);
+    },
+
+    async addDesignImage(designId, image: PhotoBlob) {
+      const { data, error } = await sb.from("design_images").insert({ design_id: designId, mime: image.mime, data: image.bytes.toString("base64") }).select("id").single();
+      if (error) {
+        if (error.code === "23503") throw new NotFoundError("design");
+        fail("addDesignImage", error);
+      }
+      await sb.from("designs").update({ updated_at: new Date().toISOString() }).eq("id", designId);
+      return (data as { id: string }).id;
+    },
+
+    async removeDesignImage(designId, imageId) {
+      const { error } = await sb.from("design_images").delete().eq("id", imageId).eq("design_id", designId);
+      if (error) fail("removeDesignImage", error);
+      await sb.from("designs").update({ updated_at: new Date().toISOString() }).eq("id", designId);
+    },
+
+    async getDesignImage(id) {
+      const { data, error } = await sb.from("design_images").select("mime,data,design_id").eq("id", id).maybeSingle();
+      if (error) fail("getDesignImage", error);
+      return data ? { mime: data.mime, bytes: Buffer.from(data.data, "base64"), designId: data.design_id } : null;
+    },
+
+    async listProductTerms() {
+      const { data, error } = await sb.from("product_terms").select("product_id,designer_id,design_id,cost_inr,commission_pct");
+      if (error) fail("listProductTerms", error);
+      return (data ?? []) as ProductTerms[];
+    },
+
+    async getProductTerms(productId) {
+      const { data, error } = await sb.from("product_terms").select("product_id,designer_id,design_id,cost_inr,commission_pct").eq("product_id", productId).maybeSingle();
+      if (error) fail("getProductTerms", error);
+      return (data as ProductTerms | null) ?? null;
+    },
+
+    async saveProductTerms(terms) {
+      const { error } = await sb.from("product_terms").upsert({ ...terms, updated_at: new Date().toISOString() });
+      if (error) {
+        if (error.code === "23503") throw new NotFoundError("product");
+        fail("saveProductTerms", error);
+      }
+    },
+
+    async listOrdersWithDesigner(designerId) {
+      const { data, error } = await sb.from("orders").select("*").contains("items", [{ designer: { id: designerId } }]).order("created_at", { ascending: false });
+      if (error) fail("listOrdersWithDesigner", error);
+      return (data ?? []) as Order[];
+    },
+
+    async listPayouts(designerId) {
+      let q = sb.from("designer_payouts").select("*");
+      if (designerId) q = q.eq("designer_id", designerId);
+      const { data, error } = await q.order("paid_at", { ascending: false });
+      if (error) fail("listPayouts", error);
+      return (data ?? []) as Payout[];
+    },
+
+    async createPayout(input) {
+      const { data, error } = await sb.from("designer_payouts").insert(input).select("*").single();
+      if (error) {
+        if (error.code === "23503") throw new NotFoundError("designer");
+        fail("createPayout", error);
+      }
+      return data as Payout;
+    },
+
+    async deletePayout(id) {
+      const { error } = await sb.from("designer_payouts").delete().eq("id", id);
+      if (error) fail("deletePayout", error);
     },
   };
 }

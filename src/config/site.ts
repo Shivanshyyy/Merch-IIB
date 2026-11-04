@@ -35,6 +35,10 @@ export const defaultSettings: Settings = defaults;
 export const site = {
   orderCodePrefix: "HD",
   maxQtyPerLine: 10,
+  // Designers earn a whole-percent share of profit; the admin picks the rate inside this range.
+  designerCommission: { min: 4, max: 10 },
+  maxDesignImages: 6,
+  maxDesignColorways: 4,
   // TODO: the current hoodie model has no recorded author or licence. If its licence asks for a credit, fill this in;
   // the footer and policies page show it only once it is set.
   modelCredit: null as { title: string; author: string; url: string; license: string } | null,

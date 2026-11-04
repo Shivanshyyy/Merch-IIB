@@ -1,7 +1,7 @@
 import "server-only";
 import seed from "../../../supabase/seed.json";
 import type { Settings } from "@/config/site";
-import type { Batch, NewOrder, Order, OrderEvent, PhotoBlob, Product, Profile } from "@/lib/types";
+import type { Batch, Design, Designer, NewOrder, Order, OrderEvent, Payout, PhotoBlob, Product, ProductTerms, Profile } from "@/lib/types";
 import { CodeTakenError, EmailTakenError, NotFoundError, SlugTakenError, type Db } from "./types";
 
 export type Store = {
@@ -11,6 +11,11 @@ export type Store = {
   orders: Order[];
   events: OrderEvent[];
   profiles: Profile[];
+  designers: Designer[];
+  designs: Design[];
+  designImageData: Record<string, PhotoBlob>; // by image id; each design lists its own ids in `images`
+  productTerms: ProductTerms[];
+  payouts: Payout[];
   settings: Settings | null;
   eventSeq: number;
 };
@@ -51,6 +56,11 @@ function init(): Store {
     orders: [],
     events: [],
     profiles: [],
+    designers: [],
+    designs: [],
+    designImageData: {},
+    productTerms: [],
+    payouts: [],
     settings: null,
     eventSeq: 0,
   };
@@ -60,6 +70,11 @@ export const memoryStore = (): Store => {
   const store = (g.__merchMemoryStore ??= init());
   // A store left over from before photos existed (dev HMR keeps globalThis alive) gets the new fields.
   store.photoData ??= {};
+  store.designers ??= [];
+  store.designs ??= [];
+  store.designImageData ??= {};
+  store.productTerms ??= [];
+  store.payouts ??= [];
   for (const p of store.products) {
     p.photos ??= [];
     p.compare_at_inr ??= null;
@@ -176,6 +191,12 @@ export function createMemoryDb(): Db {
     async deleteProduct(id) {
       for (const photoId of s.products.find((p) => p.id === id)?.photos ?? []) delete s.photoData[photoId];
       s.products = s.products.filter((p) => p.id !== id);
+      s.productTerms = s.productTerms.filter((t) => t.product_id !== id);
+      // A design whose product is gone is no longer live.
+      for (const d of s.designs.filter((x) => x.product_id === id)) {
+        d.product_id = null;
+        if (d.status === "live") d.status = "retired";
+      }
     },
     async addProductPhoto(productId, photo) {
       const row = s.products.find((p) => p.id === productId);
@@ -246,6 +267,132 @@ export function createMemoryDb(): Db {
         .filter((p) => !term || [p.full_name, p.email, p.roll_no ?? "", p.phone].some((v) => v.toLowerCase().includes(term)))
         .sort((a, b) => b.created_at.localeCompare(a.created_at))
         .slice(0, limit);
+    },
+
+    // ---- designers ----
+    async getDesigner(userId) {
+      return s.designers.find((d) => d.id === userId) ?? null;
+    },
+    async createDesigner(userId, input) {
+      if (!s.profiles.some((p) => p.id === userId)) throw new NotFoundError("profile");
+      if (s.designers.some((d) => d.id === userId)) throw new Error("designer already exists");
+      const row: Designer = { id: userId, ...input, status: "pending", commission_pct: null, decision_note: null, decided_at: null, created_at: new Date().toISOString() };
+      s.designers.push(row);
+      return row;
+    },
+    async updateDesigner(userId, input) {
+      const row = s.designers.find((d) => d.id === userId);
+      if (!row) throw new NotFoundError("designer");
+      Object.assign(row, input);
+      return row;
+    },
+    async decideDesigner(userId, decision) {
+      const row = s.designers.find((d) => d.id === userId);
+      if (!row) throw new NotFoundError("designer");
+      if (decision.status === "approved" && decision.commission_pct === null) throw new Error("an approved designer needs a commission");
+      Object.assign(row, decision, { decided_at: new Date().toISOString() });
+      return row;
+    },
+    async listDesigners(status) {
+      return s.designers
+        .filter((d) => !status || d.status === status)
+        .flatMap((d) => {
+          const p = s.profiles.find((x) => x.id === d.id);
+          return p ? [{ ...d, full_name: p.full_name, email: p.email, phone: p.phone }] : [];
+        })
+        .sort((a, b) => b.created_at.localeCompare(a.created_at));
+    },
+
+    async createDesign(designerId, input) {
+      if (!s.designers.some((d) => d.id === designerId)) throw new NotFoundError("designer");
+      const now = new Date().toISOString();
+      const row: Design = {
+        ...input,
+        id: crypto.randomUUID(),
+        designer_id: designerId,
+        originality_confirmed_at: null,
+        status: "draft",
+        review_note: null,
+        submitted_at: null,
+        reviewed_at: null,
+        product_id: null,
+        images: [],
+        created_at: now,
+        updated_at: now,
+      };
+      s.designs.push(row);
+      return row;
+    },
+    async getDesign(id) {
+      return s.designs.find((d) => d.id === id) ?? null;
+    },
+    async listDesignsByDesigner(designerId) {
+      return s.designs.filter((d) => d.designer_id === designerId).sort((a, b) => b.created_at.localeCompare(a.created_at));
+    },
+    async listDesigns(status) {
+      return s.designs.filter((d) => !status || d.status === status).sort((a, b) => (b.submitted_at ?? b.created_at).localeCompare(a.submitted_at ?? a.created_at));
+    },
+    async patchDesign(id, patch) {
+      const row = s.designs.find((d) => d.id === id);
+      if (!row) throw new NotFoundError("design");
+      Object.assign(row, patch, { updated_at: new Date().toISOString() });
+      return row;
+    },
+    async deleteDesign(id) {
+      for (const imageId of s.designs.find((d) => d.id === id)?.images ?? []) delete s.designImageData[imageId];
+      s.designs = s.designs.filter((d) => d.id !== id);
+      for (const t of s.productTerms.filter((x) => x.design_id === id)) t.design_id = null;
+    },
+    async addDesignImage(designId, image) {
+      const row = s.designs.find((d) => d.id === designId);
+      if (!row) throw new NotFoundError("design");
+      const id = crypto.randomUUID();
+      s.designImageData[id] = image;
+      row.images = [...row.images, id];
+      row.updated_at = new Date().toISOString();
+      return id;
+    },
+    async removeDesignImage(designId, imageId) {
+      const row = s.designs.find((d) => d.id === designId);
+      if (!row) throw new NotFoundError("design");
+      if (!row.images.includes(imageId)) return;
+      row.images = row.images.filter((id) => id !== imageId);
+      row.updated_at = new Date().toISOString();
+      delete s.designImageData[imageId];
+    },
+    async getDesignImage(id) {
+      const blob = s.designImageData[id];
+      const owner = s.designs.find((d) => d.images.includes(id));
+      return blob && owner ? { ...blob, designId: owner.id } : null;
+    },
+
+    async listProductTerms() {
+      return [...s.productTerms];
+    },
+    async getProductTerms(productId) {
+      return s.productTerms.find((t) => t.product_id === productId) ?? null;
+    },
+    async saveProductTerms(terms) {
+      if (!s.products.some((p) => p.id === terms.product_id)) throw new NotFoundError("product");
+      const i = s.productTerms.findIndex((t) => t.product_id === terms.product_id);
+      if (i === -1) s.productTerms.push({ ...terms });
+      else s.productTerms[i] = { ...terms };
+    },
+
+    async listOrdersWithDesigner(designerId) {
+      return s.orders.filter((o) => o.items.some((i) => i.designer?.id === designerId)).sort((a, b) => b.created_at.localeCompare(a.created_at));
+    },
+    async listPayouts(designerId) {
+      return s.payouts.filter((p) => !designerId || p.designer_id === designerId).sort((a, b) => b.paid_at.localeCompare(a.paid_at));
+    },
+    async createPayout(input) {
+      if (!s.designers.some((d) => d.id === input.designer_id)) throw new NotFoundError("designer");
+      const row: Payout = { id: crypto.randomUUID(), ...input, paid_at: new Date().toISOString() };
+      s.payouts.push(row);
+      return row;
+    },
+    async deletePayout(id) {
+      s.payouts = s.payouts.filter((p) => p.id !== id);
     },
   };
 }

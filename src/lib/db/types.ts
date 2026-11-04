@@ -1,5 +1,31 @@
 import type { Settings } from "@/config/site";
-import type { Batch, BatchInput, NewOrder, Order, OrderEvent, OrderFilter, OrderPatch, PhotoBlob, Product, ProductInput, Profile, ProfileInput } from "@/lib/types";
+import type {
+  Batch,
+  BatchInput,
+  Design,
+  DesignImageBlob,
+  DesignInput,
+  DesignPatch,
+  DesignStatus,
+  Designer,
+  DesignerDecision,
+  DesignerInput,
+  DesignerStatus,
+  DesignerWithProfile,
+  NewOrder,
+  Order,
+  OrderEvent,
+  OrderFilter,
+  OrderPatch,
+  Payout,
+  PayoutInput,
+  PhotoBlob,
+  Product,
+  ProductInput,
+  ProductTerms,
+  Profile,
+  ProfileInput,
+} from "@/lib/types";
 
 export class CodeTakenError extends Error {
   constructor() {
@@ -77,4 +103,36 @@ export interface Db {
   listEvents(orderId: string): Promise<OrderEvent[]>;
 
   listProfiles(query?: string, limit?: number): Promise<Profile[]>;
+
+  // ---- designers ----
+  getDesigner(userId: string): Promise<Designer | null>;
+  // Needs an existing profile; starts as "pending".
+  createDesigner(userId: string, input: DesignerInput): Promise<Designer>;
+  updateDesigner(userId: string, input: DesignerInput): Promise<Designer>;
+  // The admin's decision: status, commission and the note the designer sees.
+  decideDesigner(userId: string, decision: DesignerDecision): Promise<Designer>;
+  listDesigners(status?: DesignerStatus): Promise<DesignerWithProfile[]>;
+
+  createDesign(designerId: string, input: DesignInput): Promise<Design>;
+  getDesign(id: string): Promise<Design | null>;
+  listDesignsByDesigner(designerId: string): Promise<Design[]>;
+  listDesigns(status?: DesignStatus): Promise<Design[]>;
+  // Applies only the keys present and bumps updated_at.
+  patchDesign(id: string, patch: DesignPatch): Promise<Design>;
+  // Its images go with it.
+  deleteDesign(id: string): Promise<void>;
+  addDesignImage(designId: string, image: PhotoBlob): Promise<string>;
+  removeDesignImage(designId: string, imageId: string): Promise<void>;
+  getDesignImage(id: string): Promise<DesignImageBlob | null>;
+
+  // Cost and commission live apart from Product so they never reach the shop.
+  listProductTerms(): Promise<ProductTerms[]>;
+  getProductTerms(productId: string): Promise<ProductTerms | null>;
+  saveProductTerms(terms: ProductTerms): Promise<void>;
+
+  // Orders with at least one item belonging to this designer, in any state. Callers must project them (no buyer data).
+  listOrdersWithDesigner(designerId: string): Promise<Order[]>;
+  listPayouts(designerId?: string): Promise<Payout[]>;
+  createPayout(input: PayoutInput): Promise<Payout>;
+  deletePayout(id: string): Promise<void>;
 }
