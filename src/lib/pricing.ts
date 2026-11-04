@@ -6,8 +6,8 @@ import type { OrderItem, Product } from "@/lib/types";
 
 type Priced = { ok: true; items: OrderItem[]; subtotal: number; discount: Discount | null; total: number } | { ok: false; message: string };
 
-// Prices come only from `products`; anything price-like in the request is ignored.
-export function priceOrder(lines: CartLineInput[], products: Product[], rules: NameRules & { offers: Offers }): Priced {
+// Prices come only from `products`; anything price-like in the request is ignored. A designer's share is locked onto each item here.
+export function priceOrder(lines: CartLineInput[], products: Product[], rules: NameRules & { offers: Offers }, shareFor: (product: Product) => OrderItem["designer"] = () => undefined): Priced {
   const schema = makeCartLineSchema(rules);
   const bySlug = new Map(products.map((p) => [p.slug, p]));
   const items: OrderItem[] = [];
@@ -23,7 +23,8 @@ export function priceOrder(lines: CartLineInput[], products: Product[], rules: N
 
     const unit = unitPrice(product, line.name);
     const fee = line.name ? product.name_fee_inr : 0;
-    items.push({ slug: product.slug, productName: product.name, colorway: line.colorway, size: line.size, name: line.name, qty: line.qty, unitPriceInr: unit, ...(fee ? { nameFeeInr: fee } : {}) });
+    const designer = shareFor(product);
+    items.push({ slug: product.slug, productName: product.name, colorway: line.colorway, size: line.size, name: line.name, qty: line.qty, unitPriceInr: unit, ...(fee ? { nameFeeInr: fee } : {}), ...(designer ? { designer } : {}) });
     amounts.push({ kind: product.type, amount: unit * line.qty });
   }
   const subtotal = amounts.reduce((n, a) => n + a.amount, 0);

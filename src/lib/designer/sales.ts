@@ -7,7 +7,7 @@ export type SaleState = "counted" | "pending" | "void";
 // What a designer may see about a sale: never the buyer, the order code or what the buyer paid.
 export type DesignerSale = {
   date: string;
-  slug: string;
+  productId: string;
   productName: string;
   colorway: string;
   size: string;
@@ -16,7 +16,7 @@ export type DesignerSale = {
   state: SaleState;
 };
 
-export type ProductSales = { slug: string; productName: string; units: number; earnedInr: number; pendingUnits: number };
+export type ProductSales = { productId: string; productName: string; units: number; earnedInr: number; pendingUnits: number };
 
 export type DesignerSummary = {
   unitsSold: number;
@@ -47,10 +47,10 @@ export function summarizeDesigner(orders: Order[], designerId: string, payouts: 
     for (const i of o.items) {
       if (i.designer?.id !== designerId) continue;
       const commissionInr = i.designer.unitCommissionInr * i.qty;
-      sales.push({ date: o.created_at, slug: i.slug, productName: i.productName, colorway: i.colorway, size: i.size, qty: i.qty, commissionInr, state });
+      sales.push({ date: o.created_at, productId: i.designer.productId, productName: i.productName, colorway: i.colorway, size: i.size, qty: i.qty, commissionInr, state });
       if (state === "void") continue;
 
-      const row = products.get(i.slug) ?? { slug: i.slug, productName: i.productName, units: 0, earnedInr: 0, pendingUnits: 0 };
+      const row = products.get(i.designer.productId) ?? { productId: i.designer.productId, productName: i.productName, units: 0, earnedInr: 0, pendingUnits: 0 };
       if (state === "counted") {
         row.units += i.qty;
         row.earnedInr += commissionInr;
@@ -60,7 +60,7 @@ export function summarizeDesigner(orders: Order[], designerId: string, payouts: 
         row.pendingUnits += i.qty;
         unitsPending += i.qty;
       }
-      products.set(i.slug, row);
+      products.set(i.designer.productId, row);
     }
   }
 

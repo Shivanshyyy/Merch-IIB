@@ -46,7 +46,7 @@ async function Design({ params }: Props) {
   // How this design has sold, for live and retired ones.
   const sales =
     product && designer
-      ? summarizeDesigner(await d.listOrdersWithDesigner(designer.id), designer.id, []).byProduct.find((row) => row.slug === product.slug)
+      ? summarizeDesigner(await d.listOrdersWithDesigner(designer.id), designer.id, []).byProduct.find((row) => row.productId === product.id)
       : undefined;
 
   return (

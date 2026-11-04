@@ -37,9 +37,8 @@ async function Designer({ params }: Props) {
   const d = db();
   const [designer, profile] = await Promise.all([d.getDesigner(id).catch(() => null), d.getProfile(id).catch(() => null)]);
   if (!designer || !profile) notFound();
-  const [designs, orders, payouts, products, settings] = await Promise.all([d.listDesignsByDesigner(id), d.listOrdersWithDesigner(id), d.listPayouts(id), d.listAllProducts(), getSettingsFresh()]);
+  const [designs, orders, payouts, settings] = await Promise.all([d.listDesignsByDesigner(id), d.listOrdersWithDesigner(id), d.listPayouts(id), getSettingsFresh()]);
   const sum = summarizeDesigner(orders, id, payouts);
-  const slugById = new Map(products.map((p) => [p.id, p.slug]));
 
   return (
     <>
@@ -100,7 +99,7 @@ async function Designer({ params }: Props) {
               </thead>
               <tbody>
                 {designs.map((x) => {
-                  const p = x.product_id ? sum.byProduct.find((row) => row.slug === slugById.get(x.product_id!)) : undefined;
+                  const p = x.product_id ? sum.byProduct.find((row) => row.productId === x.product_id) : undefined;
                   return (
                     <tr key={x.id}>
                       <td>

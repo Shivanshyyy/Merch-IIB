@@ -48,7 +48,7 @@ export type OrderItem = {
   unitPriceInr: number;
   nameFeeInr?: number;
   /** Designer share, locked when the order was placed. Never shown to buyers. */
-  designer?: { id: string; costInr: number; pct: number; unitCommissionInr: number };
+  designer?: { id: string; productId: string; costInr: number; pct: number; unitCommissionInr: number };
 };
 
 export type PaymentStatus = "pending" | "verified" | "rejected";

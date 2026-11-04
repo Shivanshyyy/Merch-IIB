@@ -4,6 +4,7 @@ import { OrderCard } from "@/components/track/OrderCard";
 import { Button } from "@/components/ui/Button";
 import { requireProfile } from "@/lib/auth/guards";
 import { db } from "@/lib/db";
+import { toOrderView } from "@/lib/orders/view";
 import { getSettings } from "@/lib/settings";
 import { Reveal } from "@/components/ui/Reveal";
 
@@ -55,7 +56,7 @@ async function Orders() {
         [ {orders.length} {orders.length === 1 ? "order" : "orders"} ] — newest first
       </p>
       {orders.map((o) => (
-        <OrderCard key={o.code} order={o} contactName={settings.contactName} />
+        <OrderCard key={o.code} order={toOrderView(o)} contactName={settings.contactName} />
       ))}
     </div>
   );

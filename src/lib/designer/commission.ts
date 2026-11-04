@@ -19,5 +19,5 @@ export function designerSnapshot(terms: ProductTerms | undefined, designerRate: 
   if (!terms?.designer_id) return undefined;
   const pct = terms.commission_pct ?? designerRate;
   if (pct === null || pct === undefined) return undefined;
-  return { id: terms.designer_id, costInr: terms.cost_inr, pct, unitCommissionInr: unitCommission(priceInr, terms.cost_inr, pct) };
+  return { id: terms.designer_id, productId: terms.product_id, costInr: terms.cost_inr, pct, unitCommissionInr: unitCommission(priceInr, terms.cost_inr, pct) };
 }

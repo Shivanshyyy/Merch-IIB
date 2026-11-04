@@ -6,6 +6,8 @@ import { canMove, designerCanDelete, designerCanEdit, submitProblems } from "@/l
 import { saleState, summarizeDesigner } from "@/lib/designer/sales";
 import { bioSchema, designerApplySchema, designerSignUpSchema, designSchema, toDesignInput, upiIdSchema } from "@/lib/designer/schemas";
 import { db, NotFoundError } from "@/lib/db";
+import { placeOrderFor } from "@/lib/orders/place-order";
+import { toOrderView } from "@/lib/orders/view";
 import { memoryStore } from "@/lib/db/memory";
 import type { Design, Designer, Order, OrderItem, Payout, ProductTerms } from "@/lib/types";
 
@@ -20,7 +22,7 @@ const item = (over: Partial<OrderItem> = {}): OrderItem => ({
   name: "",
   qty: 1,
   unitPriceInr: 999,
-  designer: { id: D1, costInr: 600, pct: 7, unitCommissionInr: 27 },
+  designer: { id: D1, productId: "p-lake", costInr: 600, pct: 7, unitCommissionInr: 27 },
   ...over,
 });
 const order = (over: Partial<Order> = {}): Order => ({
@@ -74,8 +76,8 @@ test("the commission range is whole percents from 4 to 10", () => {
 
 test("snapshot locks cost, rate and the per-unit share; products without a designer get none", () => {
   const terms: ProductTerms = { product_id: "p1", designer_id: D1, design_id: "x", cost_inr: 600, commission_pct: null };
-  assert.deepEqual(designerSnapshot(terms, 7, 999), { id: D1, costInr: 600, pct: 7, unitCommissionInr: 27 }, "the designer's rate applies by default");
-  assert.deepEqual(designerSnapshot({ ...terms, commission_pct: 10 }, 7, 999), { id: D1, costInr: 600, pct: 10, unitCommissionInr: 39 }, "a product's own rate wins");
+  assert.deepEqual(designerSnapshot(terms, 7, 999), { id: D1, productId: "p1", costInr: 600, pct: 7, unitCommissionInr: 27 }, "the designer's rate applies by default");
+  assert.deepEqual(designerSnapshot({ ...terms, commission_pct: 10 }, 7, 999), { id: D1, productId: "p1", costInr: 600, pct: 10, unitCommissionInr: 39 }, "a product's own rate wins");
   assert.equal(designerSnapshot(terms, null, 999), undefined, "no rate yet, no share");
   assert.equal(designerSnapshot(undefined, 7, 999), undefined);
   assert.equal(designerSnapshot({ ...terms, designer_id: null }, 7, 999), undefined);
@@ -96,8 +98,8 @@ test("sale state: counted when paid, pending while unpaid, void when cancelled o
 
 test("summary counts only this designer's verified items, per product", () => {
   const orders = [
-    order({ items: [item({ qty: 2 }), item({ slug: "tee", productName: "Lake Tee", unitPriceInr: 499, designer: { id: D1, costInr: 300, pct: 7, unitCommissionInr: 13 } })] }),
-    order({ items: [item({ slug: "other", productName: "Someone Else", designer: { id: D2, costInr: 1, pct: 10, unitCommissionInr: 99 } }), item({ slug: "house", productName: "House Hoodie", designer: undefined })] }),
+    order({ items: [item({ qty: 2 }), item({ slug: "tee", productName: "Lake Tee", unitPriceInr: 499, designer: { id: D1, productId: "p-tee", costInr: 300, pct: 7, unitCommissionInr: 13 } })] }),
+    order({ items: [item({ slug: "other", productName: "Someone Else", designer: { id: D2, productId: "p-other", costInr: 1, pct: 10, unitCommissionInr: 99 } }), item({ slug: "house", productName: "House Hoodie", designer: undefined })] }),
     order({ payment_status: "pending", verified_at: null, items: [item({ qty: 3 })] }),
     order({ order_status: "cancelled", items: [item({ qty: 5 })] }),
     order({ refund_status: "refunded", items: [item({ qty: 4 })] }),
@@ -109,10 +111,10 @@ test("summary counts only this designer's verified items, per product", () => {
   assert.equal(s.paidInr, 30, "other designers' payouts are ignored");
   assert.equal(s.balanceInr, 67 - 30);
   assert.deepEqual(
-    s.byProduct.map((p) => [p.slug, p.units, p.earnedInr, p.pendingUnits]),
+    s.byProduct.map((p) => [p.productId, p.units, p.earnedInr, p.pendingUnits]),
     [
-      ["lake", 2, 54, 3],
-      ["tee", 1, 13, 0],
+      ["p-lake", 2, 54, 3],
+      ["p-tee", 1, 13, 0],
     ],
   );
   assert.equal(s.sales.length, 5, "includes pending and void lines for the history");
@@ -123,7 +125,7 @@ test("what a designer sees about a sale never includes the buyer or the order co
   const s = summarizeDesigner([order({ items: [item({ name: "SECRET NAME" })] })], D1, []);
   const text = JSON.stringify(s);
   for (const leak of ["buyer@example.com", "Buyer Name", "9876543210", "HD-AAAA", "SECRET NAME", "H4", "999"]) assert.equal(text.includes(leak), false, `leaked ${leak}`);
-  assert.deepEqual(Object.keys(s.sales[0]).sort(), ["colorway", "commissionInr", "date", "productName", "qty", "size", "slug", "state"]);
+  assert.deepEqual(Object.keys(s.sales[0]).sort(), ["colorway", "commissionInr", "date", "productId", "productName", "qty", "size", "state"]);
 });
 
 test("a refund after a payout can push the balance below zero", () => {
@@ -342,6 +344,7 @@ test("design details reject bad titles, garments, colours, prices and links", ()
 
 // ---------- in-memory database
 
+const scratchProduct = (slug: string) => db().createProduct({ slug, name: "Scratch", type: "hoodie", description: "", price_inr: 700, compare_at_inr: null, name_fee_inr: 0, colorways: [{ name: "Black", body: "#000000", stitch: "#ffffff" }], sizes: ["M"], personalizable: true, active: true, sort: 99 });
 const newDesign = (over: Partial<Design> = {}) => ({ title: "Lake", description: "", product_type: "hoodie" as const, colorways: [], suggested_price_inr: null, print_file_url: null, ...over });
 
 beforeEach(async () => {
@@ -431,7 +434,7 @@ test("designs list by designer and by status, newest submission first", async ()
 
 test("product terms are saved apart from the product, and go with it", async () => {
   const d = db();
-  const [product] = await d.listAllProducts();
+  const product = await scratchProduct("scratch-terms");
   await assert.rejects(d.saveProductTerms({ product_id: "nope", designer_id: null, design_id: null, cost_inr: 1, commission_pct: 5 }), NotFoundError);
   await d.saveProductTerms({ product_id: product.id, designer_id: D1, design_id: null, cost_inr: 500, commission_pct: 5 });
   await d.saveProductTerms({ product_id: product.id, designer_id: D1, design_id: null, cost_inr: 450, commission_pct: 8 });
@@ -446,7 +449,7 @@ test("product terms are saved apart from the product, and go with it", async () 
 test("deleting a live design's product retires the design", async () => {
   const d = db();
   await d.createDesigner(D1, { bio: null, upi_id: null });
-  const [product] = await d.listAllProducts();
+  const product = await scratchProduct("scratch-live");
   const design = await d.createDesign(D1, newDesign());
   await d.patchDesign(design.id, { status: "live", product_id: product.id });
   await d.deleteProduct(product.id);
@@ -457,7 +460,7 @@ test("deleting a live design's product retires the design", async () => {
 test("a designer's orders are found by the id snapshotted on the items", async () => {
   const d = db();
   const s = memoryStore();
-  s.orders.push(order({ code: "HD-ONE" }), order({ code: "HD-TWO", items: [item({ designer: undefined })] }), order({ code: "HD-THREE", items: [item({ designer: { id: D2, costInr: 1, pct: 4, unitCommissionInr: 1 } })] }));
+  s.orders.push(order({ code: "HD-ONE" }), order({ code: "HD-TWO", items: [item({ designer: undefined })] }), order({ code: "HD-THREE", items: [item({ designer: { id: D2, productId: "p-other", costInr: 1, pct: 4, unitCommissionInr: 1 } })] }));
   assert.deepEqual((await d.listOrdersWithDesigner(D1)).map((o) => o.code), ["HD-ONE"]);
   assert.deepEqual((await d.listOrdersWithDesigner(D2)).map((o) => o.code), ["HD-THREE"]);
 });
@@ -473,4 +476,81 @@ test("payouts: record, list newest first, filter by designer, delete", async () 
   assert.deepEqual((await d.listPayouts(D1)).map((p) => p.reference), ["UTR1"]);
   await d.deletePayout(p1.id);
   assert.equal((await d.listPayouts(D1)).length, 0);
+});
+
+// ---------- selling a designer's product
+
+const buyer = { id: "b1000000-0000-4000-8000-000000000001", email: "buyer@example.com", name: "Buyer" };
+
+async function designerWithProduct(rate: number | null, override: number | null = null) {
+  const d = db();
+  await d.createDesigner(D1, { bio: null, upi_id: null });
+  if (rate !== null) await d.decideDesigner(D1, { status: "approved", commission_pct: rate, decision_note: null });
+  const product = (await d.listAllProducts()).find((p) => p.slug === "iit-bombay-hoodie")!;
+  await d.saveProductTerms({ product_id: product.id, designer_id: D1, design_id: null, cost_inr: 500, commission_pct: override });
+  return product;
+}
+const buy = () => placeOrderFor(buyer, { values: { fullName: "Buyer", phone: "9876543210", hostel: "H4", room: "1" }, items: [{ slug: "iit-bombay-hoodie", colorway: "Black", size: "M", name: "ARYAN", qty: 2 }], confirmSpelling: true, confirmPolicy: true });
+
+test("an order for a designer's product locks their share, and costs the buyer the same", async () => {
+  const product = await designerWithProduct(6);
+  const r = await buy();
+  assert.equal(r.ok, true, r.message);
+  const o = memoryStore().orders[0];
+  assert.deepEqual(o.items[0].designer, { id: D1, productId: product.id, costInr: 500, pct: 6, unitCommissionInr: 17 }, "6% of (799 - 500) = 17.9, rounded down; the name fee isn't profit");
+  assert.equal(o.total_inr, (799 + 99) * 2 - 180, "the buyer's total is unchanged by the commission");
+});
+
+test("a product's own rate beats the designer's, and no rate means no share", async () => {
+  await designerWithProduct(6, 10);
+  await buy();
+  assert.equal(memoryStore().orders[0].items[0].designer?.pct, 10);
+
+  memoryStore().orders.length = 0;
+  memoryStore().productTerms.length = 0;
+  memoryStore().designers.length = 0;
+  await designerWithProduct(null); // pending designer with no rate yet
+  await buy();
+  assert.equal(memoryStore().orders[0].items[0].designer, undefined);
+});
+
+test("products without terms get no designer share", async () => {
+  await buy();
+  assert.equal(memoryStore().orders[0].items[0].designer, undefined);
+});
+
+test("a later rate change doesn't touch an order already placed", async () => {
+  await designerWithProduct(5);
+  await buy();
+  await db().decideDesigner(D1, { status: "approved", commission_pct: 10, decision_note: null });
+  assert.equal(memoryStore().orders[0].items[0].designer?.pct, 5);
+  await buy();
+  assert.equal(memoryStore().orders[1].items[0].designer?.pct, 10, "new orders use the new rate");
+});
+
+test("the commission counts once the payment is verified and drops out on a refund", async () => {
+  await designerWithProduct(6);
+  await buy();
+  const d = db();
+  const [placed] = await d.listOrdersWithDesigner(D1);
+  const sum = async () => summarizeDesigner(await d.listOrdersWithDesigner(D1), D1, []);
+
+  let s = await sum();
+  assert.deepEqual([s.unitsSold, s.unitsPending, s.earnedInr], [0, 2, 0], "unpaid: pending, not earned");
+  await d.patchOrder(placed.id, { payment_status: "verified", verified_at: now.toISOString() }, { type: "payment_verified" });
+  s = await sum();
+  assert.deepEqual([s.unitsSold, s.unitsPending, s.earnedInr], [2, 0, 34]);
+  await d.patchOrder(placed.id, { refund_status: "refunded" }, { type: "refund_refunded" });
+  s = await sum();
+  assert.deepEqual([s.unitsSold, s.earnedInr], [0, 0], "refunded: no longer counts");
+});
+
+test("customers never get the designer's cost or commission in their order view", async () => {
+  await designerWithProduct(6);
+  await buy();
+  const view = toOrderView(memoryStore().orders[0]);
+  const text = JSON.stringify(view);
+  for (const leak of ["designer", "costInr", "unitCommissionInr", "pct", D1]) assert.equal(text.includes(leak), false, `leaked ${leak}`);
+  assert.equal(view.items[0].unitPriceInr, 898, "everything a customer needs is still there");
+  assert.equal(view.code, memoryStore().orders[0].code);
 });
