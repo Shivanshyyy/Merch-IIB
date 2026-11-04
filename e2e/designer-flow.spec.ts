@@ -181,7 +181,7 @@ test("designer: apply → approved → design reviewed and published → a sale 
   await page.goto("/designer");
   await expect(page.getByText(/1 piece is waiting/)).toBeVisible();
   await page.goto("/designer/earnings");
-  await expect(page.getByRole("cell", { name: "Awaiting payment" })).toBeVisible();
+  await expect(page.getByRole("listitem").filter({ hasText: "Awaiting payment" })).toContainText("₹23");
 
   // 7. The admin verifies the payment; now it counts: 1 piece, ₹23.
   await admin.goto("/admin/orders");
@@ -195,7 +195,7 @@ test("designer: apply → approved → design reviewed and published → a sale 
   await expect(stat("Commission earned")).toContainText("₹23");
   await expect(stat("Your commission")).toContainText("6%");
   await page.goto("/designer/earnings");
-  await expect(page.getByRole("cell", { name: "Counted" })).toBeVisible();
+  await expect(page.getByRole("listitem").filter({ hasText: "Counted" })).toContainText("₹23");
 
   // The designer's pages never show who bought it, where it goes, or what the order is called.
   const texts: string[] = [];

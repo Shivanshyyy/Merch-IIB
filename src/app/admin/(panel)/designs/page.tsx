@@ -48,7 +48,7 @@ async function Designs({ searchParams }: Props) {
         <p className="admin-label mt-2">Review what designers submit, then put approved designs live in the shop.</p>
       </div>
 
-      <nav aria-label="Design status" className="flex overflow-x-auto border-b border-line [scrollbar-width:none]">
+      <nav aria-label="Design status" className="flex flex-wrap border-b border-line">
         {STATUSES.map((s) => tab(DESIGN_STATUS_LABEL[s], s, count(s), status === s))}
         {tab("All", "all", designs.length, all)}
       </nav>

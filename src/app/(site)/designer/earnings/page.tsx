@@ -47,28 +47,18 @@ async function Earnings() {
         {sum.byProduct.length === 0 ? (
           <p className="mt-4 text-muted">No sales yet.</p>
         ) : (
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full min-w-[28rem] text-left text-[0.95rem]">
-              <thead>
-                <tr className="label border-b border-line">
-                  <th className="py-3 pr-4 font-normal">Design</th>
-                  <th className="py-3 pr-4 text-right font-normal">Sold</th>
-                  <th className="py-3 pr-4 text-right font-normal">Waiting</th>
-                  <th className="py-3 text-right font-normal">Earned</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sum.byProduct.map((p) => (
-                  <tr key={p.productId} className="border-b border-line">
-                    <td className="py-3 pr-4">{p.productName}</td>
-                    <td className="mono py-3 pr-4 text-right">{p.units}</td>
-                    <td className="mono py-3 pr-4 text-right text-muted">{p.pendingUnits}</td>
-                    <td className="mono py-3 text-right">{inr(p.earnedInr)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ul className="mt-4 divide-y divide-line border-y border-line">
+            {sum.byProduct.map((p) => (
+              <li key={p.productId} className="grid grid-cols-[1fr_auto_5rem] items-baseline gap-x-4 py-3">
+                <span>
+                  {p.productName}
+                  {p.pendingUnits > 0 && <span className="label mt-1 block normal-case tracking-normal">{p.pendingUnits} waiting for payment</span>}
+                </span>
+                <span className="mono">{p.units} sold</span>
+                <span className="mono text-right">{inr(p.earnedInr)}</span>
+              </li>
+            ))}
+          </ul>
         )}
       </section>
 
@@ -79,32 +69,22 @@ async function Earnings() {
         {sum.sales.length === 0 ? (
           <p className="mt-4 text-muted">Nothing yet.</p>
         ) : (
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full min-w-[36rem] text-left text-[0.95rem]">
-              <thead>
-                <tr className="label border-b border-line">
-                  <th className="py-3 pr-4 font-normal">Date</th>
-                  <th className="py-3 pr-4 font-normal">Piece</th>
-                  <th className="py-3 pr-4 text-right font-normal">Qty</th>
-                  <th className="py-3 pr-4 font-normal">Status</th>
-                  <th className="py-3 text-right font-normal">Commission</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sum.sales.map((x, i) => (
-                  <tr key={i} className={`border-b border-line ${x.state === "void" ? "text-muted" : ""}`}>
-                    <td className="py-3 pr-4 whitespace-nowrap">{fmtDate(x.date)}</td>
-                    <td className="py-3 pr-4">
-                      {x.productName} <span className="text-muted">· {x.colorway} · {x.size}</span>
-                    </td>
-                    <td className="mono py-3 pr-4 text-right">{x.qty}</td>
-                    <td className="py-3 pr-4">{STATE[x.state]}</td>
-                    <td className={`mono py-3 text-right ${x.state === "void" ? "line-through" : ""}`}>{inr(x.commissionInr)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ul className="mt-4 divide-y divide-line border-y border-line">
+            {sum.sales.map((x, i) => (
+              <li key={i} className={`grid grid-cols-[1fr_auto] items-baseline gap-x-4 py-3 ${x.state === "void" ? "text-muted" : ""}`}>
+                <span>
+                  {x.productName}{" "}
+                  <span className="text-muted">
+                    · {x.colorway} · {x.size} · ×{x.qty}
+                  </span>
+                  <span className="label mt-1 block normal-case tracking-normal">
+                    {fmtDate(x.date)} · {STATE[x.state]}
+                  </span>
+                </span>
+                <span className={`mono ${x.state === "void" ? "line-through" : ""}`}>{inr(x.commissionInr)}</span>
+              </li>
+            ))}
+          </ul>
         )}
       </section>
 

@@ -23,7 +23,7 @@ async function Profile() {
       <p className="label">[ Profile ]</p>
       <h1 className="t-display t-h1 mt-4">Your details</h1>
 
-      <dl className="mt-10 grid max-w-xl grid-cols-[auto_1fr] gap-x-8 gap-y-3 border-y border-line py-6 text-[0.95rem]">
+      <dl className="mt-10 grid max-w-xl grid-cols-[auto_1fr] gap-x-5 gap-y-3 sm:gap-x-8 border-y border-line py-6 text-[0.95rem]">
         <dt className="label">Name</dt>
         <dd>{profile.full_name}</dd>
         <dt className="label">Email</dt>
