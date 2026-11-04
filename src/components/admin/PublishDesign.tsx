@@ -6,9 +6,8 @@ import { SubmitButton } from "@/components/ui/SubmitButton";
 import { TextField } from "@/components/ui/TextField";
 import { useToast } from "@/components/ui/Toast";
 import { useFieldErrors } from "@/components/ui/useFieldErrors";
-import { commissionPreview } from "@/lib/admin/designer-flow";
-import { COMMISSION_MAX, COMMISSION_MIN, isValidCommission } from "@/lib/designer/commission";
-import { inr } from "@/lib/format";
+import { PieceMath } from "@/components/admin/PieceMath";
+import { COMMISSION_MAX, COMMISSION_MIN } from "@/lib/designer/commission";
 import type { FormState } from "@/lib/form-state";
 
 type Props = { designId: string; designerRate: number; defaults: { name: string; slug: string; description: string; price: string; sizes: string } };
@@ -25,14 +24,11 @@ export function PublishDesign({ designId, designerRate, defaults }: Props) {
   const f = useFieldErrors(state, state.fieldErrors);
   const v = (k: string, fallback: string) => state.values?.[k] ?? fallback;
   const [price, setPrice] = useState(v("price_inr", defaults.price));
-  const [cost, setCost] = useState(v("cost_inr", ""));
+  const [vendor, setVendor] = useState(v("vendor_cost_inr", ""));
+  const [packaging, setPackaging] = useState(v("packaging_cost_inr", ""));
   const [override, setOverride] = useState(v("commission", ""));
 
-  const p = Number(price);
-  const c = Number(cost);
   const pct = override.trim() === "" ? designerRate : Number(override);
-  const ready = price.trim() !== "" && cost.trim() !== "" && Number.isFinite(p) && Number.isFinite(c) && c >= 0 && c < p && isValidCommission(pct);
-  const preview = ready ? commissionPreview(p, c, pct) : null;
 
   return (
     <form action={action} noValidate className="grid gap-1">
@@ -50,7 +46,10 @@ export function PublishDesign({ designId, designerRate, defaults }: Props) {
       </div>
       <div className="grid gap-x-4 sm:grid-cols-2">
         <TextField label="Selling price (₹)" name="price_inr" type="number" inputMode="numeric" min={1} step={1} value={price} onChange={(e) => setPrice(e.target.value)} error={f.error("price_inr")} help="What customers pay" required />
-        <TextField label="Cost to make, per unit (₹)" name="cost_inr" type="number" inputMode="numeric" min={0} step={1} value={cost} onChange={(e) => setCost(e.target.value)} error={f.error("cost_inr")} help="Vendor price. Never shown to the designer or customers." required />
+        <TextField label="Vendor cost per piece (₹)" name="vendor_cost_inr" type="number" inputMode="numeric" min={0} step={1} value={vendor} onChange={(e) => setVendor(e.target.value)} error={f.error("vendor_cost_inr")} help="What the vendor charges. Never shown to the designer or customers." required />
+      </div>
+      <div className="grid gap-x-4 sm:grid-cols-2">
+        <TextField label="Packaging cost per piece (₹)" name="packaging_cost_inr" type="number" inputMode="numeric" min={0} step={1} value={packaging} onChange={(e) => setPackaging(e.target.value)} error={f.error("packaging_cost_inr")} help="Bag, tag, delivery. Leave empty for none." />
       </div>
       <div className="grid gap-x-4 sm:grid-cols-2">
         <TextField label="Sizes" name="sizes" defaultValue={v("sizes", defaults.sizes)} error={f.error("sizes")} help="Separate with commas" required />
@@ -70,15 +69,7 @@ export function PublishDesign({ designId, designerRate, defaults }: Props) {
         help={`Leave empty to use the designer's rate (${designerRate}%).`}
       />
 
-      <p role="status" className="admin-card mb-2 p-4 text-[0.95rem]">
-        {preview ? (
-          <>
-            Profit per unit <span className="mono">{inr(preview.profit)}</span>. At <span className="mono">{pct}%</span> the designer earns <span className="mono">{inr(preview.commission)}</span> per unit, and you keep <span className="mono">{inr(preview.profit - preview.commission)}</span>.
-          </>
-        ) : (
-          <span className="text-muted">Enter the price and cost to see what the designer earns per sale.</span>
-        )}
-      </p>
+      <PieceMath price={price} vendor={vendor} packaging={packaging} pct={pct} />
       <div>
         <SubmitButton>Put it live</SubmitButton>
       </div>

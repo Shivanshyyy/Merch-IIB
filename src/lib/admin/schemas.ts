@@ -37,7 +37,9 @@ export const batchSchema = z
   })
   .refine((b) => Date.parse(b.closes_at) > Date.parse(b.opens_at), { path: ["closes_at"], message: "The cutoff must be after it opens" });
 
-const cost = z.number({ error: "Enter the cost per unit" }).int("Whole rupees only").min(0, "Can't be negative").max(100000, "Too high");
+const money = (msg: string) => z.number({ error: msg }).int("Whole rupees only").min(0, "Can't be negative").max(100000, "Too high");
+const vendorCost = money("Enter what the vendor charges per piece");
+const packagingCost = money("Enter the packaging cost (0 if none)");
 const commissionOverride = z.number({ error: "Enter a whole number from 4 to 10" }).nullable().refine((n) => n === null || isValidCommission(n), "A whole number from 4 to 10, or leave empty");
 
 // Putting an approved design live: the shop product's details plus what it costs to make.
@@ -47,15 +49,16 @@ export const publishSchema = z
     slug: productSchema.shape.slug,
     description: productSchema.shape.description,
     price_inr: productSchema.shape.price_inr.min(1, "Enter a price"),
-    cost_inr: cost,
+    vendor_cost_inr: vendorCost,
+    packaging_cost_inr: packagingCost,
     name_fee_inr: productSchema.shape.name_fee_inr,
     sizes: productSchema.shape.sizes,
     commission: commissionOverride,
   })
-  .refine((p) => p.cost_inr < p.price_inr, { path: ["cost_inr"], message: "Must be below the selling price" });
+  .refine((p) => p.vendor_cost_inr + p.packaging_cost_inr < p.price_inr, { path: ["vendor_cost_inr"], message: "Vendor + packaging must be below the selling price" });
 
 // Cost and designer for a product that already exists.
-export const termsSchema = z.object({ designerId: z.uuid().nullable(), cost_inr: cost, commission: commissionOverride });
+export const termsSchema = z.object({ designerId: z.uuid().nullable(), vendor_cost_inr: vendorCost, packaging_cost_inr: packagingCost, commission: commissionOverride });
 
 export const payoutSchema = z.object({
   amount: z.number({ error: "Enter the amount" }).int("Whole rupees only").min(1, "Must be at least ₹1").max(1_000_000, "Too high"),

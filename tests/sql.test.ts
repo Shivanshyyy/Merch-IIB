@@ -147,6 +147,8 @@ test("designs, images, terms and payouts: private, validated, and cascades behav
   await db.query("insert into product_terms (product_id, designer_id, design_id, cost_inr, commission_pct) values ($1,$2,$3,600,7)", [product, bob, design]);
   await db.query("update designs set status='live', product_id=$2 where id=$1", [design, product]);
   await assert.rejects(db.query("update product_terms set cost_inr=-1 where product_id=$1", [product]), /check constraint/);
+  assert.deepEqual((await db.query("select vendor_cost_inr, packaging_cost_inr from product_terms where product_id=$1", [product])).rows[0], { vendor_cost_inr: null, packaging_cost_inr: null }, "new columns start empty; reads fall back to cost_inr");
+  await assert.rejects(db.query("update product_terms set packaging_cost_inr=-1 where product_id=$1", [product]), /check constraint/);
   await db.query("insert into designer_payouts (designer_id, amount_inr, reference) values ($1, 50, 'UTR1')", [bob]);
   await assert.rejects(db.query("insert into designer_payouts (designer_id, amount_inr) values ($1, 0)", [bob]), /check constraint/);
 

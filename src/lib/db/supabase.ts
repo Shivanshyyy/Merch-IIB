@@ -23,6 +23,17 @@ export function createSupabaseDb(sb: ServiceClient): Db {
     return gone;
   };
 
+  // Rows saved before migration 0008 have no breakdown: all of the cost counts as vendor cost.
+  const toTerms = (r: { product_id: string; designer_id: string | null; design_id: string | null; cost_inr: number; commission_pct: number | null; vendor_cost_inr?: number | null; packaging_cost_inr?: number | null }): ProductTerms => ({
+    product_id: r.product_id,
+    designer_id: r.designer_id,
+    design_id: r.design_id,
+    cost_inr: r.cost_inr,
+    commission_pct: r.commission_pct,
+    vendor_cost_inr: r.vendor_cost_inr ?? r.cost_inr,
+    packaging_cost_inr: r.packaging_cost_inr ?? 0,
+  });
+
   // The photo ids of each product, oldest first. One extra query for the whole list; the image bytes are never selected here.
   const withPhotos = async (rows: Omit<Product, "photos">[]): Promise<Product[]> => {
     if (rows.length === 0) return [];
@@ -410,21 +421,21 @@ export function createSupabaseDb(sb: ServiceClient): Db {
     },
 
     async listProductTerms() {
-      const { data, error } = await sb.from("product_terms").select("product_id,designer_id,design_id,cost_inr,commission_pct");
+      const { data, error } = await sb.from("product_terms").select("*");
       if (error) {
         if (tableMissing(error)) return [];
         fail("listProductTerms", error);
       }
-      return (data ?? []) as ProductTerms[];
+      return (data ?? []).map(toTerms);
     },
 
     async getProductTerms(productId) {
-      const { data, error } = await sb.from("product_terms").select("product_id,designer_id,design_id,cost_inr,commission_pct").eq("product_id", productId).maybeSingle();
+      const { data, error } = await sb.from("product_terms").select("*").eq("product_id", productId).maybeSingle();
       if (error) {
         if (tableMissing(error)) return null;
         fail("getProductTerms", error);
       }
-      return (data as ProductTerms | null) ?? null;
+      return data ? toTerms(data) : null;
     },
 
     async saveProductTerms(terms) {

@@ -169,8 +169,10 @@ export type ProductTerms = {
   product_id: string;
   designer_id: string | null;
   design_id: string | null;
-  /** Production cost per unit, in whole rupees. */
+  /** Total cost per unit, in whole rupees: vendor price plus packaging. Commission is worked out from this. */
   cost_inr: number;
+  vendor_cost_inr: number;
+  packaging_cost_inr: number;
   /** Whole-percent override for this product; null means the designer's own rate applies. */
   commission_pct: number | null;
 };

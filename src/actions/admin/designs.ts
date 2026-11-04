@@ -11,6 +11,8 @@ import type { ProductInput } from "@/lib/types";
 
 const text = (f: FormData, k: string) => String(f.get(k) ?? "");
 const num = (s: string) => (s.trim() === "" ? NaN : Number(s));
+// Packaging is optional: empty means none.
+const packagingNum = (s: string) => (s.trim() === "" ? 0 : Number(s));
 const firstErrors = (error: z.ZodError) => Object.fromEntries(Object.entries(z.flattenError(error).fieldErrors).map(([k, v]) => [k, (v as string[])[0]]));
 const refresh = () => {
   updateTag("products");
@@ -47,14 +49,15 @@ export async function reviewDesign(_prev: FormState, formData: FormData): Promis
 export async function publishDesign(_prev: FormState, formData: FormData): Promise<FormState> {
   return adminAction(async () => {
     const id = text(formData, "id");
-    const values = Object.fromEntries(["name", "slug", "description", "price_inr", "cost_inr", "name_fee_inr", "sizes", "commission"].map((k) => [k, text(formData, k)]));
+    const values = Object.fromEntries(["name", "slug", "description", "price_inr", "vendor_cost_inr", "packaging_cost_inr", "name_fee_inr", "sizes", "commission"].map((k) => [k, text(formData, k)]));
     if (!z.uuid().safeParse(id).success) return { ok: false, message: "Design not found.", values };
     const parsed = publishSchema.safeParse({
       name: values.name,
       slug: values.slug,
       description: values.description,
       price_inr: num(values.price_inr),
-      cost_inr: num(values.cost_inr),
+      vendor_cost_inr: num(values.vendor_cost_inr),
+      packaging_cost_inr: packagingNum(values.packaging_cost_inr),
       name_fee_inr: values.name_fee_inr.trim() === "" ? 0 : Number(values.name_fee_inr),
       sizes: parseSizes(values.sizes),
       commission: commissionOrNull(values.commission),
@@ -78,7 +81,7 @@ export async function publishDesign(_prev: FormState, formData: FormData): Promi
         const image = await d.getDesignImage(imageId);
         if (image) await d.addProductPhoto(productId, { mime: image.mime, bytes: image.bytes });
       }
-      await d.saveProductTerms({ product_id: productId, designer_id: design.designer_id, design_id: design.id, cost_inr: p.cost_inr, commission_pct: p.commission });
+      await d.saveProductTerms({ product_id: productId, designer_id: design.designer_id, design_id: design.id, cost_inr: p.vendor_cost_inr + p.packaging_cost_inr, vendor_cost_inr: p.vendor_cost_inr, packaging_cost_inr: p.packaging_cost_inr, commission_pct: p.commission });
       await d.patchDesign(id, { status: "live", product_id: productId });
     } catch (e) {
       if (productId) await d.deleteProduct(productId).catch(() => {}); // don't leave a half-published product on sale
@@ -122,22 +125,22 @@ export async function retireDesign(designId: string) {
 export async function saveTerms(_prev: FormState, formData: FormData): Promise<FormState> {
   return adminAction(async () => {
     const productId = text(formData, "productId");
-    const values = { designerId: text(formData, "designerId"), cost_inr: text(formData, "cost_inr"), commission: text(formData, "commission") };
+    const values = { designerId: text(formData, "designerId"), vendor_cost_inr: text(formData, "vendor_cost_inr"), packaging_cost_inr: text(formData, "packaging_cost_inr"), commission: text(formData, "commission") };
     if (!z.uuid().safeParse(productId).success) return { ok: false, message: "Product not found.", values };
-    const parsed = termsSchema.safeParse({ designerId: values.designerId || null, cost_inr: num(values.cost_inr), commission: commissionOrNull(values.commission) });
+    const parsed = termsSchema.safeParse({ designerId: values.designerId || null, vendor_cost_inr: num(values.vendor_cost_inr), packaging_cost_inr: packagingNum(values.packaging_cost_inr), commission: commissionOrNull(values.commission) });
     if (!parsed.success) return { ok: false, fieldErrors: firstErrors(parsed.error), message: "Please fix the highlighted fields.", values };
 
     try {
       const d = db();
       const product = await d.getProductById(productId);
       if (!product) return { ok: false, message: "Product not found.", values };
-      if (parsed.data.cost_inr >= product.price_inr && product.price_inr > 0) return { ok: false, fieldErrors: { cost_inr: "Must be below the selling price" }, message: "Please fix the highlighted fields.", values };
+      if (parsed.data.vendor_cost_inr + parsed.data.packaging_cost_inr >= product.price_inr && product.price_inr > 0) return { ok: false, fieldErrors: { vendor_cost_inr: "Vendor + packaging must be below the selling price" }, message: "Please fix the highlighted fields.", values };
       const existing = await d.getProductTerms(productId);
       if (parsed.data.designerId && parsed.data.designerId !== existing?.designer_id) {
         const designer = await d.getDesigner(parsed.data.designerId);
         if (!designer || designer.status !== "approved") return { ok: false, fieldErrors: { designerId: "Pick an approved designer" }, message: "Please fix the highlighted fields.", values };
       }
-      await d.saveProductTerms({ product_id: productId, designer_id: parsed.data.designerId, design_id: existing?.design_id ?? null, cost_inr: parsed.data.cost_inr, commission_pct: parsed.data.commission });
+      await d.saveProductTerms({ product_id: productId, designer_id: parsed.data.designerId, design_id: existing?.design_id ?? null, cost_inr: parsed.data.vendor_cost_inr + parsed.data.packaging_cost_inr, vendor_cost_inr: parsed.data.vendor_cost_inr, packaging_cost_inr: parsed.data.packaging_cost_inr, commission_pct: parsed.data.commission });
     } catch (e) {
       console.error("[admin saveTerms]", e);
       return { ok: false, message: "Couldn't save the terms.", values };

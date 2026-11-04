@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { saveTerms } from "@/actions/admin/designs";
+import { PieceMath } from "@/components/admin/PieceMath";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { TextField } from "@/components/ui/TextField";
 import { useToast } from "@/components/ui/Toast";
@@ -13,11 +14,18 @@ import type { ProductTerms } from "@/lib/types";
 type Option = { id: string; name: string; rate: number | null };
 
 // Who designed a product and what it costs to make. Past orders keep the terms they were placed with.
-export function ProductTermsForm({ productId, terms, designers }: { productId: string; terms: ProductTerms | null; designers: Option[] }) {
+export function ProductTermsForm({ productId, priceInr, terms, designers }: { productId: string; priceInr: number; terms: ProductTerms | null; designers: Option[] }) {
   const [state, action] = useActionState<FormState, FormData>(saveTerms, {});
   const f = useFieldErrors(state, state.fieldErrors);
   const { toast } = useToast();
   const v = (k: string, fallback: string) => state.values?.[k] ?? fallback;
+
+  const [designerId, setDesignerId] = useState(v("designerId", terms?.designer_id ?? ""));
+  const [vendor, setVendor] = useState(v("vendor_cost_inr", terms ? String(terms.vendor_cost_inr) : ""));
+  const [packaging, setPackaging] = useState(v("packaging_cost_inr", terms ? String(terms.packaging_cost_inr) : ""));
+  const [override, setOverride] = useState(v("commission", terms?.commission_pct?.toString() ?? ""));
+  const designer = designers.find((d) => d.id === designerId);
+  const pct = !designer ? null : override.trim() !== "" ? Number(override) : designer.rate;
 
   useEffect(() => {
     if (state.message) toast({ message: state.message });
@@ -37,7 +45,7 @@ export function ProductTermsForm({ productId, terms, designers }: { productId: s
           <label htmlFor="terms-designer" className="label">
             <span>Designer</span>
           </label>
-          <select id="terms-designer" name="designerId" defaultValue={v("designerId", terms?.designer_id ?? "")} className="input">
+          <select id="terms-designer" name="designerId" value={designerId} onChange={(e) => setDesignerId(e.target.value)} className="input">
             <option value="">No designer (in-house)</option>
             {designers.map((d) => (
               <option key={d.id} value={d.id}>
@@ -48,7 +56,8 @@ export function ProductTermsForm({ productId, terms, designers }: { productId: s
           <div className="mt-2 min-h-[1.5rem]">{f.error("designerId") && <p role="alert" className="field-error m-0">{f.error("designerId")}</p>}</div>
         </div>
         <div className="grid gap-x-4 sm:grid-cols-2">
-          <TextField label="Cost to make, per unit (₹)" name="cost_inr" type="number" inputMode="numeric" min={0} step={1} defaultValue={v("cost_inr", terms ? String(terms.cost_inr) : "")} error={f.error("cost_inr")} help="Commission is a share of price minus this." required />
+          <TextField label="Vendor cost per piece (₹)" name="vendor_cost_inr" type="number" inputMode="numeric" min={0} step={1} value={vendor} onChange={(e) => setVendor(e.target.value)} error={f.error("vendor_cost_inr")} help="Commission is a share of price minus vendor and packaging." required />
+          <TextField label="Packaging cost per piece (₹)" name="packaging_cost_inr" type="number" inputMode="numeric" min={0} step={1} value={packaging} onChange={(e) => setPackaging(e.target.value)} error={f.error("packaging_cost_inr")} help="Bag, tag, delivery. Leave empty for none." />
           <TextField
             label="Commission override (%)"
             name="commission"
@@ -57,11 +66,13 @@ export function ProductTermsForm({ productId, terms, designers }: { productId: s
             min={COMMISSION_MIN}
             max={COMMISSION_MAX}
             step={1}
-            defaultValue={v("commission", terms?.commission_pct?.toString() ?? "")}
+            value={override}
+            onChange={(e) => setOverride(e.target.value)}
             error={f.error("commission")}
             help="Empty = the designer's own rate."
           />
         </div>
+        <PieceMath price={String(priceInr)} vendor={vendor} packaging={packaging} pct={pct} />
         <div>
           <SubmitButton className="btn-sm" variant="quiet">
             Save terms

@@ -9,7 +9,7 @@ import { StatTile } from "@/components/admin/StatTile";
 import { FreshOnVisit } from "@/components/ui/FreshOnVisit";
 import { requireAdmin } from "@/lib/admin/guard";
 import { db } from "@/lib/db";
-import { summarizeDesigner } from "@/lib/designer/sales";
+import { summarizeDesigner, summarizeProfit } from "@/lib/designer/sales";
 import { fmtDay, inr } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Designer" };
@@ -37,6 +37,7 @@ async function Designer({ params }: Props) {
   if (!designer || !profile) notFound();
   const [designs, orders, payouts] = await Promise.all([d.listDesignsByDesigner(id), d.listOrdersWithDesigner(id), d.listPayouts(id)]);
   const sum = summarizeDesigner(orders, id, payouts);
+  const money = summarizeProfit(orders, id);
 
   return (
     <>
@@ -51,9 +52,11 @@ async function Designer({ params }: Props) {
       </div>
       {designer.bio && <p className="max-w-2xl text-muted">{designer.bio}</p>}
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
         <StatTile label="Units sold" value={sum.unitsSold} sub={sum.unitsPending ? `${sum.unitsPending} awaiting payment` : undefined} />
+        <StatTile label="Profit on their pieces" value={inr(money.total.profitInr)} sub="After vendor and packaging" />
         <StatTile label="Commission earned" value={inr(sum.earnedInr)} />
+        <StatTile label="You keep" value={inr(money.total.keepInr)} sub="Profit minus their commission" />
         <StatTile label="Paid out" value={inr(sum.paidInr)} />
         <StatTile label="Balance owed" value={inr(Math.max(0, sum.balanceInr))} sub={sum.balanceInr < 0 ? `${inr(-sum.balanceInr)} overpaid after refunds` : undefined} />
       </div>
@@ -92,12 +95,15 @@ async function Designer({ params }: Props) {
                   <th>Design</th>
                   <th>Status</th>
                   <th className="num">Sold</th>
+                  <th className="num">Profit</th>
                   <th className="num">Earned</th>
+                  <th className="num">You keep</th>
                 </tr>
               </thead>
               <tbody>
                 {designs.map((x) => {
                   const p = x.product_id ? sum.byProduct.find((row) => row.productId === x.product_id) : undefined;
+                  const m = x.product_id ? money.byProduct.find((row) => row.productId === x.product_id) : undefined;
                   return (
                     <tr key={x.id}>
                       <td>
@@ -109,7 +115,9 @@ async function Designer({ params }: Props) {
                         <DesignChip status={x.status} />
                       </td>
                       <td className="num">{p?.units ?? 0}</td>
+                      <td className="num mono">{inr(m?.profitInr ?? 0)}</td>
                       <td className="num mono">{inr(p?.earnedInr ?? 0)}</td>
+                      <td className="num mono">{inr(m?.keepInr ?? 0)}</td>
                     </tr>
                   );
                 })}

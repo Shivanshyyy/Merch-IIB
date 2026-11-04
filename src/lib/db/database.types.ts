@@ -11,7 +11,8 @@ type ProfileRow = Profile;
 type DesignRow = Omit<Design, "images">;
 type DesignInsert = Pick<Design, "designer_id" | "title" | "product_type"> & Partial<Omit<DesignRow, "id" | "created_at" | "updated_at">>;
 type DesignImageRow = { id: string; design_id: string; mime: string; data: string; created_at: string };
-type TermsRow = ProductTerms & { updated_at: string };
+// The two cost columns come from migration 0008, so a row read before it was run may lack them.
+type TermsRow = Omit<ProductTerms, "vendor_cost_inr" | "packaging_cost_inr"> & { vendor_cost_inr?: number | null; packaging_cost_inr?: number | null; updated_at: string };
 
 export type Database = {
   public: {

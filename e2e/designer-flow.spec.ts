@@ -135,8 +135,11 @@ test("designer: apply → approved → design reviewed and published → a sale 
   // 5. Publish it: price 899, cost 500, so profit ₹399 and 6% of that is ₹23 (rounded down) a piece.
   await admin.reload();
   await admin.getByLabel("Selling price (₹)").fill("899");
-  await admin.getByLabel(/Cost to make/).fill("500");
-  await expect(admin.getByRole("status").filter({ hasText: /earns/ })).toContainText("₹23");
+  await admin.getByLabel(/Vendor cost per piece/).fill("450");
+  await admin.getByLabel(/Packaging cost per piece/).fill("50");
+  const money = admin.getByRole("status").filter({ hasText: /Designer gets/ });
+  await expect(money).toContainText("₹399");
+  await expect(money).toContainText("₹23");
   const slug = await admin.getByLabel("Web address (slug)").inputValue(); // read before the form goes away
   await admin.getByRole("button", { name: "Put it live" }).click();
   await expect(toast(admin, /live/i)).toBeVisible();
@@ -204,7 +207,7 @@ test("designer: apply → approved → design reviewed and published → a sale 
     texts.push(await page.locator("main").innerText());
   }
   const seen = texts.join("\n");
-  for (const secret of ["Bo Buyer", `buyer.${stamp}@example.com`, "Hostel 9", code, phone(3), "₹500", "Cost to make"]) expect(seen).not.toContain(secret);
+  for (const secret of ["Bo Buyer", `buyer.${stamp}@example.com`, "Hostel 9", code, phone(3), "₹500", "Cost to make", "Vendor cost", "Packaging cost"]) expect(seen).not.toContain(secret);
 
   // 8. A payout above what is owed is refused; the exact balance is recorded and the balance drops to zero.
   await admin.goto(designerUrl);
