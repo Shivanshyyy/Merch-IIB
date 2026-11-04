@@ -11,6 +11,18 @@ export function createSupabaseDb(sb: ServiceClient): Db {
     throw new Error(`supabase ${what}: ${error.message}`);
   };
 
+  // The designer tables come from migration 0006. Until it has been run, reading them means "no designers yet" rather than
+  // taking down every page that checks (the nav, the admin badges, checkout). Writes still fail loudly, as does any other error.
+  let warned = false;
+  const tableMissing = (error: { code?: string; message: string }): boolean => {
+    const gone = error.code === "42P01" || error.code === "PGRST205" || /could not find the table|relation .* does not exist/i.test(error.message);
+    if (gone && !warned) {
+      warned = true;
+      console.error("[db] a designer table is missing: run supabase/migrations/0006_designers.sql");
+    }
+    return gone;
+  };
+
   // The photo ids of each product, oldest first. One extra query for the whole list; the image bytes are never selected here.
   const withPhotos = async (rows: Omit<Product, "photos">[]): Promise<Product[]> => {
     if (rows.length === 0) return [];
@@ -273,7 +285,10 @@ export function createSupabaseDb(sb: ServiceClient): Db {
     // ---- designers ----
     async getDesigner(userId) {
       const { data, error } = await sb.from("designers").select("*").eq("id", userId).maybeSingle();
-      if (error) fail("getDesigner", error);
+      if (error) {
+        if (tableMissing(error)) return null;
+        fail("getDesigner", error);
+      }
       return (data as Designer | null) ?? null;
     },
 
@@ -304,7 +319,10 @@ export function createSupabaseDb(sb: ServiceClient): Db {
       let q = sb.from("designers").select("*");
       if (status) q = q.eq("status", status);
       const { data, error } = await q.order("created_at", { ascending: false });
-      if (error) fail("listDesigners", error);
+      if (error) {
+        if (tableMissing(error)) return [];
+        fail("listDesigners", error);
+      }
       const rows = (data ?? []) as Designer[];
       if (rows.length === 0) return [];
       const people = await sb.from("profiles").select("id,full_name,email,phone").in("id", rows.map((r) => r.id));
@@ -327,13 +345,19 @@ export function createSupabaseDb(sb: ServiceClient): Db {
 
     async getDesign(id) {
       const { data, error } = await sb.from("designs").select("*").eq("id", id).maybeSingle();
-      if (error) fail("getDesign", error);
+      if (error) {
+        if (tableMissing(error)) return null;
+        fail("getDesign", error);
+      }
       return withImagesOne(data as Omit<Design, "images"> | null);
     },
 
     async listDesignsByDesigner(designerId) {
       const { data, error } = await sb.from("designs").select("*").eq("designer_id", designerId).order("created_at", { ascending: false });
-      if (error) fail("listDesignsByDesigner", error);
+      if (error) {
+        if (tableMissing(error)) return [];
+        fail("listDesignsByDesigner", error);
+      }
       return withImages((data ?? []) as Omit<Design, "images">[]);
     },
 
@@ -341,7 +365,10 @@ export function createSupabaseDb(sb: ServiceClient): Db {
       let q = sb.from("designs").select("*");
       if (status) q = q.eq("status", status);
       const { data, error } = await q.order("submitted_at", { ascending: false, nullsFirst: false }).order("created_at", { ascending: false });
-      if (error) fail("listDesigns", error);
+      if (error) {
+        if (tableMissing(error)) return [];
+        fail("listDesigns", error);
+      }
       return withImages((data ?? []) as Omit<Design, "images">[]);
     },
 
@@ -375,19 +402,28 @@ export function createSupabaseDb(sb: ServiceClient): Db {
 
     async getDesignImage(id) {
       const { data, error } = await sb.from("design_images").select("mime,data,design_id").eq("id", id).maybeSingle();
-      if (error) fail("getDesignImage", error);
+      if (error) {
+        if (tableMissing(error)) return null;
+        fail("getDesignImage", error);
+      }
       return data ? { mime: data.mime, bytes: Buffer.from(data.data, "base64"), designId: data.design_id } : null;
     },
 
     async listProductTerms() {
       const { data, error } = await sb.from("product_terms").select("product_id,designer_id,design_id,cost_inr,commission_pct");
-      if (error) fail("listProductTerms", error);
+      if (error) {
+        if (tableMissing(error)) return [];
+        fail("listProductTerms", error);
+      }
       return (data ?? []) as ProductTerms[];
     },
 
     async getProductTerms(productId) {
       const { data, error } = await sb.from("product_terms").select("product_id,designer_id,design_id,cost_inr,commission_pct").eq("product_id", productId).maybeSingle();
-      if (error) fail("getProductTerms", error);
+      if (error) {
+        if (tableMissing(error)) return null;
+        fail("getProductTerms", error);
+      }
       return (data as ProductTerms | null) ?? null;
     },
 
@@ -409,7 +445,10 @@ export function createSupabaseDb(sb: ServiceClient): Db {
       let q = sb.from("designer_payouts").select("*");
       if (designerId) q = q.eq("designer_id", designerId);
       const { data, error } = await q.order("paid_at", { ascending: false });
-      if (error) fail("listPayouts", error);
+      if (error) {
+        if (tableMissing(error)) return [];
+        fail("listPayouts", error);
+      }
       return (data ?? []) as Payout[];
     },
 
