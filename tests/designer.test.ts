@@ -3,7 +3,7 @@ import { beforeEach, test } from "node:test";
 import { COMMISSION_MAX, COMMISSION_MIN, designerSnapshot, isValidCommission, unitCommission, unitProfit } from "@/lib/designer/commission";
 import { canMove, designerCanDelete, designerCanEdit, submitProblems } from "@/lib/designer/design-flow";
 import { saleState, summarizeDesigner } from "@/lib/designer/sales";
-import { bioSchema, designerApplySchema, designerSignUpSchema, upiIdSchema } from "@/lib/designer/schemas";
+import { bioSchema, designerApplySchema, designerSignUpSchema, designSchema, toDesignInput, upiIdSchema } from "@/lib/designer/schemas";
 import { db, NotFoundError } from "@/lib/db";
 import { memoryStore } from "@/lib/db/memory";
 import type { Design, Order, OrderItem, Payout, ProductTerms } from "@/lib/types";
@@ -196,6 +196,41 @@ test("designer sign-up needs the terms ticked and the usual account fields", () 
   assert.equal(designerSignUpSchema.safeParse({ ...ok, phone: "12345" }).success, false);
   assert.equal(designerApplySchema.safeParse({ bio: "", upiId: "", agree: false }).success, false);
   assert.ok(designerApplySchema.safeParse({ bio: "", upiId: "", agree: true }).success);
+});
+
+const design = { title: "  Lake at night ", description: " Moody. ", productType: "hoodie", colours: ["Black", "Navy Blue", "Black"], suggestedPrice: "899", printFileUrl: "", originality: true };
+
+test("design details are trimmed, de-duplicated and turned into the stored shape", () => {
+  const parsed = designSchema.safeParse(design);
+  assert.ok(parsed.success);
+  assert.deepEqual(toDesignInput(parsed.data), {
+    title: "Lake at night",
+    description: "Moody.",
+    product_type: "hoodie",
+    colorways: [
+      { name: "Black", body: "#0E0E10", stitch: "#FFFFFF" },
+      { name: "Navy Blue", body: "#1B2A4E", stitch: "#FFFFFF" },
+    ],
+    suggested_price_inr: 899,
+    print_file_url: null,
+  });
+});
+
+test("design details reject bad titles, garments, colours, prices and links", () => {
+  const bad = (over: object) => designSchema.safeParse({ ...design, ...over }).success;
+  assert.equal(bad({ title: "x" }), false);
+  assert.equal(bad({ title: "x".repeat(61) }), false);
+  assert.equal(bad({ productType: "cap" }), false);
+  assert.equal(bad({ colours: ["Hot Pink"] }), false, "only palette colours");
+  assert.equal(bad({ colours: ["Black", "White", "Grey", "Olive", "Beige"] }), false, "at most four");
+  assert.equal(bad({ colours: [] }), true, "a draft may have no colour yet");
+  for (const price of ["99", "10000", "9.5", "-1", "abc", "1e3"]) assert.equal(bad({ suggestedPrice: price }), false, price);
+  assert.equal(bad({ suggestedPrice: "" }), true);
+  assert.equal(bad({ printFileUrl: "http://example.com/a.png" }), false, "https only");
+  assert.equal(bad({ printFileUrl: "javascript:alert(1)" }), false);
+  assert.equal(bad({ printFileUrl: "not a url" }), false);
+  assert.equal(bad({ printFileUrl: "https://drive.google.com/file/d/abc" }), true);
+  assert.equal(bad({ description: "x".repeat(601) }), false);
 });
 
 // ---------- in-memory database

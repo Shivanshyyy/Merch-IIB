@@ -3,3 +3,6 @@ export const MAX_PHOTOS_PER_PRODUCT = 8;
 export const MAX_UPLOAD_BYTES = 4 * 1024 * 1024; // Vercel rejects request bodies over 4.5 MB
 
 export const photoUrl = (id: string) => `/photos/${id}`;
+
+// Design images are private: they're served only to the admin and the design's own designer.
+export const designImageUrl = (id: string) => `/design-images/${id}`;

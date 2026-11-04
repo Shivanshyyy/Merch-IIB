@@ -46,3 +46,14 @@ export function submitProblems(d: Pick<Design, "title" | "images" | "colorways" 
 }
 
 export const MAX_IMAGES = site.maxDesignImages;
+
+// What each status means to the designer, in one line.
+export const DESIGN_STATUS_HELP: Record<DesignStatus, string> = {
+  draft: "Only you can see this. Add images, then send it for review.",
+  in_review: "The team is looking at it. You'll see their reply here.",
+  changes_requested: "The team asked for changes. Update the design and send it back.",
+  approved: "Approved. The team will put it live in the store soon.",
+  rejected: "The team decided not to sell this one.",
+  live: "Live in the store.",
+  retired: "No longer on sale.",
+};
