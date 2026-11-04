@@ -1,4 +1,5 @@
-import type { Order, OrderStatus, PaymentStatus, RefundStatus } from "@/lib/types";
+import { DESIGN_STATUS_LABEL, DESIGNER_STATUS_LABEL } from "@/lib/designer/design-flow";
+import type { DesignStatus, DesignerStatus, Order, OrderStatus, PaymentStatus, RefundStatus } from "@/lib/types";
 
 export type Tone = "good" | "warn" | "serious" | "critical" | "muted" | "none";
 type IconKind = "check" | "clock" | "alert" | "cross" | "dash" | "dot" | "half";
@@ -97,6 +98,24 @@ function Chip({ label, tone, icon }: { label: string; tone: Tone; icon: IconKind
     </span>
   );
 }
+
+const DESIGN: Record<DesignStatus, { tone: Tone; icon: IconKind }> = {
+  draft: { tone: "none", icon: "dot" },
+  in_review: { tone: "warn", icon: "clock" },
+  changes_requested: { tone: "serious", icon: "alert" },
+  approved: { tone: "good", icon: "check" },
+  rejected: { tone: "critical", icon: "cross" },
+  live: { tone: "good", icon: "check" },
+  retired: { tone: "muted", icon: "dash" },
+};
+const DESIGNER: Record<DesignerStatus, { tone: Tone; icon: IconKind }> = {
+  pending: { tone: "warn", icon: "clock" },
+  approved: { tone: "good", icon: "check" },
+  rejected: { tone: "critical", icon: "cross" },
+  suspended: { tone: "serious", icon: "alert" },
+};
+export const DesignChip = ({ status }: { status: DesignStatus }) => <Chip label={DESIGN_STATUS_LABEL[status]} {...DESIGN[status]} />;
+export const DesignerChip = ({ status }: { status: DesignerStatus }) => <Chip label={DESIGNER_STATUS_LABEL[status]} {...DESIGNER[status]} />;
 
 export const PaymentChip = ({ status }: { status: PaymentStatus }) => <Chip {...PAYMENT[status]} />;
 export const OrderChip = ({ status }: { status: OrderStatus }) => <Chip {...ORDER[status]} />;

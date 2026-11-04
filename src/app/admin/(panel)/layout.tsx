@@ -42,8 +42,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
 async function NavWithBadge() {
   await requireAdmin();
-  const { total } = await db().searchOrders({ payment: "pending", limit: 1, offset: 0 });
-  return <AdminNav pendingCount={total} />;
+  const d = db();
+  const [{ total }, designers, designs] = await Promise.all([d.searchOrders({ payment: "pending", limit: 1, offset: 0 }), d.listDesigners("pending"), d.listDesigns("in_review")]);
+  return <AdminNav pendingCount={total} designerCount={designers.length} designCount={designs.length} />;
 }
 
 // Defence in depth: proxy.ts already guards /admin, and every server action re-checks the cookie.

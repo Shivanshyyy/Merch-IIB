@@ -10,11 +10,13 @@ const TABS = [
   { href: "/admin/batches", label: "Batches" },
   { href: "/admin/products", label: "Products" },
   { href: "/admin/customers", label: "Customers" },
+  { href: "/admin/designers", label: "Designers" },
+  { href: "/admin/designs", label: "Designs" },
   { href: "/admin/vendor", label: "Vendor sheet" },
   { href: "/admin/settings", label: "Settings" },
 ];
 
-function Tabs({ pathname, badge }: { pathname: string; badge: ReactNode }) {
+function Tabs({ pathname, badges }: { pathname: string; badges: Record<string, ReactNode> }) {
   return (
     <ul className="flex min-w-max gap-1">
       {TABS.map((t) => {
@@ -27,7 +29,7 @@ function Tabs({ pathname, badge }: { pathname: string; badge: ReactNode }) {
               className={`flex min-h-11 items-center gap-2 border-b-2 px-3 text-[0.9rem] transition-colors hover:text-fg ${active ? "border-accent text-fg" : "border-transparent text-muted"}`}
             >
               {t.label}
-              {t.href === "/admin/orders" && badge}
+              {badges[t.href]}
             </Link>
           </li>
         );
@@ -36,23 +38,25 @@ function Tabs({ pathname, badge }: { pathname: string; badge: ReactNode }) {
   );
 }
 
-function Active({ badge }: { badge: ReactNode }) {
+function Active({ badges }: { badges: Record<string, ReactNode> }) {
   const pathname = usePathname();
   // On a phone the strip scrolls sideways: keep the current tab in view.
   useEffect(() => {
     document.querySelector("nav[aria-label=Admin] [aria-current=page]")?.scrollIntoView({ inline: "center", block: "nearest" });
   }, [pathname]);
-  return <Tabs pathname={pathname} badge={badge} />;
+  return <Tabs pathname={pathname} badges={badges} />;
 }
 
+const Badge = ({ n }: { n: number }) => (n > 0 ? <span className="mono grid min-w-5 place-items-center rounded-full bg-accent px-1.5 text-[0.7rem] font-medium leading-5 text-bg">{n}</span> : null);
+
 // usePathname() suspends on dynamic routes, so it gets its own boundary with a same-shape fallback.
-export function AdminNav({ pendingCount }: { pendingCount: number }) {
-  const badge = pendingCount > 0 ? <span className="mono grid min-w-5 place-items-center rounded-full bg-accent px-1.5 text-[0.7rem] font-medium leading-5 text-bg">{pendingCount}</span> : null;
+export function AdminNav({ pendingCount, designerCount = 0, designCount = 0 }: { pendingCount: number; designerCount?: number; designCount?: number }) {
+  const badges = { "/admin/orders": <Badge n={pendingCount} />, "/admin/designers": <Badge n={designerCount} />, "/admin/designs": <Badge n={designCount} /> };
   return (
     <div className="relative">
       <nav aria-label="Admin" className="overflow-x-auto [scrollbar-width:none]">
-        <Suspense fallback={<Tabs pathname="" badge={badge} />}>
-          <Active badge={badge} />
+        <Suspense fallback={<Tabs pathname="" badges={badges} />}>
+          <Active badges={badges} />
         </Suspense>
       </nav>
       {/* A fade on the right edge says "more tabs this way" on narrow screens. */}

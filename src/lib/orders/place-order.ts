@@ -4,6 +4,7 @@ import type { SessionUser } from "@/lib/auth/types";
 import { CodeTakenError, db } from "@/lib/db";
 import type { CheckoutState } from "@/lib/form-state";
 import { generateOrderCode } from "@/lib/order-code";
+import { shareResolver } from "@/lib/orders/shares";
 import { priceOrder } from "@/lib/pricing";
 import { makeCheckoutSchema, type CheckoutField } from "@/lib/schemas";
 import { getSettingsFresh } from "@/lib/settings";
@@ -37,7 +38,7 @@ export async function placeOrderFor(user: SessionUser, input: PlaceOrderInput): 
       return { ok: false, message: "Preorders are closed right now. Check back when the next batch opens.", values };
     }
 
-    const priced = priceOrder(data.items, await d.listActiveProducts(), settings);
+    const priced = priceOrder(data.items, await d.listActiveProducts(), settings, await shareResolver(d));
     if (!priced.ok) return { ok: false, message: priced.message, values };
 
     const pending = await d.countPendingOrders(user.id);

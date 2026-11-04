@@ -5,7 +5,7 @@ import { DEMO_COOKIE } from "@/lib/auth/cookies";
 import { authMode } from "@/lib/auth/mode";
 import { loginPath } from "@/lib/auth/next";
 
-const NEEDS_LOGIN = /^\/(orders|account|order\/[^/]+\/pay)\/?$/;
+const NEEDS_LOGIN = /^\/(orders|account|designer(\/.*)?|order\/[^/]+\/pay)\/?$/;
 
 export async function proxy(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
