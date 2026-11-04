@@ -1,5 +1,6 @@
 // Admin form validation. Client-safe, so forms can validate inline with the exact rules the server applies.
 import { z } from "zod";
+import { isValidCommission } from "@/lib/designer/commission";
 import { settingsSchema } from "@/lib/settings-schema";
 
 const hex = z.string().trim().regex(/^#[0-9a-fA-F]{6}$/, "Use a #RRGGBB colour");
@@ -35,6 +36,32 @@ export const batchSchema = z
     est_delivery: z.string().trim().max(80, "Too long"),
   })
   .refine((b) => Date.parse(b.closes_at) > Date.parse(b.opens_at), { path: ["closes_at"], message: "The cutoff must be after it opens" });
+
+const cost = z.number({ error: "Enter the cost per unit" }).int("Whole rupees only").min(0, "Can't be negative").max(100000, "Too high");
+const commissionOverride = z.number({ error: "Enter a whole number from 4 to 10" }).nullable().refine((n) => n === null || isValidCommission(n), "A whole number from 4 to 10, or leave empty");
+
+// Putting an approved design live: the shop product's details plus what it costs to make.
+export const publishSchema = z
+  .object({
+    name: productSchema.shape.name,
+    slug: productSchema.shape.slug,
+    description: productSchema.shape.description,
+    price_inr: productSchema.shape.price_inr.min(1, "Enter a price"),
+    cost_inr: cost,
+    name_fee_inr: productSchema.shape.name_fee_inr,
+    sizes: productSchema.shape.sizes,
+    commission: commissionOverride,
+  })
+  .refine((p) => p.cost_inr < p.price_inr, { path: ["cost_inr"], message: "Must be below the selling price" });
+
+// Cost and designer for a product that already exists.
+export const termsSchema = z.object({ designerId: z.uuid().nullable(), cost_inr: cost, commission: commissionOverride });
+
+export const payoutSchema = z.object({
+  amount: z.number({ error: "Enter the amount" }).int("Whole rupees only").min(1, "Must be at least ₹1").max(1_000_000, "Too high"),
+  reference: z.string().trim().max(60, "Too long").transform((v) => v || null),
+  note: z.string().trim().max(200, "Too long").transform((v) => v || null),
+});
 
 export const BATCH_FLOW = ["open", "closed", "ordered", "received", "done"] as const;
 

@@ -49,13 +49,13 @@ create table if not exists design_images (
 create index if not exists design_images_design_idx on design_images (design_id, created_at);
 alter table design_images enable row level security;
 
--- What a product costs to make and what share goes to its designer. Never exposed to the shop.
+-- What a product costs to make and who designed it. Never exposed to the shop.
 create table if not exists product_terms (
   product_id uuid primary key references products (id) on delete cascade,
   designer_id uuid references designers (id) on delete set null,
   design_id uuid references designs (id) on delete set null,
   cost_inr int not null check (cost_inr >= 0),
-  commission_pct int not null check (commission_pct between 0 and 100),
+  commission_pct int check (commission_pct between 0 and 100), -- optional override; null = use the designer's own rate
   updated_at timestamptz not null default now()
 );
 create index if not exists product_terms_designer_idx on product_terms (designer_id);

@@ -14,13 +14,10 @@ export const unitProfit = (priceInr: number, costInr: number) => Math.max(0, pri
 // Whole rupees, rounded down so the store never over-pays.
 export const unitCommission = (priceInr: number, costInr: number, pct: number) => Math.floor((unitProfit(priceInr, costInr) * pct) / 100);
 
-// The share to lock onto an order item; undefined for products with no designer.
-export function designerSnapshot(terms: ProductTerms | undefined, priceInr: number): OrderItem["designer"] {
+// The share to lock onto an order item. A product's own rate wins over the designer's; no designer, or no rate yet, means no share.
+export function designerSnapshot(terms: ProductTerms | undefined, designerRate: number | null | undefined, priceInr: number): OrderItem["designer"] {
   if (!terms?.designer_id) return undefined;
-  return {
-    id: terms.designer_id,
-    costInr: terms.cost_inr,
-    pct: terms.commission_pct,
-    unitCommissionInr: unitCommission(priceInr, terms.cost_inr, terms.commission_pct),
-  };
+  const pct = terms.commission_pct ?? designerRate;
+  if (pct === null || pct === undefined) return undefined;
+  return { id: terms.designer_id, costInr: terms.cost_inr, pct, unitCommissionInr: unitCommission(priceInr, terms.cost_inr, pct) };
 }

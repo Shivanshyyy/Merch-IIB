@@ -1,12 +1,13 @@
 import assert from "node:assert/strict";
 import { beforeEach, test } from "node:test";
+import { canPublish, commissionPreview, payoutProblem, planDesignerAction, planDesignReview, uniqueSlug } from "@/lib/admin/designer-flow";
 import { COMMISSION_MAX, COMMISSION_MIN, designerSnapshot, isValidCommission, unitCommission, unitProfit } from "@/lib/designer/commission";
 import { canMove, designerCanDelete, designerCanEdit, submitProblems } from "@/lib/designer/design-flow";
 import { saleState, summarizeDesigner } from "@/lib/designer/sales";
 import { bioSchema, designerApplySchema, designerSignUpSchema, designSchema, toDesignInput, upiIdSchema } from "@/lib/designer/schemas";
 import { db, NotFoundError } from "@/lib/db";
 import { memoryStore } from "@/lib/db/memory";
-import type { Design, Order, OrderItem, Payout, ProductTerms } from "@/lib/types";
+import type { Design, Designer, Order, OrderItem, Payout, ProductTerms } from "@/lib/types";
 
 const D1 = "d1000000-0000-4000-8000-000000000001";
 const D2 = "d2000000-0000-4000-8000-000000000002";
@@ -72,10 +73,12 @@ test("the commission range is whole percents from 4 to 10", () => {
 });
 
 test("snapshot locks cost, rate and the per-unit share; products without a designer get none", () => {
-  const terms: ProductTerms = { product_id: "p1", designer_id: D1, design_id: "x", cost_inr: 600, commission_pct: 7 };
-  assert.deepEqual(designerSnapshot(terms, 999), { id: D1, costInr: 600, pct: 7, unitCommissionInr: 27 });
-  assert.equal(designerSnapshot(undefined, 999), undefined);
-  assert.equal(designerSnapshot({ ...terms, designer_id: null }, 999), undefined);
+  const terms: ProductTerms = { product_id: "p1", designer_id: D1, design_id: "x", cost_inr: 600, commission_pct: null };
+  assert.deepEqual(designerSnapshot(terms, 7, 999), { id: D1, costInr: 600, pct: 7, unitCommissionInr: 27 }, "the designer's rate applies by default");
+  assert.deepEqual(designerSnapshot({ ...terms, commission_pct: 10 }, 7, 999), { id: D1, costInr: 600, pct: 10, unitCommissionInr: 39 }, "a product's own rate wins");
+  assert.equal(designerSnapshot(terms, null, 999), undefined, "no rate yet, no share");
+  assert.equal(designerSnapshot(undefined, 7, 999), undefined);
+  assert.equal(designerSnapshot({ ...terms, designer_id: null }, 7, 999), undefined);
 });
 
 // ---------- sales summary
@@ -167,6 +170,110 @@ test("submitting needs a title, an image, a colour and the originality confirmat
   assert.equal(submitProblems({ ...ready, colorways: [] }).length, 1);
   assert.equal(submitProblems({ ...ready, originality_confirmed_at: null }).length, 1);
   assert.equal(submitProblems({ title: "", images: [], colorways: [], originality_confirmed_at: null }).length, 4);
+});
+
+// ---------- admin decisions
+
+const designer = (over: Partial<Designer> = {}): Designer => ({ id: D1, bio: null, upi_id: null, status: "pending", commission_pct: null, decision_note: null, decided_at: null, created_at: "2026-10-01T00:00:00Z", ...over });
+const aDesign = (over: Partial<Design> = {}): Design => ({
+  id: "g1",
+  designer_id: D1,
+  title: "Lake",
+  description: "",
+  product_type: "hoodie",
+  colorways: [{ name: "Black", body: "#0E0E10", stitch: "#FFFFFF" }],
+  suggested_price_inr: null,
+  print_file_url: null,
+  originality_confirmed_at: "2026-11-01T00:00:00Z",
+  status: "in_review",
+  review_note: null,
+  submitted_at: "2026-11-01T00:00:00Z",
+  reviewed_at: null,
+  product_id: null,
+  images: ["i1"],
+  created_at: "2026-11-01T00:00:00Z",
+  updated_at: "2026-11-01T00:00:00Z",
+  ...over,
+});
+const now = new Date("2026-11-04T10:00:00Z");
+
+test("approving a designer needs a 4-10% commission and a pending or rejected application", () => {
+  const ok = planDesignerAction(designer(), { type: "approve", commission: 6, note: "  Welcome  " });
+  assert.ok(ok.ok);
+  assert.deepEqual(ok.decision, { status: "approved", commission_pct: 6, decision_note: "Welcome" });
+  for (const bad of [3, 11, 5.5, NaN]) assert.equal(planDesignerAction(designer(), { type: "approve", commission: bad }).ok, false, String(bad));
+  assert.ok(planDesignerAction(designer({ status: "rejected" }), { type: "approve", commission: 4 }).ok, "a rejected applicant can be reconsidered");
+  assert.equal(planDesignerAction(designer({ status: "approved", commission_pct: 5 }), { type: "approve", commission: 6 }).ok, false, "already approved");
+  assert.equal(planDesignerAction(designer({ status: "suspended", commission_pct: 5 }), { type: "approve", commission: 6 }).ok, false, "use reinstate");
+});
+
+test("reject, suspend and reinstate follow the account's status", () => {
+  assert.ok(planDesignerAction(designer(), { type: "reject", note: "Not a fit" }).ok);
+  assert.equal(planDesignerAction(designer({ status: "approved", commission_pct: 5 }), { type: "reject" }).ok, false, "suspend instead");
+
+  const approved = designer({ status: "approved", commission_pct: 7, decision_note: "Welcome" });
+  const sus = planDesignerAction(approved, { type: "suspend", note: "Paused" });
+  assert.ok(sus.ok);
+  assert.deepEqual(sus.decision, { status: "suspended", commission_pct: 7, decision_note: "Paused" }, "suspending keeps the rate");
+  assert.equal(planDesignerAction(designer(), { type: "suspend" }).ok, false);
+
+  const back = planDesignerAction(designer({ status: "suspended", commission_pct: 7, decision_note: "Paused" }), { type: "reinstate" });
+  assert.ok(back.ok);
+  assert.deepEqual(back.decision, { status: "approved", commission_pct: 7, decision_note: null });
+  assert.equal(planDesignerAction(approved, { type: "reinstate" }).ok, false);
+  assert.equal(planDesignerAction(designer({ status: "suspended", commission_pct: null }), { type: "reinstate" }).ok, false);
+});
+
+test("the commission can be changed only for approved or suspended designers, within range", () => {
+  const approved = designer({ status: "approved", commission_pct: 5, decision_note: "Hi" });
+  const r = planDesignerAction(approved, { type: "set_commission", commission: 9 });
+  assert.ok(r.ok);
+  assert.deepEqual(r.decision, { status: "approved", commission_pct: 9, decision_note: "Hi" });
+  assert.equal(planDesignerAction(approved, { type: "set_commission", commission: 12 }).ok, false);
+  assert.equal(planDesignerAction(designer(), { type: "set_commission", commission: 5 }).ok, false, "pending: set it on approval");
+});
+
+test("design review: approve from review; changes and rejection need a reason", () => {
+  const a = planDesignReview(aDesign(), { type: "approve" }, now);
+  assert.ok(a.ok);
+  assert.deepEqual(a.patch, { status: "approved", review_note: null, reviewed_at: now.toISOString() });
+  const c = planDesignReview(aDesign(), { type: "changes", note: " Make the logo bigger " }, now);
+  assert.ok(c.ok);
+  assert.deepEqual([c.patch.status, c.patch.review_note], ["changes_requested", "Make the logo bigger"]);
+  assert.equal(planDesignReview(aDesign(), { type: "changes", note: "  " }, now).ok, false);
+  assert.equal(planDesignReview(aDesign(), { type: "reject", note: "" }, now).ok, false);
+  assert.ok(planDesignReview(aDesign(), { type: "reject", note: "Copied artwork" }, now).ok);
+  for (const status of ["draft", "changes_requested", "rejected", "live", "retired"] as const) assert.equal(planDesignReview(aDesign({ status }), { type: "approve" }, now).ok, false, `approve from ${status}`);
+  assert.ok(planDesignReview(aDesign({ status: "approved" }), { type: "changes", note: "One more tweak" }, now).ok, "approved designs can still be sent back");
+});
+
+test("publishing needs an approved design with images and colours, by an approved designer", () => {
+  const ok = designer({ status: "approved", commission_pct: 6 });
+  assert.equal(canPublish(aDesign({ status: "approved" }), ok), null);
+  assert.ok(canPublish(aDesign({ status: "in_review" }), ok));
+  assert.ok(canPublish(aDesign({ status: "approved", colorways: [] }), ok));
+  assert.ok(canPublish(aDesign({ status: "approved", images: [] }), ok));
+  assert.ok(canPublish(aDesign({ status: "approved" }), designer({ status: "suspended", commission_pct: 6 })));
+  assert.ok(canPublish(aDesign({ status: "approved" }), null));
+});
+
+test("slugs are made unique, and the commission preview matches the engine", () => {
+  assert.equal(uniqueSlug("Lake at Night!", []), "lake-at-night");
+  assert.equal(uniqueSlug("Lake", ["lake"]), "lake-2");
+  assert.equal(uniqueSlug("Lake", ["lake", "lake-2", "lake-3"]), "lake-4");
+  assert.equal(uniqueSlug("!!!", []), "design");
+  assert.ok(uniqueSlug("x".repeat(100), []).length <= 56);
+  assert.deepEqual(commissionPreview(999, 600, 7), { profit: 399, commission: 27 });
+  assert.deepEqual(commissionPreview(500, 700, 10), { profit: 0, commission: 0 });
+});
+
+test("a payout can't exceed the balance or be a fraction", () => {
+  assert.equal(payoutProblem({ balanceInr: 100 }, 100), null);
+  assert.equal(payoutProblem({ balanceInr: 100 }, 1), null);
+  assert.ok(payoutProblem({ balanceInr: 100 }, 101));
+  assert.ok(payoutProblem({ balanceInr: 100 }, 0));
+  assert.ok(payoutProblem({ balanceInr: 100 }, 10.5));
+  assert.ok(payoutProblem({ balanceInr: -27 }, 5), "nothing is owed after a refund beyond the payout");
 });
 
 // ---------- form schemas

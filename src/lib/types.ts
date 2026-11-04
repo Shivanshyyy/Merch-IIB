@@ -164,15 +164,15 @@ export type DesignPatch = Partial<DesignInput & Pick<Design, "status" | "review_
 /** An uploaded design image, with its owner so the route can check access. */
 export type DesignImageBlob = PhotoBlob & { designId: string };
 
-/** The store's cost and the designer's cut for one product. Kept apart from Product so it never reaches the shop. */
+/** What a product costs to make and who designed it. Kept apart from Product so it never reaches the shop. */
 export type ProductTerms = {
   product_id: string;
   designer_id: string | null;
   design_id: string | null;
   /** Production cost per unit, in whole rupees. */
   cost_inr: number;
-  /** Whole percent of (price − cost). */
-  commission_pct: number;
+  /** Whole-percent override for this product; null means the designer's own rate applies. */
+  commission_pct: number | null;
 };
 
 export type Payout = {
