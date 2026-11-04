@@ -12,7 +12,7 @@ import { canPublish, uniqueSlug } from "@/lib/admin/designer-flow";
 import { fmtShort } from "@/lib/admin/dates";
 import { requireAdmin } from "@/lib/admin/guard";
 import { db } from "@/lib/db";
-import { summarizeDesigner } from "@/lib/designer/sales";
+import { summarizeDesigner, summarizeProfit } from "@/lib/designer/sales";
 import { inr } from "@/lib/format";
 import { adminDesignImageUrl } from "@/lib/photos";
 
@@ -44,10 +44,9 @@ async function Design({ params }: Props) {
   const blocked = design.status === "approved" ? canPublish(design, designer) : null;
 
   // How this design has sold, for live and retired ones.
-  const sales =
-    product && designer
-      ? summarizeDesigner(await d.listOrdersWithDesigner(designer.id), designer.id, []).byProduct.find((row) => row.productId === product.id)
-      : undefined;
+  const designerOrders = product && designer ? await d.listOrdersWithDesigner(designer.id) : [];
+  const sales = product && designer ? summarizeDesigner(designerOrders, designer.id, []).byProduct.find((row) => row.productId === product.id) : undefined;
+  const money = product && designer ? summarizeProfit(designerOrders, designer.id).byProduct.find((row) => row.productId === product.id) : undefined;
 
   return (
     <>
@@ -170,6 +169,16 @@ async function Design({ params }: Props) {
             {sales ? `${sales.units} sold so far` : "No sales yet"}
             {sales && sales.pendingUnits > 0 ? `, ${sales.pendingUnits} awaiting payment` : ""}.
           </p>
+          {money && (
+            <dl className="mt-3 grid max-w-sm gap-1 text-[0.95rem]">
+              {([["Profit made", money.profitInr], ["Owed to designer", money.commissionInr], ["You keep", money.keepInr]] as const).map(([label, value]) => (
+                <div key={label} className="flex justify-between gap-4">
+                  <dt className="text-muted">{label}</dt>
+                  <dd className="mono m-0">{inr(value)}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
           <div className="mt-4 flex flex-wrap items-center gap-3">
             {product && (
               <Link href={`/admin/products/${product.id}`} className="btn btn-quiet btn-sm">

@@ -44,7 +44,7 @@ async function Editor({ params }: Props) {
           <ProductPhotos productId={product.id} photos={product.photos} />
         </div>
         <div className="mt-10">
-          <ProductTermsForm productId={product.id} terms={terms} designers={options.map((x) => ({ id: x.id, name: x.full_name, rate: x.commission_pct }))} />
+          <ProductTermsForm priceInr={product.price_inr} productId={product.id} terms={terms} designers={options.map((x) => ({ id: x.id, name: x.full_name, rate: x.commission_pct }))} />
         </div>
       </FreshOnVisit>
     </>

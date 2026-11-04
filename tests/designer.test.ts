@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import { beforeEach, test } from "node:test";
 import { canPublish, commissionPreview, payoutProblem, planDesignerAction, planDesignReview, uniqueSlug } from "@/lib/admin/designer-flow";
-import { COMMISSION_MAX, COMMISSION_MIN, designerSnapshot, isValidCommission, unitCommission, unitProfit } from "@/lib/designer/commission";
+import { COMMISSION_MAX, COMMISSION_MIN, designerSnapshot, isValidCommission, pieceBreakdown, unitCommission, unitProfit } from "@/lib/designer/commission";
 import { canMove, designerCanDelete, designerCanEdit, submitProblems } from "@/lib/designer/design-flow";
-import { saleState, summarizeDesigner } from "@/lib/designer/sales";
+import { saleState, summarizeDesigner, summarizeProfit } from "@/lib/designer/sales";
+import { publishSchema } from "@/lib/admin/schemas";
 import { bioSchema, designerApplySchema, designerSignUpSchema, designSchema, toDesignInput, upiIdSchema } from "@/lib/designer/schemas";
 import { db, NotFoundError } from "@/lib/db";
 import { placeOrderFor } from "@/lib/orders/place-order";
@@ -75,7 +76,7 @@ test("the commission range is whole percents from 4 to 10", () => {
 });
 
 test("snapshot locks cost, rate and the per-unit share; products without a designer get none", () => {
-  const terms: ProductTerms = { product_id: "p1", designer_id: D1, design_id: "x", cost_inr: 600, commission_pct: null };
+  const terms: ProductTerms = { product_id: "p1", designer_id: D1, design_id: "x", cost_inr: 600, vendor_cost_inr: 550, packaging_cost_inr: 50, commission_pct: null };
   assert.deepEqual(designerSnapshot(terms, 7, 999), { id: D1, productId: "p1", costInr: 600, pct: 7, unitCommissionInr: 27 }, "the designer's rate applies by default");
   assert.deepEqual(designerSnapshot({ ...terms, commission_pct: 10 }, 7, 999), { id: D1, productId: "p1", costInr: 600, pct: 10, unitCommissionInr: 39 }, "a product's own rate wins");
   assert.equal(designerSnapshot(terms, null, 999), undefined, "no rate yet, no share");
@@ -435,9 +436,9 @@ test("designs list by designer and by status, newest submission first", async ()
 test("product terms are saved apart from the product, and go with it", async () => {
   const d = db();
   const product = await scratchProduct("scratch-terms");
-  await assert.rejects(d.saveProductTerms({ product_id: "nope", designer_id: null, design_id: null, cost_inr: 1, commission_pct: 5 }), NotFoundError);
-  await d.saveProductTerms({ product_id: product.id, designer_id: D1, design_id: null, cost_inr: 500, commission_pct: 5 });
-  await d.saveProductTerms({ product_id: product.id, designer_id: D1, design_id: null, cost_inr: 450, commission_pct: 8 });
+  await assert.rejects(d.saveProductTerms({ product_id: "nope", designer_id: null, design_id: null, cost_inr: 1, vendor_cost_inr: 1, packaging_cost_inr: 0, commission_pct: 5 }), NotFoundError);
+  await d.saveProductTerms({ product_id: product.id, designer_id: D1, design_id: null, cost_inr: 500, vendor_cost_inr: 450, packaging_cost_inr: 50, commission_pct: 5 });
+  await d.saveProductTerms({ product_id: product.id, designer_id: D1, design_id: null, cost_inr: 450, vendor_cost_inr: 400, packaging_cost_inr: 50, commission_pct: 8 });
   assert.equal((await d.listProductTerms()).length, 1, "saving twice updates, not duplicates");
   assert.deepEqual((await d.getProductTerms(product.id))?.commission_pct, 8);
   assert.equal(JSON.stringify(await d.getProductBySlug(product.slug)).includes("cost_inr"), false, "the shop's product never carries cost");
@@ -487,7 +488,7 @@ async function designerWithProduct(rate: number | null, override: number | null 
   await d.createDesigner(D1, { bio: null, upi_id: null });
   if (rate !== null) await d.decideDesigner(D1, { status: "approved", commission_pct: rate, decision_note: null });
   const product = (await d.listAllProducts()).find((p) => p.slug === "iit-bombay-hoodie")!;
-  await d.saveProductTerms({ product_id: product.id, designer_id: D1, design_id: null, cost_inr: 500, commission_pct: override });
+  await d.saveProductTerms({ product_id: product.id, designer_id: D1, design_id: null, cost_inr: 500, vendor_cost_inr: 450, packaging_cost_inr: 50, commission_pct: override });
   return product;
 }
 const buy = () => placeOrderFor(buyer, { values: { fullName: "Buyer", phone: "9876543210", hostel: "H4", room: "1" }, items: [{ slug: "iit-bombay-hoodie", colorway: "Black", size: "M", name: "ARYAN", qty: 2 }], confirmSpelling: true, confirmPolicy: true });
@@ -553,4 +554,29 @@ test("customers never get the designer's cost or commission in their order view"
   for (const leak of ["designer", "costInr", "unitCommissionInr", "pct", D1]) assert.equal(text.includes(leak), false, `leaked ${leak}`);
   assert.equal(view.items[0].unitPriceInr, 898, "everything a customer needs is still there");
   assert.equal(view.code, memoryStore().orders[0].code);
+});
+
+test("a piece's money: vendor + packaging come off the price, the designer gets a share of the rest", () => {
+  assert.deepEqual(pieceBreakdown(899, 450, 50, 6), { cost: 500, profit: 399, commission: 23, keep: 376 });
+  assert.deepEqual(pieceBreakdown(400, 380, 50, 10), { cost: 430, profit: 0, commission: 0, keep: 0 }, "no profit, nothing owed");
+});
+
+test("publishing needs vendor + packaging below the price; packaging is a separate field", () => {
+  const base = { name: "Lake", slug: "lake", description: "", price_inr: 899, vendor_cost_inr: 450, packaging_cost_inr: 50, name_fee_inr: 0, sizes: ["M"], commission: null };
+  assert.equal(publishSchema.safeParse(base).success, true);
+  assert.equal(publishSchema.safeParse({ ...base, packaging_cost_inr: 449 }).success, false, "450 + 449 is the price");
+  assert.equal(publishSchema.safeParse({ ...base, packaging_cost_inr: -1 }).success, false);
+});
+
+test("the admin's profit summary: profit, the designer's cut and what the store keeps, counted sales only", async () => {
+  await designerWithProduct(6);
+  await buy();
+  const d = db();
+  const [placed] = await d.listOrdersWithDesigner(D1);
+  assert.equal(summarizeProfit([placed], D1).total.units, 0, "unpaid orders are not counted");
+  await d.patchOrder(placed.id, { payment_status: "verified", verified_at: now.toISOString() }, { type: "payment_verified" });
+  const { total } = summarizeProfit(await d.listOrdersWithDesigner(D1), D1);
+  assert.equal(total.profitInr, total.revenueInr - total.costInr);
+  assert.equal(total.keepInr, total.profitInr - total.commissionInr);
+  assert.equal(total.commissionInr, 34);
 });

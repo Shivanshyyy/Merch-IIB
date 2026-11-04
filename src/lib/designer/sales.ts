@@ -75,3 +75,26 @@ export function summarizeDesigner(orders: Order[], designerId: string, payouts: 
     sales: sales.sort((a, b) => b.date.localeCompare(a.date)),
   };
 }
+
+// Admin-only money for a designer's pieces: what was sold, what it cost, the profit, the designer's cut and what the store keeps.
+// Uses each order's snapshot. Cart discounts and name-print fees are not part of it.
+export type ProfitRow = { productId: string; productName: string; units: number; revenueInr: number; costInr: number; profitInr: number; commissionInr: number; keepInr: number };
+
+export function summarizeProfit(orders: Order[], designerId: string): { total: ProfitRow; byProduct: ProfitRow[] } {
+  const rows = new Map<string, ProfitRow>();
+  for (const o of orders) {
+    if (saleState(o) !== "counted") continue;
+    for (const i of o.items) {
+      if (i.designer?.id !== designerId) continue;
+      const r = rows.get(i.designer.productId) ?? { productId: i.designer.productId, productName: i.productName, units: 0, revenueInr: 0, costInr: 0, profitInr: 0, commissionInr: 0, keepInr: 0 };
+      r.units += i.qty;
+      r.revenueInr += (i.unitPriceInr - (i.nameFeeInr ?? 0)) * i.qty;
+      r.costInr += i.designer.costInr * i.qty;
+      r.commissionInr += i.designer.unitCommissionInr * i.qty;
+      rows.set(i.designer.productId, r);
+    }
+  }
+  const list = [...rows.values()].map((r) => ({ ...r, profitInr: r.revenueInr - r.costInr, keepInr: r.revenueInr - r.costInr - r.commissionInr }));
+  const total = list.reduce<ProfitRow>((t, r) => ({ ...t, units: t.units + r.units, revenueInr: t.revenueInr + r.revenueInr, costInr: t.costInr + r.costInr, profitInr: t.profitInr + r.profitInr, commissionInr: t.commissionInr + r.commissionInr, keepInr: t.keepInr + r.keepInr }), { productId: "", productName: "All designs", units: 0, revenueInr: 0, costInr: 0, profitInr: 0, commissionInr: 0, keepInr: 0 });
+  return { total, byProduct: list.sort((a, b) => b.profitInr - a.profitInr) };
+}
