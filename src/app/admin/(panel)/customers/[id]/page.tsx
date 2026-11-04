@@ -4,13 +4,11 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { CustomerForm } from "@/components/admin/CustomerForm";
 import { FreshOnVisit } from "@/components/ui/FreshOnVisit";
-import { ResetPassword } from "@/components/admin/ResetPassword";
 import { OrderChip, PaymentChip } from "@/components/admin/status";
 import { fmtShort } from "@/lib/admin/dates";
 import { requireAdmin } from "@/lib/admin/guard";
 import { db } from "@/lib/db";
 import { fmtDay, inr } from "@/lib/format";
-import { getSettingsFresh } from "@/lib/settings";
 
 export const metadata: Metadata = { title: "Customer" };
 
@@ -35,7 +33,7 @@ async function Customer({ params }: Props) {
   const d = db();
   const profile = await d.getProfile(id).catch(() => null);
   if (!profile) notFound();
-  const [orders, settings] = await Promise.all([d.listOrdersByUser(id), getSettingsFresh()]);
+  const orders = await d.listOrdersByUser(id);
 
   return (
     <>
@@ -53,16 +51,6 @@ async function Customer({ params }: Props) {
           </h2>
           <FreshOnVisit>
             <CustomerForm key={profile.id} profile={profile} />
-          </FreshOnVisit>
-        </section>
-
-        <section aria-labelledby="pw-h" className="admin-card p-5">
-          <h2 id="pw-h" className="text-[1rem] font-semibold">
-            Reset password
-          </h2>
-          <p className="admin-label mb-4 mt-1">There&apos;s no email reset. Set a new password here and send it on WhatsApp.</p>
-          <FreshOnVisit>
-            <ResetPassword key={profile.id} userId={profile.id} phone={profile.phone} firstName={profile.full_name.split(/\s+/)[0]} brand={settings.brand} />
           </FreshOnVisit>
         </section>
       </div>

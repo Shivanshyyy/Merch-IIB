@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { DesignerDecision } from "@/components/admin/DesignerDecision";
 import { PayoutPanel } from "@/components/admin/PayoutPanel";
-import { ResetPassword } from "@/components/admin/ResetPassword";
 import { DesignChip, DesignerChip } from "@/components/admin/status";
 import { StatTile } from "@/components/admin/StatTile";
 import { FreshOnVisit } from "@/components/ui/FreshOnVisit";
@@ -12,7 +11,6 @@ import { requireAdmin } from "@/lib/admin/guard";
 import { db } from "@/lib/db";
 import { summarizeDesigner } from "@/lib/designer/sales";
 import { fmtDay, inr } from "@/lib/format";
-import { getSettingsFresh } from "@/lib/settings";
 
 export const metadata: Metadata = { title: "Designer" };
 
@@ -37,7 +35,7 @@ async function Designer({ params }: Props) {
   const d = db();
   const [designer, profile] = await Promise.all([d.getDesigner(id).catch(() => null), d.getProfile(id).catch(() => null)]);
   if (!designer || !profile) notFound();
-  const [designs, orders, payouts, settings] = await Promise.all([d.listDesignsByDesigner(id), d.listOrdersWithDesigner(id), d.listPayouts(id), getSettingsFresh()]);
+  const [designs, orders, payouts] = await Promise.all([d.listDesignsByDesigner(id), d.listOrdersWithDesigner(id), d.listPayouts(id)]);
   const sum = summarizeDesigner(orders, id, payouts);
 
   return (
@@ -119,16 +117,6 @@ async function Designer({ params }: Props) {
             </table>
           </div>
         )}
-      </section>
-
-      <section aria-labelledby="pw-h" className="admin-card p-5">
-        <h2 id="pw-h" className="text-[1rem] font-semibold">
-          Reset password
-        </h2>
-        <p className="admin-label mb-4 mt-1">Same login as their customer account. There&apos;s no email reset, so set a new password here and send it on WhatsApp.</p>
-        <FreshOnVisit>
-          <ResetPassword key={profile.id} userId={profile.id} phone={profile.phone} firstName={profile.full_name.split(/\s+/)[0]} brand={settings.brand} />
-        </FreshOnVisit>
       </section>
     </>
   );

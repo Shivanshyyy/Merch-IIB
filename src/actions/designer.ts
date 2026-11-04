@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { vaultPassword } from "@/lib/auth/vault";
 import { authBackend } from "@/lib/auth/backend";
 import { requireDesigner, requireProfile } from "@/lib/auth/guards";
 import { db, EmailTakenError } from "@/lib/db";
@@ -13,7 +14,6 @@ const firstErrors = (error: z.ZodError) => Object.fromEntries(Object.entries(z.f
 const EXISTS = "An account with this email already exists. Log in, then apply from this page.";
 
 // New person: creates the login, the customer profile and a pending designer application in one go.
-// Designers' passwords are not copied to the password vault: they handle payouts, so nothing recoverable is kept.
 export async function designerSignUp(_prev: FormState, formData: FormData): Promise<FormState> {
   const values = Object.fromEntries(["fullName", "email", "phone", "bio", "upiId", "agree"].map((k) => [k, text(formData, k)]));
   const parsed = designerSignUpSchema.safeParse({ ...values, password: text(formData, "password"), agree: text(formData, "agree") === "on" });
@@ -34,6 +34,8 @@ export async function designerSignUp(_prev: FormState, formData: FormData): Prom
     console.error("[designerSignUp] profile creation failed:", e);
     return { message: "We couldn't create your account right now. Please try again.", values };
   }
+
+  await vaultPassword(created.id, d.password); // same encrypted copy customers get (best-effort)
 
   let applied = true;
   try {

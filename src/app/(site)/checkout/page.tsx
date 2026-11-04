@@ -40,7 +40,7 @@ async function Checkout() {
           <p className="mt-6 max-w-md text-muted">Your cart is saved on this device and will be waiting when you&apos;re back. Log in or create an account, and you&apos;ll land right here.</p>
         </div>
         <FreshOnVisit>
-          <AuthPanel next="/checkout" forgotHref={whatsappUrl(settings.whatsapp, "Hi, I forgot my password for my merch account. Can you set a new one?")} contactName={settings.contactName} />
+          <AuthPanel next="/checkout" forgotHref={whatsappUrl(settings.whatsapp, "Hi, I forgot my password for my merch account. Can you help me log in?")} contactName={settings.contactName} />
         </FreshOnVisit>
       </div>
     );
