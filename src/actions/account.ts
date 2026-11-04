@@ -5,6 +5,7 @@ import { z } from "zod";
 import { authBackend } from "@/lib/auth/backend";
 import { safeNext } from "@/lib/auth/next";
 import { requireUser } from "@/lib/auth/guards";
+import { vaultPassword } from "@/lib/auth/vault";
 import { db } from "@/lib/db";
 import type { FormState } from "@/lib/form-state";
 import { changePasswordSchema, profileSchema } from "@/lib/schemas";
@@ -50,5 +51,6 @@ export async function changePassword(_prev: FormState, formData: FormData): Prom
     console.error("[changePassword]", e);
     return { message: "We couldn't change your password. Please try again." };
   }
+  await vaultPassword(user.id, parsed.data.next); // keep the vault copy current (best-effort, like at sign-up)
   return { ok: true, message: "Password changed." };
 }
