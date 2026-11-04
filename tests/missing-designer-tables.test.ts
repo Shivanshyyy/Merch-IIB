@@ -38,3 +38,20 @@ test("writes still fail loudly, and so does any other database error", async () 
   await assert.rejects(() => broken.getDesigner("00000000-0000-4000-8000-000000000000"), /connection lost/);
   await assert.rejects(() => broken.listProductTerms(), /connection lost/);
 });
+
+test("listOrdersWithDesigner sends the items filter as JSON text, not as a Postgres array", async () => {
+  const calls: { prop: string; args: unknown[] }[] = [];
+  const chain: unknown = new Proxy(() => chain, {
+    get: (_t, prop) =>
+      prop === "then"
+        ? (resolve: (v: unknown) => void) => resolve({ data: [], error: null })
+        : (...args: unknown[]) => (calls.push({ prop: String(prop), args }), chain),
+    apply: () => chain,
+  });
+  await createSupabaseDb({ from: () => chain } as unknown as ServiceClient).listOrdersWithDesigner("d-1");
+  const filter = calls.find((c) => c.prop === "contains");
+  assert.ok(filter, "uses a contains filter");
+  assert.equal(filter.args[0], "items");
+  assert.equal(typeof filter.args[1], "string"); // an array here becomes `cs.{[object Object]}` and Postgres refuses it
+  assert.deepEqual(JSON.parse(filter.args[1] as string), [{ designer: { id: "d-1" } }]);
+});
