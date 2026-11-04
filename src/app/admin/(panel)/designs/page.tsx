@@ -8,7 +8,7 @@ import { requireAdmin } from "@/lib/admin/guard";
 import type { SearchParams } from "@/lib/admin/params";
 import { db } from "@/lib/db";
 import { DESIGN_STATUS_LABEL } from "@/lib/designer/design-flow";
-import { designImageUrl } from "@/lib/photos";
+import { adminDesignImageUrl } from "@/lib/photos";
 import type { DesignStatus } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Designs" };
@@ -61,7 +61,7 @@ async function Designs({ searchParams }: Props) {
             <li key={x.id}>
               <Link href={`/admin/designs/${x.id}`} className="admin-card grid grid-cols-[88px_1fr] gap-4 p-3">
                 <div className="relative aspect-[4/5] overflow-hidden border border-line bg-bg-2">
-                  {x.images[0] ? <Image src={designImageUrl(x.images[0])} alt="" fill unoptimized sizes="88px" className="object-cover" /> : <span className="label absolute inset-0 grid place-items-center">None</span>}
+                  {x.images[0] ? <Image src={adminDesignImageUrl(x.images[0])} alt="" fill unoptimized sizes="88px" className="object-cover" /> : <span className="label absolute inset-0 grid place-items-center">None</span>}
                 </div>
                 <div className="min-w-0 content-center">
                   <p className="truncate font-medium">{x.title}</p>

@@ -14,7 +14,7 @@ import { requireAdmin } from "@/lib/admin/guard";
 import { db } from "@/lib/db";
 import { summarizeDesigner } from "@/lib/designer/sales";
 import { inr } from "@/lib/format";
-import { designImageUrl } from "@/lib/photos";
+import { adminDesignImageUrl } from "@/lib/photos";
 
 export const metadata: Metadata = { title: "Design" };
 
@@ -76,8 +76,8 @@ async function Design({ params }: Props) {
             <ul className="grid grid-cols-2 gap-3">
               {design.images.map((imageId, i) => (
                 <li key={imageId}>
-                  <a href={designImageUrl(imageId)} target="_blank" rel="noopener" className="relative block aspect-[4/5] overflow-hidden border border-line bg-bg-2">
-                    <Image src={designImageUrl(imageId)} alt={`Design image ${i + 1}`} fill unoptimized sizes="(min-width: 1024px) 28vw, 45vw" className="object-contain" />
+                  <a href={adminDesignImageUrl(imageId)} target="_blank" rel="noopener" className="relative block aspect-[4/5] overflow-hidden border border-line bg-bg-2">
+                    <Image src={adminDesignImageUrl(imageId)} alt={`Design image ${i + 1}`} fill unoptimized sizes="(min-width: 1024px) 28vw, 45vw" className="object-contain" />
                   </a>
                 </li>
               ))}
@@ -120,7 +120,7 @@ async function Design({ params }: Props) {
                 Review
               </h2>
               <FreshOnVisit>
-                <DesignReview key={`${design.status}-${design.reviewed_at}`} designId={design.id} status={design.status} note={design.review_note} />
+                <DesignReview designId={design.id} status={design.status} note={design.review_note} />
               </FreshOnVisit>
             </section>
           )}

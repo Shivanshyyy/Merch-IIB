@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState } from "react";
 import { reviewDesign } from "@/actions/admin/designs";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
@@ -10,13 +10,14 @@ import type { FormState } from "@/lib/form-state";
 
 // Approve, send back with changes, or reject. The note is the designer's feedback and is required for the last two.
 export function DesignReview({ designId, status, note }: { designId: string; status: DesignStatus; note: string | null }) {
-  const [state, action, pending] = useActionState<FormState, FormData>(reviewDesign, {});
-  const f = useFieldErrors(state, state.fieldErrors);
   const { toast } = useToast();
-
-  useEffect(() => {
-    if (state.message) toast({ message: state.message });
-  }, [state, toast]);
+  // Toast from inside the action: this form unmounts once the design leaves review, so an effect would never run.
+  const [state, action, pending] = useActionState<FormState, FormData>(async (prev, data) => {
+    const result = await reviewDesign(prev, data);
+    if (result.message) toast({ message: result.message });
+    return result;
+  }, {});
+  const f = useFieldErrors(state, state.fieldErrors);
 
   const button = (intent: string, label: string, variant: "primary" | "ghost" = "ghost") => (
     <Button type="submit" name="intent" value={intent} variant={variant} className="btn-sm" disabled={pending}>
@@ -27,7 +28,7 @@ export function DesignReview({ designId, status, note }: { designId: string; sta
   return (
     <form action={action} noValidate className="grid gap-3">
       <input type="hidden" name="id" value={designId} />
-      <div className="field">
+      <div key={`${status}-${note ?? ""}`} className="field">
         <label htmlFor="review-note" className="label">
           <span>Note to the designer</span>
         </label>

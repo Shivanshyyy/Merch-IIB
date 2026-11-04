@@ -66,7 +66,7 @@ async function Designer({ params }: Props) {
             Account & commission
           </h2>
           <FreshOnVisit>
-            <DesignerDecision key={`${designer.status}-${designer.commission_pct}`} designer={designer} />
+            <DesignerDecision designer={designer} />
           </FreshOnVisit>
         </section>
 

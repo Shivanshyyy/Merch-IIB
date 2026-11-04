@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useState } from "react";
 import { publishDesign } from "@/actions/admin/designs";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { TextField } from "@/components/ui/TextField";
@@ -15,17 +15,18 @@ type Props = { designId: string; designerRate: number; defaults: { name: string;
 
 // Puts an approved design in the shop. The preview shows what each sale earns the designer before anything goes live.
 export function PublishDesign({ designId, designerRate, defaults }: Props) {
-  const [state, action] = useActionState<FormState, FormData>(publishDesign, {});
-  const f = useFieldErrors(state, state.fieldErrors);
   const { toast } = useToast();
+  // Toast from inside the action: this form disappears once the design is live, so an effect would never run.
+  const [state, action] = useActionState<FormState, FormData>(async (prev, data) => {
+    const result = await publishDesign(prev, data);
+    if (result.message) toast({ message: result.message });
+    return result;
+  }, {});
+  const f = useFieldErrors(state, state.fieldErrors);
   const v = (k: string, fallback: string) => state.values?.[k] ?? fallback;
   const [price, setPrice] = useState(v("price_inr", defaults.price));
   const [cost, setCost] = useState(v("cost_inr", ""));
   const [override, setOverride] = useState(v("commission", ""));
-
-  useEffect(() => {
-    if (state.message) toast({ message: state.message });
-  }, [state, toast]);
 
   const p = Number(price);
   const c = Number(cost);
