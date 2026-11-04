@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { beforeEach, test } from "node:test";
 import { defaultSettings } from "@/config/site";
 import { fromIstInput, toIstInput } from "@/lib/admin/dates";
-import { pivot, toCsv, vendorRows } from "@/lib/admin/export";
+import { facets, filterLines, parseVendorFilter, pivot, toCsv, toRow, vendorLines, vendorRows } from "@/lib/admin/export";
 import { planOrderAction, type OrderAction } from "@/lib/admin/order-flow";
 import { computeStats } from "@/lib/admin/stats";
 import { adminConfig, safeAdminNext, signAdminToken, verifyAdminToken } from "@/lib/admin/token";
@@ -166,6 +166,36 @@ test("vendor rows: paid orders only, one row per item, and never any contact or 
   assert.ok(csv.startsWith("﻿product,colour,size,name,quantity,order_code\r\n"));
   for (const secret of ["secret@example.com", "9123456789", "UTR123456789", "Aryan Kumar", "a@example.com", "H4"]) assert.ok(!csv.includes(secret), `${secret} must not be in the vendor CSV`);
   assert.match(csv, /Flame Hoodie,Midnight,L,SAM,2,HD-BBBB/);
+});
+
+test("vendor sheet filters: by garment kind, then by product, with unit counts", () => {
+  const kinds = { "zip-hoodie": "hoodie", "plain-hoodie": "hoodie", "regular-tee": "tee", "oversized-tee": "tee" };
+  const pick = (slug: string, productName: string, over: Partial<OrderItem> = {}) => item({ slug, productName, ...over });
+  const lines = vendorLines(
+    [
+      paid({ code: "HD-AAAA", items: [pick("zip-hoodie", "Zip Hoodie", { qty: 2 }), pick("regular-tee", "Regular Tee")] }),
+      paid({ code: "HD-BBBB", items: [pick("plain-hoodie", "Hoodie"), pick("oversized-tee", "Oversized Tee", { qty: 3 }), pick("gone", "Old Cap")] }),
+      order({ code: "HD-CCCC", items: [pick("zip-hoodie", "Zip Hoodie")] }),
+    ],
+    kinds,
+  );
+  assert.equal(lines.length, 5, "unpaid orders stay out");
+  assert.equal(lines.find((l) => l.slug === "gone")?.kind, "other", "a deleted product is not lost");
+
+  const bar = facets(lines);
+  assert.deepEqual(bar.kinds.map((k) => [k.label, k.units]), [["Hoodies", 3], ["Tees", 4], ["Other", 1]]);
+  assert.deepEqual(facets(lines, "tee").products.map((p) => [p.name, p.units]), [["Oversized Tee", 3], ["Regular Tee", 1]], "styles of the chosen kind only");
+
+  assert.deepEqual(filterLines(lines, { kind: "hoodie" }).map((l) => l.slug).sort(), ["plain-hoodie", "zip-hoodie"]);
+  assert.deepEqual(filterLines(lines, { kind: "tee", slug: "regular-tee" }).map((l) => l.orderCode), ["HD-AAAA"]);
+  assert.equal(filterLines(lines, {}).length, 5);
+
+  assert.deepEqual(parseVendorFilter(lines, "tee", "zip-hoodie"), { kind: "tee", slug: undefined }, "a product from another kind is ignored");
+  assert.deepEqual(parseVendorFilter(lines, "cap", "nope"), { kind: undefined, slug: undefined }, "unknown values fall back to everything");
+
+  const csv = toCsv(filterLines(lines, { kind: "hoodie" }).map(toRow));
+  assert.ok(!csv.includes("zip-hoodie") && !csv.includes("kind"), "the CSV keeps its six columns");
+  assert.equal(csv.trim().split("\r\n").length, 1 + 2);
 });
 
 test("CSV is safe to open in a spreadsheet: formulas are neutralised, quotes and commas escaped", () => {

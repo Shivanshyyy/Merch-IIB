@@ -317,7 +317,8 @@ body {
     outline-offset: 3px;
   }
   .chip:has(input:checked),
-  .chip[aria-pressed="true"] {
+  .chip[aria-pressed="true"],
+  .chip[aria-current="true"] {
     border-color: var(--fg);
     background: var(--fg);
     color: var(--bg);

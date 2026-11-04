@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 import { BatchSelect } from "@/components/admin/BatchSelect";
 import { requireAdmin } from "@/lib/admin/guard";
-import { pivot, vendorRows } from "@/lib/admin/export";
-import type { SearchParams } from "@/lib/admin/params";
+import { facets, filterLines, kindLabel, parseVendorFilter, pivot, toRow, vendorLines } from "@/lib/admin/export";
+import { withParams, type SearchParams } from "@/lib/admin/params";
 import { db } from "@/lib/db";
 
 export const metadata: Metadata = { title: "Vendor sheet" };
@@ -35,8 +36,18 @@ async function Vendor({ searchParams }: Props) {
     );
   }
 
-  const rows = vendorRows(await d.listOrdersForBatch(batch.id));
+  const kinds = Object.fromEntries((await d.listAllProducts()).map((p) => [p.slug, p.type]));
+  const all = vendorLines(await d.listOrdersForBatch(batch.id), kinds);
+  const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
+  const filter = parseVendorFilter(all, one(sp.type), one(sp.product));
+  const lines = filterLines(all, filter);
+  const rows = lines.map(toRow);
   const table = pivot(rows);
+  const bar = facets(all, filter.kind);
+  const total = bar.kinds.reduce((n, k) => n + k.units, 0);
+  const current = { batch: batch.id, ...(filter.kind ? { type: filter.kind } : {}), ...(filter.slug ? { product: filter.slug } : {}) };
+  const href = (change: Record<string, string | undefined>) => withParams("/admin/vendor", current, change);
+  const csvQuery = new URLSearchParams({ batch: batch.id, ...(filter.kind ? { type: filter.kind } : {}), ...(filter.slug ? { product: filter.slug } : {}) }).toString();
 
   return (
     <div className="grid gap-8">
@@ -49,14 +60,38 @@ async function Vendor({ searchParams }: Props) {
       </div>
 
       <div className="flex flex-wrap items-center gap-4">
-        <a href={`/admin/export?batch=${batch.id}`} download className="btn btn-sm">
+        <a href={`/admin/export?${csvQuery}`} download className="btn btn-sm">
           <span className="btn-fill" aria-hidden />
-          <span>Download CSV</span>
+          <span>Download CSV{filter.slug || filter.kind ? " (filtered)" : ""}</span>
         </a>
         <p className="admin-label">
           {table.grandTotal} {table.grandTotal === 1 ? "unit" : "units"} · {rows.length} {rows.length === 1 ? "line" : "lines"}
         </p>
       </div>
+
+      {all.length > 0 && (
+        <nav aria-label="Filter by garment" className="grid gap-3">
+          <div className="flex flex-wrap gap-2">
+            <Link href={href({ type: undefined, product: undefined })} className="chip !min-h-10 !px-3" aria-current={!filter.kind ? "true" : undefined} scroll={false}>
+              All <span>{total}</span>
+            </Link>
+            {bar.kinds.map((k) => (
+              <Link key={k.kind} href={href({ type: k.kind, product: undefined })} className="chip !min-h-10 !px-3" aria-current={filter.kind === k.kind ? "true" : undefined} scroll={false}>
+                {k.label} <span>{k.units}</span>
+              </Link>
+            ))}
+          </div>
+          {bar.products.length > 1 && (
+            <div className="flex flex-wrap gap-2" aria-label={filter.kind ? `${kindLabel(filter.kind)} by style` : "By product"} role="group">
+              {bar.products.map((p) => (
+                <Link key={p.slug} href={href({ product: filter.slug === p.slug ? undefined : p.slug })} className="chip !min-h-10 !px-3 !normal-case" aria-current={filter.slug === p.slug ? "true" : undefined} scroll={false}>
+                  {p.name} <span>{p.units}</span>
+                </Link>
+              ))}
+            </div>
+          )}
+        </nav>
+      )}
 
       {rows.length === 0 ? (
         <p className="admin-card p-10 text-center text-muted">No paid orders in this batch yet. Verify payments and they appear here.</p>
