@@ -46,3 +46,52 @@ export function pivot(rows: VendorRow[]): Pivot {
   const out = [...map.values()].sort((a, b) => a.product.localeCompare(b.product) || a.colour.localeCompare(b.colour));
   return { sizes, rows: out, totals, grandTotal };
 }
+
+// ---- Filtering the vendor sheet by garment ----
+// A line knows which product it is and what kind of garment that is, so the sheet and its CSV can be cut per garment.
+export type VendorLine = VendorRow & { slug: string; kind: string };
+export type VendorFilter = { kind?: string; slug?: string };
+
+export const KIND_LABEL: Record<string, string> = { hoodie: "Hoodies", tee: "Tees", other: "Other" };
+export const kindLabel = (kind: string) => KIND_LABEL[kind] ?? kind;
+
+// `kinds` maps product slug to its type. A product that has since been deleted lands in "other" instead of vanishing.
+export function vendorLines(orders: Order[], kinds: Record<string, string>): VendorLine[] {
+  return orders
+    .filter(isLive)
+    .sort((a, b) => a.code.localeCompare(b.code))
+    .flatMap((o) => o.items.map((i) => ({ product: i.productName, colour: i.colorway, size: i.size, name: i.name, quantity: i.qty, orderCode: o.code, slug: i.slug, kind: kinds[i.slug] ?? "other" })));
+}
+
+export const toRow = ({ product, colour, size, name, quantity, orderCode }: VendorLine): VendorRow => ({ product, colour, size, name, quantity, orderCode });
+
+export function filterLines(lines: VendorLine[], f: VendorFilter): VendorLine[] {
+  return lines.filter((l) => (!f.kind || l.kind === f.kind) && (!f.slug || l.slug === f.slug));
+}
+
+export type VendorFacets = { kinds: { kind: string; label: string; units: number }[]; products: { slug: string; name: string; units: number }[] };
+
+// Chips for the filter bar: each garment kind with its units, and the products of the chosen kind (all kinds when none is chosen).
+export function facets(lines: VendorLine[], kind?: string): VendorFacets {
+  const kinds = new Map<string, number>();
+  const products = new Map<string, { slug: string; name: string; units: number }>();
+  for (const l of lines) {
+    kinds.set(l.kind, (kinds.get(l.kind) ?? 0) + l.quantity);
+    if (kind && l.kind !== kind) continue;
+    const p = products.get(l.slug) ?? { slug: l.slug, name: l.product, units: 0 };
+    p.units += l.quantity;
+    products.set(l.slug, p);
+  }
+  const order = Object.keys(KIND_LABEL);
+  return {
+    kinds: [...kinds].map(([k, units]) => ({ kind: k, label: kindLabel(k), units })).sort((a, b) => order.indexOf(a.kind) - order.indexOf(b.kind) || a.label.localeCompare(b.label)),
+    products: [...products.values()].sort((a, b) => a.name.localeCompare(b.name)),
+  };
+}
+
+// Reads ?type= and ?product= and drops anything that doesn't exist in this batch, so a stale link never shows an empty sheet.
+export function parseVendorFilter(lines: VendorLine[], type: string | undefined, product: string | undefined): VendorFilter {
+  const kind = type && lines.some((l) => l.kind === type) ? type : undefined;
+  const slug = product && lines.some((l) => l.slug === product && (!kind || l.kind === kind)) ? product : undefined;
+  return { kind, slug };
+}
