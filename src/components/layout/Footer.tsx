@@ -22,6 +22,7 @@ export function Footer({ settings: s }: { settings: Settings }) {
             ["/shop", "Shop"],
             ["/orders", "My orders"],
             ["/cart", "Cart"],
+            ["/designers", "Sell your design"],
             ["/policies", "Refunds, pickup & privacy"],
           ].map(([href, label]) => (
             <Link key={href} href={href} className="flex min-h-11 items-center text-[0.95rem] transition-colors hover:text-accent-2">

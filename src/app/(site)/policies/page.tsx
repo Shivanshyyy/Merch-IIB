@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { site, whatsappUrl } from "@/config/site";
+import { COMMISSION_MAX, COMMISSION_MIN } from "@/lib/designer/commission";
 import { getSettings } from "@/lib/settings";
 import { Reveal } from "@/components/ui/Reveal";
 
@@ -10,6 +11,7 @@ const SECTIONS = [
   { id: "pickup", label: "Pickup" },
   { id: "made-to-order", label: "Made to order" },
   { id: "privacy", label: "Privacy" },
+  { id: "designers", label: "Designer terms" },
   { id: "credits", label: "Credits" },
 ] as const;
 
@@ -101,8 +103,29 @@ export default async function PoliciesPage() {
               <p>To have your data removed after your order is complete, message {s.contactName}.</p>
             </Section>
 
+            <Section id="designers" n="05" title="Designer terms">
+              <p>
+                <strong>Your work.</strong> Only submit designs you made yourself. No copied artwork, no logos or characters you don&apos;t own, nothing hateful or explicit. You keep ownership of your design; by submitting it you let us print and sell it in this store while it&apos;s live.
+              </p>
+              <p>
+                <strong>Review.</strong> Every design is checked by the team before it goes live. We may ask for changes or turn a design down, and we can take a live design off sale. Orders already paid for are still made.
+              </p>
+              <p>
+                <strong>Commission.</strong> The team sets your rate when it approves you, a whole number between {COMMISSION_MIN}% and {COMMISSION_MAX}%. You earn that share of the <em>profit</em> on each piece, which is the selling price minus the production cost the team sets for that product. Name-print fees and cart discounts aren&apos;t part of it, and discounts come out of the store&apos;s share, not yours.
+              </p>
+              <p>
+                <strong>When a sale counts.</strong> A sale counts once the buyer&apos;s payment is verified. If the order is cancelled or refunded, it stops counting. The rate is locked when the order is placed, so a later change to your rate only applies to new orders.
+              </p>
+              <p>
+                <strong>Payouts.</strong> Commission is paid by UPI to the ID in your profile, and each payout is recorded in your dashboard.
+              </p>
+              <p>
+                <strong>Privacy.</strong> Your dashboard shows your own sales as numbers: units sold and commission earned. You never see who bought, and buyers never see your rate.
+              </p>
+            </Section>
+
             {site.modelCredit && (
-              <Section id="credits" n="05" title="Credits">
+              <Section id="credits" n="06" title="Credits">
                 <p>
                   The 3D hoodie model, &ldquo;{site.modelCredit.title}&rdquo;, is by{" "}
                   <a href={site.modelCredit.url} className="underline underline-offset-4 hover:text-accent-2" target="_blank" rel="noopener noreferrer">

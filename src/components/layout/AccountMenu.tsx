@@ -23,6 +23,6 @@ export async function AccountMenu() {
       </Link>
     );
   }
-  const profile = await db().getProfile(user.id);
-  return <AccountDropdown name={profile?.full_name ?? user.name ?? user.email} email={user.email} />;
+  const [profile, designer] = await Promise.all([db().getProfile(user.id), db().getDesigner(user.id)]);
+  return <AccountDropdown name={profile?.full_name ?? user.name ?? user.email} email={user.email} designer={designer !== null} />;
 }

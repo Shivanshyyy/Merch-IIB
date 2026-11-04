@@ -1,7 +1,7 @@
 import "server-only";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import type { Profile } from "@/lib/types";
+import type { Designer, Profile } from "@/lib/types";
 import { loginPath } from "./next";
 import { getSessionUser } from "./session";
 import type { SessionUser } from "./types";
@@ -18,4 +18,19 @@ export async function requireProfile(next: string): Promise<{ user: SessionUser;
   const profile = await db().getProfile(user.id);
   if (!profile) redirect(`/account?next=${encodeURIComponent(next)}`);
   return { user, profile };
+}
+
+// A logged-in customer who has applied to be a designer. Anyone else is sent to the sign-up page.
+export async function requireDesigner(next: string): Promise<{ user: SessionUser; profile: Profile; designer: Designer }> {
+  const { user, profile } = await requireProfile(next);
+  const designer = await db().getDesigner(user.id);
+  if (!designer) redirect("/designers");
+  return { user, profile, designer };
+}
+
+// Approved designers only (checked on every request, so suspending someone takes effect at once).
+export async function requireApprovedDesigner(next: string): Promise<{ user: SessionUser; profile: Profile; designer: Designer & { commission_pct: number } }> {
+  const { designer, ...rest } = await requireDesigner(next);
+  if (designer.status !== "approved" || designer.commission_pct === null) redirect("/designer");
+  return { ...rest, designer: { ...designer, commission_pct: designer.commission_pct } };
 }

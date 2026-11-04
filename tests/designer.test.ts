@@ -3,6 +3,7 @@ import { beforeEach, test } from "node:test";
 import { COMMISSION_MAX, COMMISSION_MIN, designerSnapshot, isValidCommission, unitCommission, unitProfit } from "@/lib/designer/commission";
 import { canMove, designerCanDelete, designerCanEdit, submitProblems } from "@/lib/designer/design-flow";
 import { saleState, summarizeDesigner } from "@/lib/designer/sales";
+import { bioSchema, designerApplySchema, designerSignUpSchema, upiIdSchema } from "@/lib/designer/schemas";
 import { db, NotFoundError } from "@/lib/db";
 import { memoryStore } from "@/lib/db/memory";
 import type { Design, Order, OrderItem, Payout, ProductTerms } from "@/lib/types";
@@ -166,6 +167,35 @@ test("submitting needs a title, an image, a colour and the originality confirmat
   assert.equal(submitProblems({ ...ready, colorways: [] }).length, 1);
   assert.equal(submitProblems({ ...ready, originality_confirmed_at: null }).length, 1);
   assert.equal(submitProblems({ title: "", images: [], colorways: [], originality_confirmed_at: null }).length, 4);
+});
+
+// ---------- form schemas
+
+test("UPI ID is optional but must look like name@bank when given", () => {
+  assert.equal(upiIdSchema.parse("  dee@okbank "), "dee@okbank");
+  assert.equal(upiIdSchema.parse("dee.one-1@ybl"), "dee.one-1@ybl");
+  assert.equal(upiIdSchema.parse(""), null);
+  assert.equal(upiIdSchema.parse("   "), null);
+  for (const bad of ["dee", "@bank", "dee@", "dee bank@x", "dee@bank@x", "a".repeat(70) + "@ybl"]) assert.equal(upiIdSchema.safeParse(bad).success, false, bad);
+});
+
+test("bio is trimmed, optional and capped at 300 characters", () => {
+  assert.equal(bioSchema.parse("  Posters  "), "Posters");
+  assert.equal(bioSchema.parse(""), null);
+  assert.equal(bioSchema.safeParse("x".repeat(301)).success, false);
+  assert.equal(bioSchema.safeParse("x".repeat(300)).success, true);
+});
+
+test("designer sign-up needs the terms ticked and the usual account fields", () => {
+  const ok = { fullName: "Dee Signer", email: " Dee@Example.com ", phone: "+91 98765 43210", password: "password123", bio: "", upiId: "", agree: true };
+  const parsed = designerSignUpSchema.safeParse(ok);
+  assert.ok(parsed.success);
+  assert.deepEqual([parsed.data.email, parsed.data.phone, parsed.data.bio, parsed.data.upiId], ["dee@example.com", "9876543210", null, null]);
+  assert.equal(designerSignUpSchema.safeParse({ ...ok, agree: false }).success, false);
+  assert.equal(designerSignUpSchema.safeParse({ ...ok, password: "short" }).success, false);
+  assert.equal(designerSignUpSchema.safeParse({ ...ok, phone: "12345" }).success, false);
+  assert.equal(designerApplySchema.safeParse({ bio: "", upiId: "", agree: false }).success, false);
+  assert.ok(designerApplySchema.safeParse({ bio: "", upiId: "", agree: true }).success);
 });
 
 // ---------- in-memory database

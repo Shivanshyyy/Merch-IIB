@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { logOut } from "@/actions/auth";
 
-export function AccountDropdown({ name, email }: { name: string; email: string }) {
+export function AccountDropdown({ name, email, designer }: { name: string; email: string; designer: boolean }) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -58,6 +58,9 @@ export function AccountDropdown({ name, email }: { name: string; email: string }
           </Link>
           <Link role="menuitem" href="/account" className={item} onClick={() => setOpen(false)}>
             Account
+          </Link>
+          <Link role="menuitem" href={designer ? "/designer" : "/designers"} className={item} onClick={() => setOpen(false)}>
+            {designer ? "Designer dashboard" : "Sell your design"}
           </Link>
           <form action={logOut} className="border-t border-line">
             <button role="menuitem" type="submit" className={item}>
